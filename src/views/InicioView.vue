@@ -1,11 +1,12 @@
 <template>
-  <div>
-    <h1>Página de inicio</h1>
+  <div class="inicio">
+    <h1>Mensaje de prueba (Confie inge xd)</h1>
+    <p>Bienvenido a la vista de inicio 👋</p>
   </div>
 </template>
 
-<script>
-export default {
-  name: 'InicioView'
-}
+<script setup>
+  import '../assets/styles/InicioView.css'
 </script>
+
+
