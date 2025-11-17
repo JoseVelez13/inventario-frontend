@@ -1,0 +1,111 @@
+/* CONTENEDOR PRINCIPAL DEL HEADER */
+.header {
+  width: 99%;
+  height: 80px;
+  overflow: hidden;
+  padding: 10px 20px;
+  background: #0a3d62;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  /* header fijo arriba */
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* LOGO + TÍTULOS */
+.left-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  width: 200px;
+  height: 200px;
+  object-fit: contain;
+  animation: fadeLogo 0.7s ease-out;
+}
+
+.system-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.title {
+  font-size: 20px;
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  font-size: 25px;
+  margin-top: 2px;
+  margin-left: 15px;
+  color: #d6eaf8;
+}
+
+/* MENÚ HORIZONTAL */
+.nav-menu {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+.nav-item {
+  background: transparent;
+  border: none;
+  color: #d6eaf8;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: 0.25s;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+/* HOVER EFECTO */
+.nav-item:hover {
+  background: #3c6382;
+  color: white;
+}
+
+/* Íconos */
+.nav-item i {
+  font-size: 16px;
+}
+
+/* ANIMACIONES */
+@keyframes fadeLogo {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* RESPONSIVE */
+@media (max-width: 720px) {
+  .title {
+    font-size: 16px;
+  }
+
+  .subtitle {
+    font-size: 12px;
+  }
+
+  .nav-menu {
+    gap: 10px;
+  }
+
+  .nav-item {
+    font-size: 14px;
+    padding: 6px 10px;
+  }
+}
