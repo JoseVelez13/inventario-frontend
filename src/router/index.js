@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+
 import InicioView from '../views/InicioView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegistroView from '../views/RegistroView.vue'
@@ -39,6 +40,8 @@ const routes = [
       title: 'Dashboard - Sistema Innoquim'
     } 
   },
+  // ruta fallback para errores (si alguien entra a /xd123)
+  { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
 const router = createRouter({

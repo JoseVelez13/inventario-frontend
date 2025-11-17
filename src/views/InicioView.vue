@@ -1,12 +1,29 @@
 <template>
-  <div class="inicio">
-    <h1>Mensaje de prueba (Confie inge xd)</h1>
-    <p>Bienvenido a la vista de inicio 👋</p>
+  <div class="welcome-container">
+    <HeaderComponent />
+    <div class="fondo"></div>
+
+    <div class="welcome-box">
+      <h2 class="title">Bienvenido al gestor de inventario</h2>
+      <p class="subtitle_incio">Para continuar, inicie sesión</p>
+
+      <button class="btn-login" @click="$router.push('/login')">
+        Iniciar Sesión
+      </button>
+    </div>
+
   </div>
+  
 </template>
 
-<script setup>
+<script>
   import '../assets/styles/InicioView.css'
+  import '../router/index.js'
+  import HeaderComponent from '../components/HeaderInicio.vue';
+    export default {
+      name: 'InicioView',
+      components: {
+      HeaderComponent
+                  },   
+    }
 </script>
-
-
