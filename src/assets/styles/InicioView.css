@@ -1,9 +1,11 @@
-.inicio {
-  min-height: 100vh;
-  background: linear-gradient(to bottom right, #0a3d62, #3c6382);
+.welcome-container {
+  /* Altura máxima basada en la ventana para evitar scroll extra */
+  min-height: 90vh;
+  background: transparent;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* Evitar que el header se centre como "tarjeta" */
+  align-items: stretch;
 }
 
 .fondo {
@@ -17,16 +19,17 @@
   background-position: center;
   background-repeat: no-repeat;
   z-index: -1;        
+  /* Añadimos un overlay oscuro suave opcional para contraste del contenido */
 }
 .welcome-box {
   background: white;
   padding: 40px;
   border-radius: 12px;
-  width: 600px; /* ajusta según necesites */
-  margin-left: 376px;
+  width: 90%;
+  max-width: 600px; /* Mantiene un ancho máximo razonable */
+  margin: 80px auto 40px; /* deja espacio visual bajo el header sin desajustar */
   text-align: center;
   box-shadow: 0 0 15px rgba(0,0,0,0.2);
-  margin-top: 150px; /* para que no choque con el header */
   z-index: 5;         
   position: relative; 
 }
@@ -37,10 +40,27 @@
   color: #0a3d62;
 }
 
-.subtitle_inicio {
+.subtitle_inicio,
+.subtitle_incio { /* cubrimos también el typo para que aplique el estilo */
   margin-top: 10px;
   font-size: 17px;
   color: #000000;
+}
+
+/* Asegura que el body no tenga márgenes que desplacen el fondo */
+html, body, #app {
+  height: 100%;
+}
+body {
+  margin: 0;
+}
+
+/* En la vista de inicio, el header debe comportarse como bloque normal (no fixed).
+   No añadimos sombras o bordes ni tarjetas centradas. */
+.welcome-container .header {
+  position: static !important;
+  width: 100%;
+  margin: 0;
 }
 
 .btn-login {
@@ -58,7 +78,8 @@
 .btn-login:hover {
   background: #3c6382;
 }
-.logo {
+/* Logotipo para secciones de bienvenida (no afecta al header) */
+.welcome-box .logo {
   width: 250px;
   margin-bottom: 20px;
 }

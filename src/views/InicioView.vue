@@ -5,7 +5,7 @@
 
     <div class="welcome-box">
       <h2 class="title">Bienvenido al gestor de inventario</h2>
-      <p class="subtitle_incio">Para continuar, inicie sesión</p>
+      <p class="subtitle_inicio">Para continuar, inicie sesión</p>
 
       <button class="btn-login" @click="$router.push('/login')">
         Iniciar Sesión
