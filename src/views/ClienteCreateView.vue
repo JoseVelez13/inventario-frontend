@@ -1,6 +1,6 @@
 <template>
   <div class="page-container">
-    <HeaderComponent />
+    <HeaderGlobal />
     <div class="bg-fondo-clientes"></div>
 
     <div class="topbar">
@@ -57,12 +57,14 @@
 </template>
 
 <script>
-import HeaderComponent from '../components/HeaderInicio.vue'
+import HeaderGlobal from '../components/HeaderGlobal.vue'
 import '../assets/styles/Clientes.css'
+import clientesService from '../services/clientesService.js'
 
 export default {
   name: 'ClienteCreateView',
-  components: { HeaderComponent },
+  components: { HeaderGlobal },
+
   data() {
     return {
       form: {
@@ -72,19 +74,67 @@ export default {
         telefono: '',
         email: '',
         direccion: '',
-      }
+      },
+      isEdit: false,
+      idEdit: null,
     }
   },
-  methods: {
-    reset() {
-      this.form = { ruc: '', nombre_empresa: '', nombre_contacto: '', telefono: '', email: '', direccion: '' }
-    },
-    submit() {
-      // Simulación de guardado (sin backend todavía)
-      console.log('Cliente a guardar:', this.form)
-      alert('Cliente guardado (mock). Cuando el backend esté listo, se enviará al API.')
-      this.$router.push('/clientes')
+
+  created() {
+    const editParam = this.$route.query.edit
+    if (editParam) {
+      this.isEdit = true
+      this.idEdit = editParam
+      this.fetchCliente(editParam)
     }
+  },
+
+  methods: {
+    async fetchCliente(id) {
+      try {
+        const data = await clientesService.getCliente(id)
+        this.form = {
+          ruc: data.ruc || '',
+          nombre_empresa: data.nombre_empresa || '',
+          nombre_contacto: data.nombre_contacto || '',
+          telefono: data.telefono || '',
+          email: data.email || '',
+          direccion: data.direccion || '',
+        }
+      } catch (e) {
+        console.error('No se pudo cargar el cliente', e)
+        alert('No se pudo cargar el cliente a editar')
+      }
+    },
+
+    reset() {
+      this.form = {
+        ruc: '',
+        nombre_empresa: '',
+        nombre_contacto: '',
+        telefono: '',
+        email: '',
+        direccion: '',
+      }
+    },
+
+    async submit() {
+  try {
+    if (this.isEdit) {
+      await clientesService.updateCliente(this.idEdit, this.form)
+      alert('Cliente actualizado correctamente')
+    } else {
+      await clientesService.createCliente(this.form)
+      alert('Cliente creado correctamente')
+    }
+    this.$router.push('/clientes')
+  } catch (e) {
+    // 👀 Mostrar detalle del error que manda el backend
+    console.error('Error al guardar cliente', e.response?.data || e)
+    alert('No se pudo guardar el cliente')
+  }
+}
+
   }
 }
 </script>

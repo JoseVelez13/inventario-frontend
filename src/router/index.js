@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 import InicioView from '../views/InicioView.vue'
 import LoginView from '../views/LoginView.vue'
-import RegistroView from '../views/RegistroView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import ClientesListView from '../views/ClientesListView.vue'
 import ClienteCreateView from '../views/ClienteCreateView.vue'
@@ -21,15 +20,6 @@ const routes = [
     component: LoginView,
     meta: { 
       title: 'Iniciar Sesión - Sistema Innoquim',
-      hideForAuth: true // Ocultar si ya está autenticado
-    }
-  },
-  { 
-    path: '/registro', 
-    name: 'Registro',
-    component: RegistroView,
-    meta: { 
-      title: 'Registro - Sistema Innoquim',
       hideForAuth: true // Ocultar si ya está autenticado
     }
   },

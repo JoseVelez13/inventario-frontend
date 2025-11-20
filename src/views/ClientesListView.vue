@@ -18,7 +18,9 @@
           <input v-model="search" @input="onSearch" type="text" placeholder="Buscar por RUC, Empresa, Contacto..." style="flex:1; padding:10px 12px; border:1px solid #dfe7ef; border-radius: 8px;"/>
           <button class="btn-secondary" @click="clearSearch">Limpiar</button>
         </div>
-        <table class="table">
+        <div v-if="loading" style="padding:12px; color:#6b7c93;">Cargando clientes...</div>
+        <div v-else-if="error" class="alert-error" style="padding:12px; border:1px solid #fcc; background:#fee; color:#c00; border-radius:8px;">{{ error }}</div>
+        <table v-else class="table">
           <thead>
             <tr>
               <th>ID</th>
@@ -28,20 +30,26 @@
               <th>Teléfono</th>
               <th>Email</th>
               <th>Dirección</th>
+              <th style="width:140px">Acciones</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="c in filtered" :key="c.cliente_id">
-              <td>{{ c.cliente_id }}</td>
-              <td>{{ c.ruc }}</td>
-              <td>{{ c.nombre_empresa }}</td>
-              <td>{{ c.nombre_contacto || '-' }}</td>
-              <td>{{ c.telefono || '-' }}</td>
-              <td>{{ c.email }}</td>
-              <td>{{ c.direccion }}</td>
+              <td class="h">{{ c.cliente_id }}</td>
+              <td class="h">{{ c.ruc }}</td>
+              <td class="h">{{ c.nombre_empresa }}</td>
+              <td class="h">{{ c.nombre_contacto || '-' }}</td>
+              <td class="h">{{ c.telefono || '-' }}</td>
+              <td class="h">{{ c.email }}</td>
+              <td class="h">{{ c.direccion }}</td>
+              <td>
+                <button class="btn-secondary" @click="$router.push(`/clientes/nuevo?edit=${c.cliente_id}`)">Editar</button>
+                <button class="btn-primary" style="margin-left:6px; background:#b71c1c" @click="deleteCliente(c.cliente_id)">Eliminar</button>
+
+              </td>
             </tr>
             <tr v-if="filtered.length === 0">
-              <td colspan="7" style="text-align:center; color:#6b7c93; padding: 16px;">Sin resultados</td>
+              <td colspan="8" style="text-align:center; color:#6b7c93; padding: 16px;">Sin resultados</td>
             </tr>
           </tbody>
         </table>
@@ -53,20 +61,7 @@
 <script>
 import HeaderGlobal from '../components/HeaderGlobal.vue'
 import '../assets/styles/Clientes.css'
-
-// Datos mock locales (sin backend aún)
-const MOCK_CLIENTES = [
-  {
-    cliente_id: 'CL000001', ruc: '0999999999001', nombre_empresa: 'Innoquim S.A.',
-    nombre_contacto: 'Juan Pérez', telefono: '+593 99 999 9999',
-    email: 'contacto@innoquim.com', direccion: 'Av. Principal 123, Manta'
-  },
-  {
-    cliente_id: 'CL000002', ruc: '0912345678001', nombre_empresa: 'Constructora XYZ Cia. Ltda.',
-    nombre_contacto: 'María García', telefono: '+593 98 888 7777',
-    email: 'ventas@constructoraxyz.com', direccion: 'Calle 10 y Av. 5, Manta'
-  },
-]
+import clientesService from '../services/clientesService'
 
 export default {
   name: 'ClientesListView',
@@ -74,15 +69,22 @@ export default {
   data() {
     return {
       search: '',
-      clientes: MOCK_CLIENTES,
+      clientes: [],
+      loading: false,
+      error: '',
     }
   },
+
+  created() {
+    this.fetchClientes()
+  },
+
   computed: {
     filtered() {
       const q = this.search.trim().toLowerCase()
       if (!q) return this.clientes
       return this.clientes.filter(c =>
-        c.cliente_id.toLowerCase().includes(q) ||
+        String(c.cliente_id || c.id).includes(q) ||
         c.ruc.toLowerCase().includes(q) ||
         c.nombre_empresa.toLowerCase().includes(q) ||
         (c.nombre_contacto || '').toLowerCase().includes(q) ||
@@ -91,10 +93,44 @@ export default {
       )
     }
   },
+
   methods: {
+    async fetchClientes() {
+  this.loading = true
+  this.error = ''
+  try {
+    const data = await clientesService.getClientes()
+    this.clientes = Array.isArray(data) ? data : []
+  } catch (e) {
+    console.error('Error al listar clientes', e)
+    this.error = 'No se pudo cargar la lista de clientes.'
+  } finally {
+    this.loading = false
+  }
+},
+
     onSearch() {},
-    clearSearch() { this.search = '' },
-    reload() {/* placeholder */}
+
+    clearSearch() {
+      this.search = ''
+    },
+
+    reload() {
+      this.fetchClientes()
+    },
+
+    async deleteCliente(id) {
+      if (!confirm('¿Eliminar cliente definitivamente?')) return
+      try {
+        await clientesService.deleteCliente(id)
+        this.clientes = this.clientes.filter(
+          c => (c.cliente_id || c.id) !== id
+        )
+      } catch (e) {
+        console.error('Error al eliminar cliente', e)
+        alert('No se pudo eliminar el cliente')
+      }
+    }
   }
 }
 </script>

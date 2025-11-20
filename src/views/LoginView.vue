@@ -41,10 +41,7 @@
           </button>
         </div>
 
-        <div class="login-footer">
-          <p>¿No tienes cuenta? <router-link to="/registro">Registrarse</router-link></p>
-        </div>
-      </form>
+        </form>
 
         <div class="demo-credentials">
           <p><small>Credenciales de prueba:</small></p>
