@@ -4,6 +4,8 @@ import InicioView from '../views/InicioView.vue'
 import LoginView from '../views/LoginView.vue'
 import RegistroView from '../views/RegistroView.vue'
 import DashboardView from '../views/DashboardView.vue'
+import ClientesListView from '../views/ClientesListView.vue'
+import ClienteCreateView from '../views/ClienteCreateView.vue'
 import authService from '../services/auth'
 
 const routes = [
@@ -39,6 +41,18 @@ const routes = [
       requiresAuth: true,
       title: 'Dashboard - Sistema Innoquim'
     } 
+  },
+  {
+    path: '/clientes',
+    name: 'Clientes',
+    component: ClientesListView,
+    meta: { title: 'Clientes - Sistema Innoquim' }
+  },
+  {
+    path: '/clientes/nuevo',
+    name: 'ClienteNuevo',
+    component: ClienteCreateView,
+    meta: { title: 'Nuevo Cliente - Sistema Innoquim' }
   },
   // ruta fallback para errores (si alguien entra a /xd123)
   { path: '/:pathMatch(.*)*', redirect: '/' }

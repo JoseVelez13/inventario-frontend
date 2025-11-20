@@ -1,5 +1,5 @@
 <template>
-  <header class="header">
+  <header class="header-inicio">
     <!-- Contenedor principal -->
     <div class="left-section">
       <img :src="logo" alt="Logo empresa" class="logo" />
@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import '../assets/styles/Header.css'
+import '../assets/styles/HeaderInicio.css'
 import logo from '../assets/img/logo.png'
 
 export default {

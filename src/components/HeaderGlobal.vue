@@ -1,5 +1,5 @@
 <template>
-  <header class="header">
+  <header class="header-global">
     <!-- Contenedor principal -->
     <div class="left-section">
       <img :src="logo" alt="Logo empresa" class="logo" />
@@ -16,22 +16,18 @@
         <i class="fa-solid fa-house"></i> Inicio
       </button>
 
-      <button class="nav-item" @click="$router.push('/login')">
-        <i class="fa-solid fa-right-to-bracket"></i> Login
-      </button>
-
-      <button class="nav-item" @click="$router.push('/registro')">
-        <i class="fa-solid fa-user-plus"></i> Registro
-      </button>
-
       <button class="nav-item" @click="$router.push('/dashboard')">
         <i class="fa-solid fa-table"></i> Dashboard
+      </button>
+
+      <button class="nav-item" @click="logout">
+        <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
       </button>
     </nav>
   </header>
 </template>
 <script>
-import '../assets/styles/Header.css'
+import '../assets/styles/HeaderGlobal.css'
 import logo from '../assets/img/logo.png'
 
 export default {
@@ -39,6 +35,16 @@ export default {
   data() {
     return {
       logo
+    }
+  },
+  methods: {
+    logout() {
+      try {
+        localStorage.removeItem('access_token')
+        localStorage.removeItem('refresh_token')
+        localStorage.removeItem('user')
+      } catch (e) {}
+      this.$router.push('/login')
     }
   }
 }

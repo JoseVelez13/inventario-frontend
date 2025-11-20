@@ -1,0 +1,28 @@
+/* Estilos exclusivos del Header de Inicio */
+.header-inicio {
+  width: 97.4%;
+  height: 60px;
+  overflow: hidden;
+  padding: 10px 20px;
+  background: #0a3d62;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: static; /* en inicio no fijo */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.header-inicio .left-section { display: flex; align-items: center; gap: 12px; }
+.header-inicio .logo { height: 130px; width: auto; object-fit: contain; }
+.header-inicio .system-info { display:flex; flex-direction:column; line-height:1.1; }
+.header-inicio .title { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: 1px; }
+.header-inicio .subtitle { font-size: 25px; margin-top: 2px; margin-left: 15px; color: #d6eaf8; }
+.header-inicio .nav-menu { display:flex; gap:18px; align-items:center; }
+.header-inicio .nav-item { background: transparent; border:none; color:#d6eaf8; font-size:16px; display:flex; align-items:center; gap:6px; cursor:pointer; transition:0.25s; padding:8px 12px; border-radius:6px; }
+.header-inicio .nav-item:hover { background:#3c6382; color:#fff; }
+.header-inicio .nav-item i { font-size: 16px; }

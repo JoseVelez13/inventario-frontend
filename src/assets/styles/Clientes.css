@@ -1,0 +1,143 @@
+/* Estilos compartidos para las vistas de Clientes (guiado por Odoo y la landing) */
+
+.page-container {
+  min-height: 100vh;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.bg-fondo-clientes {
+  position: fixed;
+  inset: 0;
+  background-image: url('../img/fondo.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+}
+
+/* Barra superior estilo Odoo (acciones) */
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  margin: 80px auto 12px; /* espacio bajo el header */
+  width: 95%;
+  max-width: 1200px;
+  background: rgba(10, 61, 98, 0.9); /* #0a3d62 con transparencia */
+  color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+}
+
+.topbar-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-primary {
+  background: #0a3d62;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+.btn-primary:hover { background: #3c6382; }
+
+.btn-secondary {
+  background: #f4f6f9;
+  color: #0a3d62;
+  border: 1px solid #d9e2ec;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+.btn-secondary:hover { background: #e9edf3; color: #08344f; }
+
+/* Contenedor principal de contenido (tarjeta) */
+.content-box {
+  width: 95%;
+  max-width: 1200px;
+  margin: 0 auto 40px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.content-body {
+  padding: 20px;
+}
+
+/* Tabla estilo Odoo */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th, .table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #eef2f7;
+  text-align: left;
+}
+.table thead th {
+  background: #f6f9fc;
+  color: #0a3d62;
+  font-weight: 700;
+}
+.table tbody tr:hover {
+  background: #f9fbfe;
+}
+
+/* Formulario */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.form-grid .full { grid-column: 1 / -1; }
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+}
+.form-field label {
+  font-weight: 600;
+  color: #0a3d62;
+  margin-bottom: 6px;
+}
+.form-field input,
+.form-field textarea {
+  border: 1px solid #dfe7ef;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+}
+.form-field textarea { min-height: 90px; resize: vertical; }
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+/* Responsivo */
+@media (max-width: 860px) {
+  .topbar { width: 96%; }
+  .content-box { width: 96%; }
+  .form-grid { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,13 @@
+/* Estilos del Dashboard con estética similar a la bienvenida */
+.dashboard-page { min-height: 100vh; display:flex; flex-direction: column; }
+.dashboard-bg { position: fixed; inset: 0; background-image: url('../img/fondo.jpg'); background-size: cover; background-position: center; z-index: -1; }
+.dashboard-wrapper { width: 95%; max-width: 1200px; margin: 80px auto 40px; }
+.dash-title { color: #0a3d62; margin: 0 0 16px; }
+
+.modules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.module-card { background: rgba(255,255,255,0.95); border-radius: 12px; padding: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); display:flex; gap: 12px; align-items:center; cursor:pointer; border:1px solid #e8eef5; transition: transform .2s ease, box-shadow .2s ease; }
+.module-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0,0,0,0.22); }
+.module-card.disabled { cursor: not-allowed; opacity: .6; }
+.module-icon { font-size: 36px; }
+.module-info h3 { margin: 0; color: #0a3d62; }
+.module-info p { margin: 4px 0 0; color: #3c6382; font-size: 14px; }
