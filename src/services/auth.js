@@ -7,14 +7,14 @@ import api from './api'
 class AuthService {
   /**
    * Iniciar sesión con username y password
-   * @param {string} username - Nombre de usuario
+   * @param {string} email - Nombre de usuario o email
    * @param {string} password - Contraseña
    * @returns {Promise} Respuesta del servidor con tokens y datos de usuario
    */
-  async login(username, password) {
+  async login(email, password) {
     try {
-      const response = await api.post('/auth/login', {
-        username,
+      const response = await api.post('/auth/login/', {
+        email,
         password,
       })
 
@@ -45,20 +45,7 @@ class AuthService {
    */
   async register(userData) {
     try {
-      const response = await api.post('/auth/register', userData)
-      
-      // Si el registro retorna tokens automáticamente, guardarlos
-      const { access, refresh, user } = response.data
-      if (access) {
-        localStorage.setItem('access_token', access)
-      }
-      if (refresh) {
-        localStorage.setItem('refresh_token', refresh)
-      }
-      if (user) {
-        localStorage.setItem('user', JSON.stringify(user))
-      }
-
+      const response = await api.post('/usuarios/', userData)
       return response.data
     } catch (error) {
       console.error('Error en registro:', error)
@@ -67,16 +54,16 @@ class AuthService {
   }
 
   /**
-   * Cerrar sesión
+   * Cerrar sesión y agregar refresh token a blacklist
    * @returns {Promise} Respuesta del servidor
    */
   async logout() {
     try {
       const refreshToken = localStorage.getItem('refresh_token')
-      
-      // Intentar hacer logout en el servidor
+
+      // Intentar hacer logout en el servidor (blacklist el refresh token)
       if (refreshToken) {
-        await api.post('/auth/logout', { refresh: refreshToken })
+        await api.post('/auth/logout/', { refresh: refreshToken })
       }
     } catch (error) {
       console.error('Error en logout:', error)
@@ -94,6 +81,11 @@ class AuthService {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
+
+    // Emitir evento para que otros componentes sepan del cambio
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('auth-change'))
+    }
   }
 
   /**
@@ -150,12 +142,12 @@ class AuthService {
    */
   async getCurrentUser() {
     try {
-      const response = await api.get('/auth/me')
+      const response = await api.get('/auth/me/')
       const user = response.data
-      
+
       // Actualizar datos en localStorage
       localStorage.setItem('user', JSON.stringify(user))
-      
+
       return user
     } catch (error) {
       console.error('Error al obtener usuario actual:', error)
@@ -170,12 +162,12 @@ class AuthService {
   async refreshToken() {
     try {
       const refreshToken = this.getRefreshToken()
-      
+
       if (!refreshToken) {
         throw new Error('No hay refresh token disponible')
       }
 
-      const response = await api.post('/auth/refresh', {
+      const response = await api.post('/auth/refresh/', {
         refresh: refreshToken,
       })
 

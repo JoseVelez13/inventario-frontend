@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 // Configuración base del API
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 const API_TIMEOUT = import.meta.env.VITE_API_TIMEOUT || 10000
 
 const api = axios.create({
@@ -21,7 +21,6 @@ api.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`
       }
     } catch (e) {
-      // En algunos entornos localStorage puede no estar disponible
       console.warn('No se pudo acceder a localStorage:', e)
     }
     return config
@@ -43,14 +42,13 @@ api.interceptors.response.use(
 
       try {
         const refreshToken = localStorage.getItem('refresh_token')
-        
         if (!refreshToken) {
           throw new Error('No refresh token available')
         }
 
         // Intentar refrescar el token
         const response = await axios.post(
-          `${API_BASE_URL}/auth/refresh`,
+          `${API_BASE_URL}/auth/refresh/`,
           { refresh: refreshToken }
         )
 
@@ -66,12 +64,13 @@ api.interceptors.response.use(
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('user')
-        
-        // Redirigir a login
+
+        // Emitir evento de cambio de autenticación
         if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('auth-change'))
           window.location.href = '/login'
         }
-        
+
         return Promise.reject(refreshError)
       }
     }

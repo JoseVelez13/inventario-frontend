@@ -29,15 +29,36 @@
   max-width: 420px;
   border-radius: 12px;
   padding: 32px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.login-header { text-align: center; margin-bottom: 18px; }
-.login-header h1 { margin: 0 0 8px; color: #0a3d62; font-size: 24px; }
-.login-header p  { margin: 0; color: #3c6382; }
+.login-header {
+  text-align: center;
+  margin-bottom: 18px;
+}
 
-.form-group { margin-bottom: 14px; }
-.form-group label { display:block; margin-bottom:6px; color:#0a3d62; font-weight:600; }
+.login-header h1 {
+  margin: 0 0 8px;
+  color: #0a3d62;
+  font-size: 24px;
+}
+
+.login-header p {
+  margin: 0;
+  color: #3c6382;
+}
+
+.form-group {
+  margin-bottom: 14px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  color: #0a3d62;
+  font-weight: 600;
+}
+
 .form-group input {
   width: 100%;
   padding: 12px;
@@ -47,9 +68,15 @@
   box-sizing: border-box;
   outline: none;
 }
-.form-group input:focus { border-color: #3c6382; }
 
-.form-actions { margin-top: 16px; }
+.form-group input:focus {
+  border-color: #3c6382;
+}
+
+.form-actions {
+  margin-top: 16px;
+}
+
 .btn-primary {
   width: 100%;
   padding: 12px;
@@ -61,10 +88,49 @@
   font-weight: 600;
   cursor: pointer;
 }
-.btn-primary:hover { background: #3c6382; }
 
-.login-footer { margin-top: 16px; text-align:center; font-size:14px; color:#666; }
-.login-footer a { color: #0a3d62; font-weight: 600; text-decoration: none; }
-.login-footer a:hover { text-decoration: underline; }
+.btn-primary:hover {
+  background: #3c6382;
+}
 
-.demo-credentials { margin-top: 16px; text-align:center; color:#6b7c93; }
+.login-footer {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.login-footer a {
+  color: #0a3d62;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-footer a:hover {
+  text-decoration: underline;
+}
+
+.demo-credentials {
+  margin-top: 16px;
+  text-align: center;
+  color: #6b7c93;
+}
+
+.alert {
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.alert-error {
+  background-color: #fee;
+  border: 1px solid #fcc;
+  color: #c33;
+}
+
+.alert-success {
+  background-color: #efe;
+  border: 1px solid #cfc;
+  color: #3c3;
+}

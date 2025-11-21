@@ -1,52 +1,50 @@
 <template>
   <div class="login-page">
     <div class="login-bg"></div>
-
     <div class="login-wrapper">
       <div class="login-card">
         <div class="login-header">
           <h1>Sistema Innoquim</h1>
           <p>Iniciar sesión</p>
         </div>
-
+        
+        <!-- Mostrar errores -->
+        <div v-if="error" class="alert alert-error">
+          {{ error }}
+        </div>
+        
         <form @submit.prevent="submit" class="login-form">
-        <div class="form-group">
-          <label for="username">Usuario</label>
-          <input 
-            id="username"
-            v-model="username" 
-            type="text" 
-            required 
-            placeholder="Ingresa tu usuario"
-            :disabled="loading"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="password">Contraseña</label>
-          <input 
-            id="password"
-            v-model="password" 
-            type="password" 
-            required 
-            minlength="4" 
-            placeholder="Ingresa tu contraseña"
-            :disabled="loading"
-          />
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" :disabled="loading" class="btn-primary">
-            {{ loading ? 'Ingresando...' : 'Ingresar' }}
-          </button>
-        </div>
-
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input 
+              id="email"
+              v-model="email" 
+              type="text" 
+              required 
+              placeholder="Ingresa tu email"
+              :disabled="loading"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label for="password">Contraseña</label>
+            <input 
+              id="password"
+              v-model="password" 
+              type="password" 
+              required 
+              minlength="4" 
+              placeholder="Ingresa tu contraseña"
+              :disabled="loading"
+            />
+          </div>
+          
+          <div class="form-actions">
+            <button type="submit" :disabled="loading" class="btn-primary">
+              {{ loading ? 'Ingresando...' : 'Ingresar' }}
+            </button>
+          </div>
         </form>
-
-        <div class="demo-credentials">
-          <p><small>Credenciales de prueba:</small></p>
-          <p><small><strong>Usuario:</strong> admin | <strong>Contraseña:</strong> admin123</small></p>
-        </div>
       </div>
     </div>
   </div>
@@ -55,41 +53,57 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import authService from '../services/auth'
 import '../assets/styles/Login.css'
 
-// Sin validaciones de credenciales contra backend; se usan credenciales de prueba
 const router = useRouter()
 const route = useRoute()
 
-const username = ref('')
+const email = ref('')
 const password = ref('')
 const loading = ref(false)
+const error = ref('')
 
 async function submit() {
   loading.value = true
-
-  // Credenciales de prueba
-  const isValid = username.value === 'admin' && password.value === 'admin123'
-  if (isValid) {
-    // Mock de autenticación: almacenar tokens y usuario para que el guard permita el acceso
-    localStorage.setItem('access_token', 'demo-token')
-    localStorage.setItem('refresh_token', 'demo-refresh')
-    localStorage.setItem('user', JSON.stringify({ username: 'admin', email: 'admin@innoquim.com' }))
-
+  error.value = ''
+  
+  try {
+    await authService.login(email.value, password.value)
+    
+    // Emitir evento de cambio de autenticación
     window.dispatchEvent(new Event('auth-change'))
-
-    // Si hay redirect en query y es string, úsalo; si no, ir por nombre de ruta
-    const redirect = route.query && route.query.redirect ? route.query.redirect : null
+    
+    // Redirigir al dashboard o a la página de origen
+    const redirect = route.query?.redirect
     if (redirect && typeof redirect === 'string') {
       router.push(redirect)
     } else {
       router.push({ name: 'Dashboard' })
     }
-  } else {
-    alert('Credenciales inválidas de prueba. Use admin / admin123')
+  } catch (err) {
+    console.error('Error en login:', err)
+    
+    // Manejar diferentes tipos de errores
+    if (err.response) {
+      // El servidor respondió con un código de error
+      if (err.response.status === 401) {
+        error.value = 'Usuario o contraseña incorrectos'
+      } else if (err.response.data?.detail) {
+        error.value = err.response.data.detail
+      } else {
+        error.value = 'Error al iniciar sesión. Intenta nuevamente.'
+      }
+    } else if (err.request) {
+      // La petición se hizo pero no hubo respuesta
+      error.value = 'No se pudo conectar con el servidor. Verifica tu conexión.'
+    } else {
+      // Algo pasó al configurar la petición
+      error.value = 'Error inesperado. Intenta nuevamente.'
+    }
+  } finally {
+    loading.value = false
   }
-
-  loading.value = false
 }
 </script>
 
