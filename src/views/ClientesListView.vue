@@ -95,20 +95,21 @@ export default {
   },
 
   methods: {
-    async fetchClientes() {
-  this.loading = true
-  this.error = ''
-  try {
-    const data = await clientesService.getClientes()
-    this.clientes = Array.isArray(data) ? data : []
-  } catch (e) {
-    console.error('Error al listar clientes', e)
-    this.error = 'No se pudo cargar la lista de clientes.'
-  } finally {
-    this.loading = false
-  }
-},
+  async fetchClientes() {
+    this.loading = true
+    this.error = ''
+    try {
+      const data = await clientesService.getClientes()
 
+      // Soporte para paginación de DRF
+      this.clientes = Array.isArray(data) ? data : data.results || []
+    } catch (e) {
+      console.error('Error al listar clientes', e)
+      this.error = 'No se pudo cargar la lista de clientes.'
+    } finally {
+      this.loading = false
+    }
+  },
     onSearch() {},
 
     clearSearch() {
