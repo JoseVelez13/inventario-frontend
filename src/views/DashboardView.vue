@@ -9,28 +9,31 @@
       </div>
 
       <div class="modules-grid">
-        <div class="module-card" @click="$router.push('/clientes')">
+        <div class="module-card" @click="$router.push('/clientes')" role="button" tabindex="0">
           <div class="module-icon">👥</div>
           <div class="module-info">
             <h3>Clientes</h3>
-            <p>Gestione empresas y contactos</p>
+            <p>Gestión de empresas y contactos</p>
           </div>
+          <div class="module-badge active">Activo</div>
         </div>
 
-        <div class="module-card disabled">
+        <div class="module-card disabled" role="button" tabindex="-1" aria-disabled="true">
           <div class="module-icon">📦</div>
           <div class="module-info">
             <h3>Productos</h3>
-            <p>Inventario de productos</p>
+            <p>Control de inventario</p>
           </div>
+          <div class="module-badge">Próximamente</div>
         </div>
 
-        <div class="module-card disabled">
+        <div class="module-card disabled" role="button" tabindex="-1" aria-disabled="true">
           <div class="module-icon">🧪</div>
           <div class="module-info">
             <h3>Materia Prima</h3>
-            <p>Gestionar insumos</p>
+            <p>Gestión de insumos</p>
           </div>
+          <div class="module-badge">Próximamente</div>
         </div>
       </div>
     </div>

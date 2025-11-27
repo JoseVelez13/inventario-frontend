@@ -15,14 +15,15 @@
         
         <form @submit.prevent="submit" class="login-form">
           <div class="form-group">
-            <label for="email">Email</label>
+            <label for="email">Correo electrónico</label>
             <input 
               id="email"
               v-model="email" 
-              type="text" 
+              type="email" 
               required 
-              placeholder="Ingresa tu email"
+              autocomplete="email"
               :disabled="loading"
+              :class="{ 'has-error': error && !email }"
             />
           </div>
           
@@ -33,15 +34,25 @@
               v-model="password" 
               type="password" 
               required 
-              minlength="4" 
-              placeholder="Ingresa tu contraseña"
+              minlength="4"
+              autocomplete="current-password" 
               :disabled="loading"
+              :class="{ 'has-error': error && !password }"
             />
           </div>
           
           <div class="form-actions">
-            <button type="submit" :disabled="loading" class="btn-primary">
-              {{ loading ? 'Ingresando...' : 'Ingresar' }}
+            <button 
+              type="submit" 
+              :disabled="loading" 
+              class="btn-primary"
+              :class="{ 'is-loading': loading }"
+            >
+              <span v-if="!loading">Iniciar sesión</span>
+              <span v-else class="loading-text">
+                <span class="spinner"></span>
+                Iniciando sesión...
+              </span>
             </button>
           </div>
         </form>

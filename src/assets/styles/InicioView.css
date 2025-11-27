@@ -22,29 +22,39 @@
   /* Añadimos un overlay oscuro suave opcional para contraste del contenido */
 }
 .welcome-box {
-  background: white;
-  padding: 40px;
+  background: #ffffff;
+  padding: 48px;
   border-radius: 12px;
   width: 90%;
-  max-width: 600px; /* Mantiene un ancho máximo razonable */
-  margin: 80px auto 40px; /* deja espacio visual bajo el header sin desajustar */
+  max-width: 600px;
+  margin: 80px auto 40px;
   text-align: center;
-  box-shadow: 0 0 15px rgba(0,0,0,0.2);
-  z-index: 5;         
-  position: relative; 
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.08);
+  z-index: 5;
+  position: relative;
 }
 
 .title {
-  font-size: 26px;
-  font-weight: bold;
-  color: #0a3d62;
+  font-size: 36px;
+  font-weight: 600;
+  color: #1E3A8A;
+  font-family: 'Inter', 'Roboto', sans-serif;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin: 0;
 }
 
 .subtitle_inicio,
-.subtitle_incio { /* cubrimos también el typo para que aplique el estilo */
-  margin-top: 10px;
-  font-size: 17px;
-  color: #000000;
+.subtitle_incio {
+  margin-top: 16px;
+  font-size: 18px;
+  color: #64748B;
+  font-weight: 400;
+  line-height: 1.6;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Asegura que el body no tenga márgenes que desplacen el fondo */
@@ -64,19 +74,23 @@ body {
 }
 
 .btn-login {
-  margin-top: 20px;
-  background: #0a3d62;
+  margin-top: 24px;
+  background: #1E3A8A;
   color: white;
   border: none;
-  padding: 12px 20px;
+  padding: 14px 32px;
   font-size: 16px;
-  border-radius: 8px;
+  font-weight: 500;
+  border-radius: 12px;
   cursor: pointer;
-  transition: 0.3s;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
 
 .btn-login:hover {
-  background: #3c6382;
+  background: #3B82F6;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0,0,0,0.12);
 }
 /* Logotipo para secciones de bienvenida (no afecta al header) */
 .welcome-box .logo {
