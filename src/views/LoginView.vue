@@ -1,11 +1,34 @@
 <template>
   <div class="login-page">
-    <div class="login-bg"></div>
-    <div class="login-wrapper">
+    <!-- Lado izquierdo - Branding -->
+    <div class="login-brand">
+      <div class="brand-content">
+        <img :src="logo" alt="Logo Innoquim" class="brand-logo" />
+        <h1 class="brand-title">INNOQUIM</h1>
+        <p class="brand-subtitle">Sistema de Gestión de Inventario</p>
+        <div class="brand-features">
+          <div class="brand-feature">
+            <span class="feature-icon">✓</span>
+            <span>Control de inventario en tiempo real</span>
+          </div>
+          <div class="brand-feature">
+            <span class="feature-icon">✓</span>
+            <span>Gestión integral de clientes</span>
+          </div>
+          <div class="brand-feature">
+            <span class="feature-icon">✓</span>
+            <span>Reportes y análisis detallados</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lado derecho - Formulario -->
+    <div class="login-form-section">
       <div class="login-card">
         <div class="login-header">
-          <h1>Sistema Innoquim</h1>
-          <p>Iniciar sesión</p>
+          <h2>Iniciar sesión</h2>
+          <p>Ingresa tus credenciales para acceder</p>
         </div>
         
         <!-- Mostrar errores -->
@@ -65,6 +88,7 @@
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import authService from '../services/auth'
+import logo from '../assets/img/logo.png'
 import '../assets/styles/Login.css'
 
 const router = useRouter()

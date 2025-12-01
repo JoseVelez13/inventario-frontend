@@ -4,17 +4,22 @@
   line-height: 1.6;
   font-weight: 400;
 
-  /* Paleta corporativa suave */
-  --color-primary: #1E3A8A;        /* Azul corporativo suave */
-  --color-primary-light: #3B82F6;  /* Azul claro */
-  --color-secondary: #1F5F9;       /* Gris claro */
-  --color-text: #334155;           /* Gris para texto */
-  --color-bg: #ffffff;             /* Fondo blanco */
-  --color-border: #E2E8F0;         /* Bordes suaves */
+  /* Paleta ergonómica para uso prolongado */
+  --color-primary: #4F6F8F;        /* Azul grisáceo suave - menos cansador */
+  --color-primary-light: #6B8CAE;  /* Azul claro desaturado */
+  --color-primary-lighter: #E8EDF2; /* Azul muy claro para fondos */
+  --color-secondary: #5F6B7A;      /* Gris azulado neutral */
+  --color-text: #374151;           /* Gris oscuro suave para texto */
+  --color-text-light: #6B7280;     /* Gris medio para secundarios */
+  --color-bg: #F9FAFB;             /* Gris muy claro - menos cansador que blanco puro */
+  --color-bg-secondary: #F3F4F6;   /* Fondo alternativo */
+  --color-border: #E5E7EB;         /* Bordes muy sutiles */
+  --color-card: #FFFFFF;           /* Blanco para tarjetas */
   
   color-scheme: light;
   color: var(--color-text);
-  background-color: var(--color-bg);
+  background: linear-gradient(to bottom, #EEF3F9, #F8FAFC);
+  background-attachment: fixed;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -44,7 +49,7 @@ h1 {
 }
 
 button {
-  border-radius: 12px;
+  border-radius: 8px;
   border: none;
   padding: 0.75em 1.5em;
   font-size: 1em;
@@ -54,12 +59,12 @@ button {
   color: white;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
 }
 button:hover {
   background-color: var(--color-primary-light);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(0,0,0,0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
 button:focus,
 button:focus-visible {
@@ -69,9 +74,9 @@ button:focus-visible {
 
 .card {
   padding: 2em;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  background: var(--color-card);
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
   border: 1px solid var(--color-border);
 }
 
@@ -83,16 +88,50 @@ button:focus-visible {
   height: 100%;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* Animaciones suaves */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  a:hover {
-    color: #747bff;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
   }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Clases de utilidad para animaciones */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-slide-in {
+  animation: slideInFromLeft 0.5s ease-out forwards;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.4s ease-out forwards;
 }
 

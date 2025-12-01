@@ -4,25 +4,28 @@
   height: 60px;
   overflow: hidden;
   padding: 10px 20px;
-  background: #0a3d62;
-  color: white;
+  background: var(--color-card, #ffffff);
+  color: var(--color-text, #374151);
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  position: static; /* en inicio no fijo */
+  position: static;
   top: 0;
   left: 0;
   right: 0;
   z-index: 1000;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
-.header-inicio .left-section { display: flex; align-items: center; gap: 12px; }
-.header-inicio .logo { height: 130px; width: auto; object-fit: contain; }
-.header-inicio .system-info { display:flex; flex-direction:column; line-height:1.1; }
-.header-inicio .title { font-size: 20px; margin: 0; font-weight: 700; letter-spacing: 1px; }
-.header-inicio .subtitle { font-size: 25px; margin-top: 2px; margin-left: 15px; color: #d6eaf8; }
-.header-inicio .nav-menu { display:flex; gap:18px; align-items:center; }
-.header-inicio .nav-item { background: transparent; border:none; color:#d6eaf8; font-size:16px; display:flex; align-items:center; gap:6px; cursor:pointer; transition:0.25s; padding:8px 12px; border-radius:6px; }
-.header-inicio .nav-item:hover { background:#3c6382; color:#fff; }
+.header-inicio .left-section { display: flex; align-items: center; gap: 18px; }
+.header-inicio .logo { height: 85px; width: auto; object-fit: contain; }
+.header-inicio .system-info { display:flex; flex-direction:column; line-height:1.2; gap: 2px; }
+.header-inicio .title { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: 0.5px; font-family: 'Inter', 'Roboto', sans-serif; color: var(--color-primary, #4F6F8F); }
+.header-inicio .subtitle { font-size: 13px; margin: 0; color: var(--color-text-light, #6B7280); font-weight: 400; }
+.header-inicio .nav-menu { display:flex; gap:12px; align-items:center; }
+.header-inicio .nav-item { background: transparent; border:none; color: var(--color-text, #374151); font-size:15px; display:flex; align-items:center; gap:6px; cursor:pointer; transition: all 0.2s ease; padding:10px 14px; border-radius:6px; font-weight: 500; }
+.header-inicio .nav-item:hover { background: var(--color-primary-lighter, #E8EDF2); color: var(--color-primary, #4F6F8F); }
+.header-inicio .nav-item:focus { outline: 2px solid rgba(79, 111, 143, 0.3); outline-offset: 2px; }
+.header-inicio .nav-item:active { transform: scale(0.98); }
 .header-inicio .nav-item i { font-size: 16px; }
