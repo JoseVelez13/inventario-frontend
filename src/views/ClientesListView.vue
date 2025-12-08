@@ -140,6 +140,13 @@ export default {
 
     clearSearch() {
       this.search = ''
+      // Poner focus en el campo de búsqueda después de limpiar
+      this.$nextTick(() => {
+        const searchInput = document.querySelector('.search-input')
+        if (searchInput) {
+          searchInput.focus()
+        }
+      })
     },
 
     reload() {

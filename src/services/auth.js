@@ -9,7 +9,7 @@ class AuthService {
    * Iniciar sesión con username y password
    * @param {string} email - Nombre de usuario o email
    * @param {string} password - Contraseña
-   * @returns {Promise} Respuesta del servidor con tokens y datos de usuario
+   * @returns {Promise} Respuesta del servidor con tokens y datos de usuarios
    */
   async login(email, password) {
     try {
