@@ -1,13 +1,18 @@
 <template>
   <div class="page-container">
     <HeaderGlobal />
+    <Breadcrumbs />
     <div class="bg-fondo-clientes"></div>
 
     <div class="topbar">
       <div class="topbar-title">Nuevo Cliente</div>
       <div class="topbar-actions">
-        <button class="btn-secondary" @click="$router.push('/clientes')">Cancelar</button>
-        <button class="btn-primary" @click="submit">Guardar</button>
+        <Tooltip text="Cancelar y volver a la lista">
+          <button class="btn-secondary" @click="$router.push('/clientes')">Cancelar</button>
+        </Tooltip>
+        <Tooltip text="Guardar el cliente">
+          <button class="btn-primary" @click="submit">Guardar</button>
+        </Tooltip>
       </div>
     </div>
 
@@ -58,12 +63,14 @@
 
 <script>
 import HeaderGlobal from '../components/HeaderGlobal.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'
+import Tooltip from '../components/Tooltip.vue'
 import '../assets/styles/Clientes.css'
 import clientesService from '../services/clientesService.js'
 
 export default {
   name: 'ClienteCreateView',
-  components: { HeaderGlobal },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip },
 
   data() {
     return {
