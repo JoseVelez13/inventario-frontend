@@ -20,14 +20,14 @@
           </div>
         </Tooltip>
 
-        <Tooltip text="Módulo en desarrollo" position="bottom">
-          <div class="module-card disabled" role="button" tabindex="-1" aria-disabled="true">
+        <Tooltip text="Ir al módulo de Productos" position="bottom">
+          <div class="module-card" @click="$router.push('/productos')" role="button" tabindex="0">
             <div class="module-icon">📦</div>
             <div class="module-info">
               <h3>Productos</h3>
               <p>Control de inventario</p>
             </div>
-            <div class="module-badge">Próximamente</div>
+            <div class="module-badge active">Activo</div>
           </div>
         </Tooltip>
 

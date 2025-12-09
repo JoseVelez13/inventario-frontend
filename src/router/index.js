@@ -5,6 +5,8 @@ import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import ClientesListView from '../views/ClientesListView.vue'
 import ClienteCreateView from '../views/ClienteCreateView.vue'
+import ProductosListView from '../views/ProductosListView.vue'
+import ProductoCreateView from '../views/ProductoCreateView.vue'
 import authService from '../services/auth'
 
 const routes = [
@@ -43,6 +45,18 @@ const routes = [
     name: 'ClienteNuevo',
     component: ClienteCreateView,
     meta: { title: 'Nuevo Cliente - Sistema Innoquim' }
+  },
+  {
+    path: '/productos',
+    name: 'Productos',
+    component: ProductosListView,
+    meta: { title: 'Productos - Sistema Innoquim' }
+  },
+  {
+    path: '/productos/nuevo',
+    name: 'ProductoNuevo',
+    component: ProductoCreateView,
+    meta: { title: 'Nuevo Producto - Sistema Innoquim' }
   },
   // ruta fallback para errores (si alguien entra a /xd123)
   { path: '/:pathMatch(.*)*', redirect: '/' }
