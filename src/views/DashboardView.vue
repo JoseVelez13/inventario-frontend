@@ -31,14 +31,14 @@
           </div>
         </Tooltip>
 
-        <Tooltip text="Módulo en desarrollo" position="bottom">
-          <div class="module-card disabled" role="button" tabindex="-1" aria-disabled="true">
+        <Tooltip text="Ir al módulo de Materias Primas" position="bottom">
+          <div class="module-card" @click="$router.push('/materias-primas')" role="button" tabindex="0">
             <div class="module-icon">🧪</div>
             <div class="module-info">
               <h3>Materia Prima</h3>
               <p>Gestión de insumos</p>
             </div>
-            <div class="module-badge">Próximamente</div>
+            <div class="module-badge active">Activo</div>
           </div>
         </Tooltip>
       </div>

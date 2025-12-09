@@ -28,9 +28,7 @@
             placeholder="Buscar por código, nombre o descripción..." 
             class="search-input"
           />
-          <Tooltip text="Limpiar búsqueda">
-            <button class="btn-secondary" @click="clearSearch">Limpiar</button>
-          </Tooltip>
+          <button class="btn-secondary" @click="clearSearch">Limpiar</button>
         </div>
 
         <div v-if="loading" class="loading-state">Cargando productos...</div>
@@ -39,9 +37,6 @@
           <div class="empty-icon">📦</div>
           <h3>No hay productos registrados</h3>
           <p>Comienza agregando tu primer producto</p>
-          <button class="btn-primary" @click="$router.push('/productos/nuevo')">
-            Crear primer producto
-          </button>
         </div>
         <table v-else class="table">
           <thead>

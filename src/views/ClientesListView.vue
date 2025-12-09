@@ -37,9 +37,6 @@
           <div class="empty-icon">👥</div>
           <h3>No hay clientes registrados</h3>
           <p>Comienza agregando tu primer cliente</p>
-          <button class="btn-primary" @click="$router.push('/clientes/nuevo')">
-            Crear primer cliente
-          </button>
         </div>
         <table v-else class="table">
           <thead>
