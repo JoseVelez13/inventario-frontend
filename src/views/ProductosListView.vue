@@ -12,6 +12,12 @@
         <Tooltip text="Recargar lista de productos">
           <button class="btn-secondary" @click="reload">Refrescar</button>
         </Tooltip>
+        <Tooltip text="Importar productos desde archivo">
+          <button class="btn-secondary" @click="openImport">📥 Importar</button>
+        </Tooltip>
+        <Tooltip text="Exportar productos a archivo">
+          <button class="btn-secondary" @click="openExport">📤 Exportar</button>
+        </Tooltip>
         <Tooltip text="Crear un nuevo producto">
           <button class="btn-primary" @click="$router.push('/productos/nuevo')">Nuevo</button>
         </Tooltip>
@@ -56,7 +62,7 @@
               <td><strong>{{ p.product_code }}</strong></td>
               <td>{{ p.name }}</td>
               <td>{{ p.description || '-' }}</td>
-              <td>{{ p.unit }}</td>
+              <td>{{ getUnidadNombre(p.unit) }}</td>
               <td>{{ p.weight }} kg</td>
               <td class="action-buttons">
                 <Tooltip text="Editar producto">
@@ -83,6 +89,25 @@
       @confirm="onConfirmDelete"
       @cancel="confirmDialog.show = false"
     />
+
+    <Notification
+      :show="notification.show"
+      :type="notification.type"
+      :title="notification.title"
+      :message="notification.message"
+      @close="notification.show = false"
+    />
+
+    <ImportExportDialog
+      :show="importExportDialog.show"
+      :mode="importExportDialog.mode"
+      entity-name="producto"
+      :data="exportData"
+      :columns="exportColumns"
+      :item-count="productos.length"
+      @close="importExportDialog.show = false"
+      @import-complete="handleImportComplete"
+    />
   </div>
 </template>
 
@@ -91,17 +116,20 @@ import HeaderGlobal from '../components/HeaderGlobal.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import Tooltip from '../components/Tooltip.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import Notification from '../components/Notification.vue'
+import ImportExportDialog from '../components/ImportExportDialog.vue'
 import '../assets/styles/Productos.css'
 import productosService from '../services/productosService'
 
 export default {
   name: 'ProductosListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, Notification, ImportExportDialog },
   
   data() {
     return {
       search: '',
       productos: [],
+      unidades: [],
       loading: false,
       error: '',
       confirmDialog: {
@@ -109,12 +137,23 @@ export default {
         title: '¿Eliminar producto?',
         message: 'Esta acción no se puede deshacer.',
         productId: null
+      },
+      notification: {
+        show: false,
+        type: 'success',
+        title: '',
+        message: ''
+      },
+      importExportDialog: {
+        show: false,
+        mode: 'export'
       }
     }
   },
 
   created() {
     this.fetchProductos()
+    this.fetchUnidades()
   },
 
   computed: {
@@ -127,10 +166,54 @@ export default {
         p.name.toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q)
       )
+    },
+
+    exportData() {
+      return this.productos.map(p => ({
+        id: p.producto_id || p.id,
+        product_code: p.product_code,
+        name: p.name,
+        description: p.description || '',
+        unit: p.unit,
+        weight: p.weight
+      }))
+    },
+
+    exportColumns() {
+      return [
+        { key: 'id', label: 'ID' },
+        { key: 'product_code', label: 'Código' },
+        { key: 'name', label: 'Nombre' },
+        { key: 'description', label: 'Descripción' },
+        { key: 'unit', label: 'Unidad' },
+        { key: 'weight', label: 'Peso (kg)' }
+      ]
     }
   },
 
   methods: {
+    getUnidadNombre(unitId) {
+      const unidad = this.unidades.find(u => u.id === unitId)
+      return unidad ? `${unidad.nombre} (${unidad.simbolo})` : unitId
+    },
+
+    async fetchUnidades() {
+      try {
+        const token = localStorage.getItem('access_token')
+        const response = await fetch('http://localhost:8000/api/unidades/', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        const data = await response.json()
+        this.unidades = Array.isArray(data) ? data : data.results || []
+        console.log('Unidades cargadas:', this.unidades)
+      } catch (e) {
+        console.error('Error al cargar unidades', e)
+      }
+    },
+
     async fetchProductos() {
       this.loading = true
       this.error = ''
@@ -161,6 +244,49 @@ export default {
       this.fetchProductos()
     },
 
+    openImport() {
+      this.importExportDialog = { show: true, mode: 'import' }
+    },
+
+    openExport() {
+      this.importExportDialog = { show: true, mode: 'export' }
+    },
+
+    async handleImportComplete(importedData) {
+      let successCount = 0
+      let errorCount = 0
+
+      for (const item of importedData) {
+        try {
+          // Limpiar objeto: solo enviar campos que el backend espera
+          // Asegurarse de que sean valores simples, no arrays
+          const cleanData = {
+            product_code: String(item.product_code || '').trim(),
+            name: String(item.name || '').trim(),
+            description: String(item.description || '').trim(),
+            unit: Number(item.unit) || 1,
+            weight: Number(item.weight) || 0.1
+          }
+          
+          console.log('Enviando al backend:', cleanData)
+          await productosService.createProducto(cleanData)
+          successCount++
+        } catch (e) {
+          console.error('Error al importar:', item, e)
+          console.error('Respuesta del servidor:', e.response?.data)
+          errorCount++
+        }
+      }
+
+      this.importExportDialog.show = false
+      await this.fetchProductos()
+
+      const message = `${successCount} producto(s) importado(s)${errorCount > 0 ? `, ${errorCount} error(es)` : ''}`
+      this.showNotification(errorCount > 0 ? 'warning' : 'success', 
+                           errorCount > 0 ? 'Importación parcial' : '¡Importación completada!', 
+                           message)
+    },
+
     deleteProducto(id) {
       this.confirmDialog.productId = id
       this.confirmDialog.show = true
@@ -168,16 +294,23 @@ export default {
 
     async onConfirmDelete() {
       const id = this.confirmDialog.productId
+      this.confirmDialog.show = false
+      
       try {
         await productosService.deleteProducto(id)
         this.productos = this.productos.filter(
           p => (p.producto_id || p.id) !== id
         )
-        this.confirmDialog.show = false
+        this.showNotification('success', '¡Eliminado!', 'Producto eliminado correctamente')
       } catch (e) {
         console.error('Error al eliminar producto', e)
-        alert('No se pudo eliminar el producto')
+        const errorMsg = e.response?.data?.detail || e.response?.data?.error || 'No se pudo eliminar el producto'
+        this.showNotification('error', 'Error', errorMsg)
       }
+    },
+
+    showNotification(type, title, message) {
+      this.notification = { show: true, type, title, message }
     }
   }
 }
