@@ -10,7 +10,7 @@ class ProductosService {
    * @returns {Promise} Lista paginada de productos
    */
   async getProductos(params = {}) {
-    const response = await api.get('/productos', { params })
+    const response = await api.get('/productos/', { params })
     return response.data
   }
 
@@ -20,7 +20,7 @@ class ProductosService {
    * @returns {Promise} Datos del producto
    */
   async getProducto(id) {
-    const response = await api.get(`/productos/${id}`)
+    const response = await api.get(`/productos/${id}/`)
     return response.data
   }
 
@@ -30,7 +30,7 @@ class ProductosService {
    * @returns {Promise} Producto creado
    */
   async createProducto(productoData) {
-    const response = await api.post('/productos', productoData)
+    const response = await api.post('/productos/', productoData)
     return response.data
   }
 
@@ -41,7 +41,7 @@ class ProductosService {
    * @returns {Promise} Producto actualizado
    */
   async updateProducto(id, productoData) {
-    const response = await api.put(`/productos/${id}`, productoData)
+    const response = await api.put(`/productos/${id}/`, productoData)
     return response.data
   }
 
@@ -52,7 +52,7 @@ class ProductosService {
    * @returns {Promise} Producto actualizado
    */
   async patchProducto(id, productoData) {
-    const response = await api.patch(`/productos/${id}`, productoData)
+    const response = await api.patch(`/productos/${id}/`, productoData)
     return response.data
   }
 
@@ -62,7 +62,7 @@ class ProductosService {
    * @returns {Promise} Respuesta de eliminación
    */
   async deleteProducto(id) {
-    const response = await api.delete(`/productos/${id}`)
+    const response = await api.delete(`/productos/${id}/`)
     return response.data
   }
 

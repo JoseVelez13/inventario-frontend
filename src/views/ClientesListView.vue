@@ -48,7 +48,7 @@
               <th>Teléfono</th>
               <th>Email</th>
               <th>Dirección</th>
-              <th style="width:140px">Acciones</th>
+              <th style="width:100px; text-align:center">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -60,12 +60,16 @@
               <td class="h">{{ c.telefono || '-' }}</td>
               <td class="h">{{ c.email }}</td>
               <td class="h">{{ c.direccion }}</td>
-              <td>
-                <Tooltip text="Editar este cliente">
-                  <button class="btn-secondary" @click="$router.push(`/clientes/nuevo?edit=${c.cliente_id}`)">Editar</button>
+              <td class="action-buttons">
+                <Tooltip text="Editar cliente">
+                  <button class="btn-icon btn-edit" @click="$router.push(`/clientes/nuevo?edit=${c.cliente_id}`)">
+                    ✏️
+                  </button>
                 </Tooltip>
-                <Tooltip text="Eliminar este cliente">
-                  <button class="btn-primary" style="margin-left:6px; background:#b71c1c" @click="deleteCliente(c.cliente_id)">Eliminar</button>
+                <Tooltip text="Eliminar cliente">
+                  <button class="btn-icon btn-delete" @click="deleteCliente(c.cliente_id)">
+                    🗑️
+                  </button>
                 </Tooltip>
               </td>
             </tr>
@@ -76,6 +80,14 @@
         </table>
       </div>
     </div>
+
+    <ConfirmDialog
+      :show="confirmDialog.show"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      @confirm="onConfirmDelete"
+      @cancel="confirmDialog.show = false"
+    />
   </div>
 </template>
 
@@ -83,18 +95,25 @@
 import HeaderGlobal from '../components/HeaderGlobal.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import Tooltip from '../components/Tooltip.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import '../assets/styles/Clientes.css'
 import clientesService from '../services/clientesService'
 
 export default {
   name: 'ClientesListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog },
   data() {
     return {
       search: '',
       clientes: [],
       loading: false,
       error: '',
+      confirmDialog: {
+        show: false,
+        title: '¿Eliminar cliente?',
+        message: 'Esta acción no se puede deshacer.',
+        clienteId: null
+      }
     }
   },
 
@@ -150,13 +169,19 @@ export default {
       this.fetchClientes()
     },
 
-    async deleteCliente(id) {
-      if (!confirm('¿Eliminar cliente definitivamente?')) return
+    deleteCliente(id) {
+      this.confirmDialog.clienteId = id
+      this.confirmDialog.show = true
+    },
+
+    async onConfirmDelete() {
+      const id = this.confirmDialog.clienteId
       try {
         await clientesService.deleteCliente(id)
         this.clientes = this.clientes.filter(
           c => (c.cliente_id || c.id) !== id
         )
+        this.confirmDialog.show = false
       } catch (e) {
         console.error('Error al eliminar cliente', e)
         alert('No se pudo eliminar el cliente')

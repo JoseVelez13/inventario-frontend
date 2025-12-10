@@ -47,23 +47,27 @@
               <th>Descripción</th>
               <th>Unidad</th>
               <th>Peso</th>
-              <th style="width:140px">Acciones</th>
+              <th style="width:100px; text-align:center">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in filtered" :key="p.producto_id">
-              <td>{{ p.producto_id }}</td>
+            <tr v-for="p in filtered" :key="p.producto_id || p.id">
+              <td>{{ p.producto_id || p.id }}</td>
               <td><strong>{{ p.product_code }}</strong></td>
               <td>{{ p.name }}</td>
               <td>{{ p.description || '-' }}</td>
               <td>{{ p.unit }}</td>
               <td>{{ p.weight }} kg</td>
-              <td>
-                <Tooltip text="Editar este producto">
-                  <button class="btn-secondary" @click="$router.push(`/productos/nuevo?edit=${p.producto_id}`)">Editar</button>
+              <td class="action-buttons">
+                <Tooltip text="Editar producto">
+                  <button class="btn-icon btn-edit" @click="$router.push(`/productos/nuevo?edit=${p.producto_id || p.id}`)">
+                    ✏️
+                  </button>
                 </Tooltip>
-                <Tooltip text="Eliminar este producto">
-                  <button class="btn-primary" style="margin-left:6px; background:#b71c1c" @click="deleteProducto(p.producto_id)">Eliminar</button>
+                <Tooltip text="Eliminar producto">
+                  <button class="btn-icon btn-delete" @click="deleteProducto(p.producto_id || p.id)">
+                    🗑️
+                  </button>
                 </Tooltip>
               </td>
             </tr>
@@ -71,6 +75,14 @@
         </table>
       </div>
     </div>
+
+    <ConfirmDialog
+      :show="confirmDialog.show"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      @confirm="onConfirmDelete"
+      @cancel="confirmDialog.show = false"
+    />
   </div>
 </template>
 
@@ -78,12 +90,13 @@
 import HeaderGlobal from '../components/HeaderGlobal.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import Tooltip from '../components/Tooltip.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
 import '../assets/styles/Productos.css'
 import productosService from '../services/productosService'
 
 export default {
   name: 'ProductosListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog },
   
   data() {
     return {
@@ -91,6 +104,12 @@ export default {
       productos: [],
       loading: false,
       error: '',
+      confirmDialog: {
+        show: false,
+        title: '¿Eliminar producto?',
+        message: 'Esta acción no se puede deshacer.',
+        productId: null
+      }
     }
   },
 
@@ -142,13 +161,19 @@ export default {
       this.fetchProductos()
     },
 
-    async deleteProducto(id) {
-      if (!confirm('¿Eliminar producto definitivamente?')) return
+    deleteProducto(id) {
+      this.confirmDialog.productId = id
+      this.confirmDialog.show = true
+    },
+
+    async onConfirmDelete() {
+      const id = this.confirmDialog.productId
       try {
         await productosService.deleteProducto(id)
         this.productos = this.productos.filter(
           p => (p.producto_id || p.id) !== id
         )
+        this.confirmDialog.show = false
       } catch (e) {
         console.error('Error al eliminar producto', e)
         alert('No se pudo eliminar el producto')

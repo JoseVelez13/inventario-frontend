@@ -24,8 +24,8 @@
         <form @submit.prevent="submit">
           <div class="form-grid">
             <div class="form-field">
-              <label for="ruc">RUC</label>
-              <input id="ruc" ref="rucInput" v-model="form.ruc" maxlength="13" required />
+              <label for="ruc">RUC <span style="color: #9CA3AF; font-size: 12px;">(13 dígitos)</span></label>
+              <input id="ruc" ref="rucInput" v-model="form.ruc" maxlength="13" minlength="13" pattern="\d{13}" required placeholder="Ej: 1234567890001" />
             </div>
 
             <div class="form-field">
@@ -150,18 +150,44 @@ export default {
 
     async submit() {
   try {
+    // Preparar datos, convertir strings vacíos a null para campos opcionales
+    const payload = {
+      ruc: this.form.ruc,
+      nombre_empresa: this.form.nombre_empresa,
+      nombre_contacto: this.form.nombre_contacto || null,
+      telefono: this.form.telefono || null,
+      email: this.form.email,
+      direccion: this.form.direccion,
+    }
+    
+    console.log('Enviando datos:', payload)
+    
     if (this.isEdit) {
-      await clientesService.updateCliente(this.idEdit, this.form)
+      await clientesService.updateCliente(this.idEdit, payload)
       this.showNotification('success', '¡Éxito!', 'Cliente actualizado correctamente')
       setTimeout(() => this.$router.push('/clientes'), 1500)
     } else {
-      await clientesService.createCliente(this.form)
+      await clientesService.createCliente(payload)
       this.showNotification('success', '¡Éxito!', 'Cliente creado correctamente')
       setTimeout(() => this.$router.push('/clientes'), 1500)
     }
   } catch (e) {
-    console.error('Error al guardar cliente', e.response?.data || e)
-    this.showNotification('error', 'Error', 'No se pudo guardar el cliente')
+    console.error('Error completo:', e)
+    console.error('Respuesta del servidor:', e.response?.data)
+    console.error('Status:', e.response?.status)
+    
+    // Mostrar errores de validación del backend si existen
+    let errorMsg = 'No se pudo guardar el cliente'
+    if (e.response?.data) {
+      const errors = e.response.data
+      if (typeof errors === 'object') {
+        errorMsg = Object.entries(errors).map(([field, msgs]) => `${field}: ${msgs}`).join(', ')
+      } else if (errors.detail) {
+        errorMsg = errors.detail
+      }
+    }
+    
+    this.showNotification('error', 'Error', errorMsg)
   }
 },
 

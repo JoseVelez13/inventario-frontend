@@ -34,16 +34,16 @@
 
             <div class="form-field">
               <label for="unit">Unidad de Medida</label>
-              <select id="unit" v-model="form.unit" required>
-                <option value="">Seleccione...</option>
-                <option value="kg">Kilogramo (kg)</option>
-                <option value="g">Gramo (g)</option>
-                <option value="L">Litro (L)</option>
-                <option value="mL">Mililitro (mL)</option>
-                <option value="unidad">Unidad</option>
-                <option value="caja">Caja</option>
-                <option value="galon">Galón</option>
-                <option value="barril">Barril</option>
+              <select id="unit" v-model.number="form.unit" required>
+                <option :value="null">Seleccione...</option>
+                <option :value="1">Kilogramo (kg)</option>
+                <option :value="2">Gramo (g)</option>
+                <option :value="3">Litro (L)</option>
+                <option :value="4">Mililitro (mL)</option>
+                <option :value="5">Unidad</option>
+                <option :value="6">Caja</option>
+                <option :value="7">Galón</option>
+                <option :value="8">Barril</option>
               </select>
             </div>
 
@@ -89,7 +89,7 @@ export default {
         product_code: '',
         name: '',
         description: '',
-        unit: '',
+        unit: null,
         weight: 0,
       },
       isEdit: false,
@@ -134,7 +134,7 @@ export default {
         product_code: '',
         name: '',
         description: '',
-        unit: '',
+        unit: null,
         weight: 0,
       }
       setTimeout(() => {
@@ -148,18 +148,30 @@ export default {
 
     async submit() {
       try {
+        // Preparar los datos asegurando que unit sea un número
+        const payload = {
+          product_code: this.form.product_code,
+          name: this.form.name,
+          description: this.form.description || '',
+          unit: parseInt(this.form.unit), // Convertir a número explícitamente
+          weight: parseFloat(this.form.weight) || 0,
+        }
+        
+        console.log('Enviando payload:', payload)
+        
         if (this.isEdit) {
-          await productosService.updateProducto(this.idEdit, this.form)
+          await productosService.updateProducto(this.idEdit, payload)
           this.showNotification('success', '¡Éxito!', 'Producto actualizado correctamente')
           setTimeout(() => this.$router.push('/productos'), 1500)
         } else {
-          await productosService.createProducto(this.form)
+          await productosService.createProducto(payload)
           this.showNotification('success', '¡Éxito!', 'Producto creado correctamente')
           setTimeout(() => this.$router.push('/productos'), 1500)
         }
       } catch (e) {
         console.error('Error al guardar producto', e.response?.data || e)
-        this.showNotification('error', 'Error', 'No se pudo guardar el producto')
+        const errorMsg = e.response?.data?.unit || e.response?.data?.detail || 'No se pudo guardar el producto'
+        this.showNotification('error', 'Error', errorMsg)
       }
     },
 
