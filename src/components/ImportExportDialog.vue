@@ -136,8 +136,8 @@
 <script>
 import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
-import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import { jsPDF } from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 export default {
   name: 'ImportExportDialog',
@@ -167,6 +167,10 @@ export default {
     itemCount: {
       type: Number,
       default: 0
+    },
+    apiEndpoint: {
+      type: String,
+      default: ''
     }
   },
 
@@ -222,43 +226,192 @@ export default {
 
     // ========== EXPORTAR ==========
     exportExcel() {
-      const ws = XLSX.utils.json_to_sheet(this.data)
-      const wb = XLSX.utils.book_new()
-      XLSX.utils.book_append_sheet(wb, ws, this.entityName)
-      XLSX.writeFile(wb, `${this.entityName}s_${this.getTimestamp()}.xlsx`)
-      this.close()
+      try {
+        // Preparar datos con encabezados personalizados
+        const dataToExport = this.data.map(item => {
+          const row = {}
+          this.columns.forEach(col => {
+            row[col.label] = item[col.key] !== undefined && item[col.key] !== null ? item[col.key] : '-'
+          })
+          return row
+        })
+
+        const ws = XLSX.utils.json_to_sheet(dataToExport)
+        
+        // Ajustar ancho de columnas automáticamente
+        const colWidths = this.columns.map(col => ({
+          wch: Math.max(col.label.length, 15)
+        }))
+        ws['!cols'] = colWidths
+
+        // Estilo de encabezados (color de fondo)
+        const range = XLSX.utils.decode_range(ws['!ref'])
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+          const address = XLSX.utils.encode_col(C) + "1"
+          if (!ws[address]) continue
+          ws[address].s = {
+            font: { bold: true, color: { rgb: "FFFFFF" } },
+            fill: { fgColor: { rgb: "4F6F8F" } },
+            alignment: { horizontal: "center", vertical: "center" }
+          }
+        }
+
+        const wb = XLSX.utils.book_new()
+        XLSX.utils.book_append_sheet(wb, ws, this.entityName.substring(0, 31)) // Max 31 chars
+        XLSX.writeFile(wb, `${this.entityName}_${this.getTimestamp()}.xlsx`)
+        this.close()
+      } catch (error) {
+        console.error('Error al exportar Excel:', error)
+        alert('Error al generar el archivo Excel')
+      }
     },
 
     exportCSV() {
-      const csv = Papa.unparse(this.data)
-      this.downloadFile(csv, `${this.entityName}s_${this.getTimestamp()}.csv`, 'text/csv')
-      this.close()
+      try {
+        // Preparar datos con encabezados personalizados
+        const dataToExport = this.data.map(item => {
+          const row = {}
+          this.columns.forEach(col => {
+            row[col.label] = item[col.key] !== undefined && item[col.key] !== null ? item[col.key] : '-'
+          })
+          return row
+        })
+
+        const csv = Papa.unparse(dataToExport, {
+          quotes: true,
+          delimiter: ",",
+          header: true
+        })
+        
+        // Agregar BOM para correcta visualización de caracteres especiales en Excel
+        const BOM = '\uFEFF'
+        this.downloadFile(BOM + csv, `${this.entityName}_${this.getTimestamp()}.csv`, 'text/csv;charset=utf-8')
+        this.close()
+      } catch (error) {
+        console.error('Error al exportar CSV:', error)
+        alert('Error al generar el archivo CSV')
+      }
     },
 
     exportJSON() {
-      const json = JSON.stringify(this.data, null, 2)
-      this.downloadFile(json, `${this.entityName}s_${this.getTimestamp()}.json`, 'application/json')
-      this.close()
+      try {
+        const exportData = {
+          metadata: {
+            entity: this.entityName,
+            exportDate: new Date().toISOString(),
+            totalRecords: this.data.length,
+            exportedBy: 'Sistema Innoquim'
+          },
+          columns: this.columns,
+          data: this.data
+        }
+        const json = JSON.stringify(exportData, null, 2)
+        this.downloadFile(json, `${this.entityName}_${this.getTimestamp()}.json`, 'application/json')
+        this.close()
+      } catch (error) {
+        console.error('Error al exportar JSON:', error)
+        alert('Error al generar el archivo JSON')
+      }
     },
 
     exportPDF() {
-      const doc = new jsPDF()
-      doc.setFontSize(16)
-      doc.text(`Lista de ${this.entityName}s`, 14, 20)
-      
-      const tableData = this.data.map(item => this.columns.map(col => item[col.key] || '-'))
-      const headers = this.columns.map(col => col.label)
+      try {
+        const doc = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4'
+        })
+        
+        // Encabezado del documento
+        doc.setFillColor(79, 111, 143)
+        doc.rect(0, 0, 297, 35, 'F')
+        
+        // Logo/Título
+        doc.setTextColor(255, 255, 255)
+        doc.setFontSize(20)
+        doc.setFont('helvetica', 'bold')
+        doc.text('SISTEMA INNOQUIM', 14, 15)
+        
+        doc.setFontSize(14)
+        doc.setFont('helvetica', 'normal')
+        doc.text(`Reporte de ${this.entityName}`, 14, 24)
+        
+        // Información adicional
+        doc.setFontSize(9)
+        const fecha = new Date()
+        const fechaHora = `${fecha.toLocaleDateString('es-PE')} ${fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`
+        doc.text(`Fecha de exportacion: ${fechaHora}`, 14, 30)
+        doc.text(`Total de registros: ${this.data.length}`, 180, 30)
+        
+        // Preparar datos de la tabla
+        const tableData = this.data.map(item => 
+          this.columns.map(col => {
+            const value = item[col.key]
+            if (value === null || value === undefined) return '-'
+            if (typeof value === 'number') return String(value)
+            return String(value)
+          })
+        )
+        const headers = this.columns.map(col => col.label)
 
-      doc.autoTable({
-        head: [headers],
-        body: tableData,
-        startY: 30,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [79, 111, 143] }
-      })
+        // Generar tabla con estilos mejorados
+        autoTable(doc, {
+          head: [headers],
+          body: tableData,
+          startY: 40,
+          theme: 'striped',
+          styles: { 
+            fontSize: 8,
+            cellPadding: 3,
+            overflow: 'linebreak',
+            halign: 'left',
+            font: 'helvetica'
+          },
+          headStyles: { 
+            fillColor: [79, 111, 143],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: 9
+          },
+          alternateRowStyles: {
+            fillColor: [245, 247, 250]
+          },
+          columnStyles: {
+            0: { fontStyle: 'bold' }
+          },
+          margin: { left: 14, right: 14 },
+          didDrawPage: function(data) {
+            // Pie de página
+            const pageCount = doc.internal.getNumberOfPages()
+            const pageNumber = doc.internal.getCurrentPageInfo().pageNumber
+            
+            doc.setFontSize(8)
+            doc.setTextColor(128, 128, 128)
+            doc.setFont('helvetica', 'normal')
+            
+            doc.text(
+              `Pagina ${pageNumber} de ${pageCount}`,
+              14,
+              doc.internal.pageSize.height - 10
+            )
+            
+            doc.text(
+              'Sistema de Gestion de Inventario - Innoquim',
+              doc.internal.pageSize.width / 2,
+              doc.internal.pageSize.height - 10,
+              { align: 'center' }
+            )
+          }
+        })
 
-      doc.save(`${this.entityName}s_${this.getTimestamp()}.pdf`)
-      this.close()
+        doc.save(`${this.entityName}_${this.getTimestamp()}.pdf`)
+        this.close()
+      } catch (error) {
+        console.error('Error al exportar PDF:', error)
+        console.error('Detalles del error:', error.message, error.stack)
+        alert(`Error al generar el archivo PDF: ${error.message}`)
+      }
     },
 
     // ========== IMPORTAR ==========
@@ -358,7 +511,7 @@ export default {
         const rowNum = idx + 2 // Excel row (header = 1)
         
         // Validaciones según el tipo de entidad
-        if (this.entityName === 'producto') {
+        if (this.entityName === 'Productos' || this.entityName === 'producto') {
           // Mapeo de unidades de texto a IDs (según la base de datos)
           const unidadTextoAId = {
             'kg': 2, 'kilogramo': 2, 'kilo': 2,
@@ -419,6 +572,70 @@ export default {
             })
             item.weight = 0.1
           }
+        } 
+        else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
+          // Normalizar campos de clientes
+          item.ruc = item.ruc || item.RUC || item['RUC'] || ''
+          item.nombre_empresa = item.nombre_empresa || item.empresa || item['Empresa'] || item['Nombre Empresa'] || ''
+          item.nombre_contacto = item.nombre_contacto || item.contacto || item['Contacto'] || item['Nombre Contacto'] || ''
+          item.telefono = item.telefono || item['Teléfono'] || item['Telefono'] || item.phone || ''
+          item.email = item.email || item.Email || item['Email'] || item.correo || ''
+          item.direccion = item.direccion || item['Dirección'] || item['Direccion'] || item.address || ''
+
+          if (idx === 0) {
+            console.log('validateData - cliente normalizado:', item)
+          }
+
+          if (!item.ruc || !item.nombre_empresa) {
+            item._hasError = true
+            this.validationErrors.push({
+              row: rowNum,
+              message: 'Faltan campos obligatorios (RUC o Empresa)',
+              severity: 'error'
+            })
+          }
+
+          if (!item.email) {
+            item._hasWarning = true
+            this.validationErrors.push({
+              row: rowNum,
+              message: 'Email no especificado',
+              severity: 'warning'
+            })
+          }
+        }
+        else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
+          // Normalizar campos de materias primas
+          item.codigo = item.codigo || item['Código'] || item.code || ''
+          item.nombre = item.nombre || item['Nombre'] || item.name || ''
+          item.descripcion = item.descripcion || item['Descripción'] || item.description || ''
+          item.unidad = item.unidad || item['Unidad'] || item.unit || 'kg'
+          item.densidad = parseFloat(item.densidad || item['Densidad (g/cm³)'] || item['Densidad'] || item.density || 0)
+          item.stock_minimo = parseInt(item.stock_minimo || item['Stock Mínimo'] || item['Stock Minimo'] || item.min_stock || 0)
+          item.stock_maximo = parseInt(item.stock_maximo || item['Stock Máximo'] || item['Stock Maximo'] || item.max_stock || 0)
+
+          if (idx === 0) {
+            console.log('validateData - materia prima normalizada:', item)
+          }
+
+          if (!item.codigo || !item.nombre) {
+            item._hasError = true
+            this.validationErrors.push({
+              row: rowNum,
+              message: 'Faltan campos obligatorios (código o nombre)',
+              severity: 'error'
+            })
+          }
+
+          if (!item.stock_minimo || item.stock_minimo <= 0) {
+            item._hasWarning = true
+            this.validationErrors.push({
+              row: rowNum,
+              message: 'Stock mínimo no especificado. Se usará 0',
+              severity: 'warning'
+            })
+            item.stock_minimo = 0
+          }
         }
       })
     },
@@ -432,7 +649,7 @@ export default {
 
       // Crear objetos limpios SOLO con los campos normalizados
       const cleanedData = validData.map(item => {
-        if (this.entityName === 'producto') {
+        if (this.entityName === 'Productos' || this.entityName === 'producto') {
           // FORZAR que sean valores simples, no arrays
           return {
             product_code: String(item.product_code || '').trim(),
@@ -440,6 +657,27 @@ export default {
             description: String(item.description || '').trim(),
             unit: Number(item.unit) || 2,
             weight: Number(item.weight) || 0.1
+          }
+        } 
+        else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
+          return {
+            ruc: String(item.ruc || '').trim(),
+            nombre_empresa: String(item.nombre_empresa || '').trim(),
+            nombre_contacto: String(item.nombre_contacto || '').trim(),
+            telefono: String(item.telefono || '').trim(),
+            email: String(item.email || '').trim(),
+            direccion: String(item.direccion || '').trim()
+          }
+        }
+        else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
+          return {
+            codigo: String(item.codigo || '').trim(),
+            nombre: String(item.nombre || '').trim(),
+            descripcion: String(item.descripcion || '').trim(),
+            unidad: String(item.unidad || 'kg').trim(),
+            densidad: Number(item.densidad) || 0,
+            stock_minimo: Number(item.stock_minimo) || 0,
+            stock_maximo: Number(item.stock_maximo) || 0
           }
         }
         return item

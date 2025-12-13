@@ -101,7 +101,7 @@
     <ImportExportDialog
       :show="importExportDialog.show"
       :mode="importExportDialog.mode"
-      entity-name="producto"
+      entity-name="Productos"
       :data="exportData"
       :columns="exportColumns"
       :item-count="productos.length"

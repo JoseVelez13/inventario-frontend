@@ -12,6 +12,12 @@
         <Tooltip text="Recargar lista de materias primas">
           <button class="btn-secondary" @click="reload">Refrescar</button>
         </Tooltip>
+        <Tooltip text="Importar materias primas desde archivo">
+          <button class="btn-secondary" @click="openImport">📥 Importar</button>
+        </Tooltip>
+        <Tooltip text="Exportar materias primas a archivo">
+          <button class="btn-secondary" @click="openExport">📤 Exportar</button>
+        </Tooltip>
         <Tooltip text="Crear una nueva materia prima">
           <button class="btn-primary" @click="$router.push('/materias-primas/nuevo')">Nuevo</button>
         </Tooltip>
@@ -79,6 +85,33 @@
         </table>
       </div>
     </div>
+
+    <ConfirmDialog
+      :show="confirmDialog.show"
+      :title="confirmDialog.title"
+      :message="confirmDialog.message"
+      @confirm="onConfirmDelete"
+      @cancel="confirmDialog.show = false"
+    />
+
+    <ImportExportDialog
+      :show="importExportDialog.show"
+      :mode="importExportDialog.mode"
+      :data="materiasPrimas"
+      :columns="exportColumns"
+      :item-count="materiasPrimas.length"
+      entity-name="Materias Primas"
+      :api-endpoint="apiEndpoint"
+      @close="importExportDialog.show = false"
+      @import-complete="handleImportComplete"
+    />
+
+    <Notification
+      :show="notification.show"
+      :message="notification.message"
+      :type="notification.type"
+      @close="notification.show = false"
+    />
   </div>
 </template>
 
@@ -86,12 +119,15 @@
 import HeaderGlobal from '../components/HeaderGlobal.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import Tooltip from '../components/Tooltip.vue'
+import ConfirmDialog from '../components/ConfirmDialog.vue'
+import ImportExportDialog from '../components/ImportExportDialog.vue'
+import Notification from '../components/Notification.vue'
 import '../assets/styles/MateriasPrimas.css'
 import materiasPrimasService from '../services/materiasPrimasService'
 
 export default {
   name: 'MateriasPrimasListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification },
   
   data() {
     return {
@@ -99,6 +135,29 @@ export default {
       materiasPrimas: [],
       loading: false,
       error: '',
+      confirmDialog: {
+        show: false,
+        title: '¿Eliminar materia prima?',
+        message: 'Esta acción no se puede deshacer.',
+        materiaPrimaId: null
+      },
+      importExportDialog: { show: false, mode: 'export' },
+      apiEndpoint: 'http://localhost:8000/api/materias-primas/',
+      exportColumns: [
+        { key: 'materia_prima_id', label: 'ID' },
+        { key: 'codigo', label: 'Código' },
+        { key: 'nombre', label: 'Nombre' },
+        { key: 'descripcion', label: 'Descripción' },
+        { key: 'unidad', label: 'Unidad' },
+        { key: 'densidad', label: 'Densidad (g/cm³)' },
+        { key: 'stock_minimo', label: 'Stock Mínimo' },
+        { key: 'stock_maximo', label: 'Stock Máximo' }
+      ],
+      notification: {
+        show: false,
+        message: '',
+        type: 'success'
+      }
     }
   },
 
@@ -150,21 +209,76 @@ export default {
       this.fetchMateriasPrimas()
     },
 
+    openImport() {
+      this.importExportDialog = { show: true, mode: 'import' }
+    },
+
+    openExport() {
+      this.importExportDialog = { show: true, mode: 'export' }
+    },
+
     isStockBajo(mp) {
       // Aquí podrías comparar con stock actual si está disponible
       // Por ahora solo es visual basado en stock_minimo
       return false
     },
 
-    async deleteMateriaPrima(id) {
-      if (!confirm('¿Estás seguro de eliminar esta materia prima?')) return
+    deleteMateriaPrima(id) {
+      this.confirmDialog.materiaPrimaId = id
+      this.confirmDialog.show = true
+    },
+
+    async onConfirmDelete() {
+      const id = this.confirmDialog.materiaPrimaId
       try {
         await materiasPrimasService.deleteMateriaPrima(id)
         this.materiasPrimas = this.materiasPrimas.filter(mp => mp.materia_prima_id !== id)
+        this.confirmDialog.show = false
+        this.notification = {
+          show: true,
+          message: 'Materia prima eliminada exitosamente',
+          type: 'success'
+        }
       } catch (e) {
         console.error('Error al eliminar materia prima', e)
-        alert('No se pudo eliminar la materia prima.')
+        this.notification = {
+          show: true,
+          message: 'No se pudo eliminar la materia prima',
+          type: 'error'
+        }
       }
+    },
+
+    async handleImportComplete(importedData) {
+      console.log('Datos importados:', importedData)
+      let successCount = 0
+      let errorCount = 0
+
+      for (const materiaPrima of importedData) {
+        try {
+          await materiasPrimasService.createMateriaPrima(materiaPrima)
+          successCount++
+        } catch (e) {
+          console.error('Error al importar materia prima:', e)
+          errorCount++
+        }
+      }
+
+      if (errorCount === 0) {
+        this.notification = {
+          show: true,
+          message: `${successCount} materia(s) prima(s) importada(s) exitosamente`,
+          type: 'success'
+        }
+      } else {
+        this.notification = {
+          show: true,
+          message: `${successCount} importadas, ${errorCount} con errores`,
+          type: 'warning'
+        }
+      }
+      
+      this.fetchMateriasPrimas()
     }
   }
 }

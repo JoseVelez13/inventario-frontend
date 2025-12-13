@@ -13,6 +13,12 @@
         <Tooltip text="Recargar lista de clientes">
           <button class="btn-secondary" @click="reload">Refrescar</button>
         </Tooltip>
+        <Tooltip text="Importar clientes desde archivo">
+          <button class="btn-secondary" @click="openImport">📥 Importar</button>
+        </Tooltip>
+        <Tooltip text="Exportar clientes a archivo">
+          <button class="btn-secondary" @click="openExport">📤 Exportar</button>
+        </Tooltip>
         <Tooltip text="Crear un nuevo cliente">
           <button class="btn-primary" @click="$router.push('/clientes/nuevo')">Nuevo</button>
         </Tooltip>
@@ -88,6 +94,25 @@
       @confirm="onConfirmDelete"
       @cancel="confirmDialog.show = false"
     />
+
+    <ImportExportDialog
+      :show="importExportDialog.show"
+      :mode="importExportDialog.mode"
+      :data="clientes"
+      :columns="exportColumns"
+      :item-count="clientes.length"
+      entity-name="Clientes"
+      :api-endpoint="apiEndpoint"
+      @close="importExportDialog.show = false"
+      @import-complete="handleImportComplete"
+    />
+
+    <Notification
+      :show="notification.show"
+      :message="notification.message"
+      :type="notification.type"
+      @close="notification.show = false"
+    />
   </div>
 </template>
 
@@ -96,12 +121,14 @@ import HeaderGlobal from '../components/HeaderGlobal.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import Tooltip from '../components/Tooltip.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
+import ImportExportDialog from '../components/ImportExportDialog.vue'
+import Notification from '../components/Notification.vue'
 import '../assets/styles/Clientes.css'
 import clientesService from '../services/clientesService'
 
 export default {
   name: 'ClientesListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification },
   data() {
     return {
       search: '',
@@ -113,6 +140,22 @@ export default {
         title: '¿Eliminar cliente?',
         message: 'Esta acción no se puede deshacer.',
         clienteId: null
+      },
+      importExportDialog: { show: false, mode: 'export' },
+      apiEndpoint: 'http://localhost:8000/api/clientes/',
+      exportColumns: [
+        { key: 'cliente_id', label: 'ID' },
+        { key: 'ruc', label: 'RUC' },
+        { key: 'nombre_empresa', label: 'Empresa' },
+        { key: 'nombre_contacto', label: 'Contacto' },
+        { key: 'telefono', label: 'Teléfono' },
+        { key: 'email', label: 'Email' },
+        { key: 'direccion', label: 'Dirección' }
+      ],
+      notification: {
+        show: false,
+        message: '',
+        type: 'success'
       }
     }
   },
@@ -169,6 +212,14 @@ export default {
       this.fetchClientes()
     },
 
+    openImport() {
+      this.importExportDialog = { show: true, mode: 'import' }
+    },
+
+    openExport() {
+      this.importExportDialog = { show: true, mode: 'export' }
+    },
+
     deleteCliente(id) {
       this.confirmDialog.clienteId = id
       this.confirmDialog.show = true
@@ -182,10 +233,51 @@ export default {
           c => (c.cliente_id || c.id) !== id
         )
         this.confirmDialog.show = false
+        this.notification = {
+          show: true,
+          message: 'Cliente eliminado exitosamente',
+          type: 'success'
+        }
       } catch (e) {
         console.error('Error al eliminar cliente', e)
-        alert('No se pudo eliminar el cliente')
+        this.notification = {
+          show: true,
+          message: 'No se pudo eliminar el cliente',
+          type: 'error'
+        }
       }
+    },
+
+    async handleImportComplete(importedData) {
+      console.log('Datos importados:', importedData)
+      let successCount = 0
+      let errorCount = 0
+
+      for (const cliente of importedData) {
+        try {
+          await clientesService.createCliente(cliente)
+          successCount++
+        } catch (e) {
+          console.error('Error al importar cliente:', e)
+          errorCount++
+        }
+      }
+
+      if (errorCount === 0) {
+        this.notification = {
+          show: true,
+          message: `${successCount} cliente(s) importado(s) exitosamente`,
+          type: 'success'
+        }
+      } else {
+        this.notification = {
+          show: true,
+          message: `${successCount} importados, ${errorCount} con errores`,
+          type: 'warning'
+        }
+      }
+      
+      this.fetchClientes()
     }
   }
 }
