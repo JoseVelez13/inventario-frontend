@@ -4,7 +4,6 @@ import InicioView from '../views/InicioView.vue'
 import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import ClientesListView from '../views/ClientesListView.vue'
-import ClienteCreateView from '../views/ClienteCreateView.vue'
 import ProductosListView from '../views/ProductosListView.vue'
 import ProductoCreateView from '../views/ProductoCreateView.vue'
 import MateriasPrimasListView from '../views/MateriasPrimasListView.vue'
@@ -41,12 +40,6 @@ const routes = [
     name: 'Clientes',
     component: ClientesListView,
     meta: { title: 'Clientes - Sistema Innoquim' }
-  },
-  {
-    path: '/clientes/nuevo',
-    name: 'ClienteNuevo',
-    component: ClienteCreateView,
-    meta: { title: 'Nuevo Cliente - Sistema Innoquim' }
   },
   {
     path: '/productos',

@@ -35,12 +35,6 @@ const crumbs = computed(() => {
   if (path.includes('/clientes')) {
     breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
     breadcrumbs.push({ label: 'Clientes', path: '/clientes' })
-    
-    if (path.includes('/nuevo')) {
-      breadcrumbs.push({ label: 'Nuevo Cliente', path: '/clientes/nuevo' })
-    } else if (path.match(/\/clientes\/\d+/)) {
-      breadcrumbs.push({ label: 'Editar Cliente', path: path })
-    }
   }
 
   // Productos

@@ -5,7 +5,13 @@
     <div class="bg-fondo-clientes"></div>
 
     <div class="topbar">
-      <div class="topbar-title">Clientes</div>
+      <div class="topbar-title">
+        Clientes
+        <span class="chip" aria-live="polite" title="Total de clientes">
+          <template v-if="!loading">{{ clientes.length }}</template>
+          <template v-else>...</template>
+        </span>
+      </div>
       <div class="topbar-actions">
         <Tooltip text="Volver a la página anterior">
           <button class="btn-secondary" @click="$router.back()">Atrás</button>
@@ -20,7 +26,7 @@
           <button class="btn-secondary" @click="openExport">📤 Exportar</button>
         </Tooltip>
         <Tooltip text="Crear un nuevo cliente">
-          <button class="btn-primary" @click="$router.push('/clientes/nuevo')">Nuevo</button>
+          <button class="btn-primary" @click="openCreateModal">Nuevo</button>
         </Tooltip>
       </div>
     </div>
@@ -45,21 +51,81 @@
           <p>Comienza agregando tu primer cliente</p>
         </div>
         <table v-else class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>RUC</th>
-              <th>Empresa</th>
-              <th>Contacto</th>
-              <th>Teléfono</th>
-              <th>Email</th>
-              <th>Dirección</th>
-              <th style="width:100px; text-align:center">Acciones</th>
-            </tr>
-          </thead>
+        <thead>
+          <tr>
+            <th class="sortable-header" @click="toggleSort('cliente_id')">
+            <div class="header-content">
+            <span>ID</span>
+            <div class="sort-indicator">
+              <i v-if="sortField === 'cliente_id' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+              <i v-else-if="sortField === 'cliente_id' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+               <i v-else class="fa-solid fa-sort"></i>
+        </div>
+      </div>
+    </th>
+    
+    <th class="sortable-header" @click="toggleSort('ruc')">
+      <div class="header-content">
+        <span>RUC</span>
+        <div class="sort-indicator">
+          <i v-if="sortField === 'ruc' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+          <i v-else-if="sortField === 'ruc' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+          <i v-else class="fa-solid fa-sort"></i>
+        </div>
+      </div>
+    </th>
+    
+    <th class="sortable-header" @click="toggleSort('nombre_empresa')">
+      <div class="header-content">
+        <span>Empresa</span>
+        <div class="sort-indicator">
+          <i v-if="sortField === 'nombre_empresa' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+          <i v-else-if="sortField === 'nombre_empresa' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+          <i v-else class="fa-solid fa-sort"></i>
+        </div>
+      </div>
+    </th>
+    
+    <th class="sortable-header" @click="toggleSort('nombre_contacto')">
+      <div class="header-content">
+        <span>Contacto</span>
+        <div class="sort-indicator">
+          <i v-if="sortField === 'nombre_contacto' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+          <i v-else-if="sortField === 'nombre_contacto' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+          <i v-else class="fa-solid fa-sort"></i>
+        </div>
+      </div>
+    </th>
+    
+    <th class="sortable-header" @click="toggleSort('telefono')">
+      <div class="header-content">
+        <span>Teléfono</span>
+        <div class="sort-indicator">
+          <i v-if="sortField === 'telefono' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+          <i v-else-if="sortField === 'telefono' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+          <i v-else class="fa-solid fa-sort"></i>
+        </div>
+      </div>
+    </th>
+    
+    <th class="sortable-header" @click="toggleSort('email')">
+      <div class="header-content">
+        <span>Email</span>
+        <div class="sort-indicator">
+          <i v-if="sortField === 'email' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+          <i v-else-if="sortField === 'email' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+          <i v-else class="fa-solid fa-sort"></i>
+        </div>
+      </div>
+    </th>
+    
+    <th>Dirección</th>
+    <th style="width:100px; text-align:center">Acciones</th>
+  </tr>
+</thead>
           <tbody>
-            <tr v-for="c in filtered" :key="c.cliente_id">
-              <td class="h">{{ c.cliente_id }}</td>
+            <tr v-for="c in sortedAndFiltered" :key="c.cliente_id || c.id">
+              <td class="h">{{ c.cliente_id || c.id }}</td>
               <td class="h">{{ c.ruc }}</td>
               <td class="h">{{ c.nombre_empresa }}</td>
               <td class="h">{{ c.nombre_contacto || '-' }}</td>
@@ -68,7 +134,7 @@
               <td class="h">{{ c.direccion }}</td>
               <td class="action-buttons">
                 <Tooltip text="Editar cliente">
-                  <button class="btn-icon btn-edit" @click="$router.push(`/clientes/nuevo?edit=${c.cliente_id}`)">
+                  <button class="btn-icon btn-edit" @click.prevent="openEditModal(c.cliente_id)">
                     ✏️
                   </button>
                 </Tooltip>
@@ -113,6 +179,13 @@
       :type="notification.type"
       @close="notification.show = false"
     />
+
+    <ClienteFormModal
+      :show="showFormModal"
+      :edit-id="formEditId"
+      @close="onModalClose"
+      @saved="onModalSaved"
+    />
   </div>
 </template>
 
@@ -123,18 +196,22 @@ import Tooltip from '../components/Tooltip.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ImportExportDialog from '../components/ImportExportDialog.vue'
 import Notification from '../components/Notification.vue'
+import ClienteFormModal from '../components/ClienteFormModal.vue'
 import '../assets/styles/Clientes.css'
 import clientesService from '../services/clientesService'
 
 export default {
   name: 'ClientesListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification, ClienteFormModal },
   data() {
+  
     return {
       search: '',
       clientes: [],
       loading: false,
       error: '',
+      sortField: null,
+      sortOrder: 'asc',
       confirmDialog: {
         show: false,
         title: '¿Eliminar cliente?',
@@ -156,7 +233,10 @@ export default {
         show: false,
         message: '',
         type: 'success'
-      }
+      },
+      // Modal/form state
+      showFormModal: false,
+      formEditId: null
     }
   },
 
@@ -166,20 +246,63 @@ export default {
 
   computed: {
     filtered() {
-      const q = this.search.trim().toLowerCase()
-      if (!q) return this.clientes
-      return this.clientes.filter(c =>
-        String(c.cliente_id || c.id).includes(q) ||
-        c.ruc.toLowerCase().includes(q) ||
-        c.nombre_empresa.toLowerCase().includes(q) ||
-        (c.nombre_contacto || '').toLowerCase().includes(q) ||
-        (c.telefono || '').toLowerCase().includes(q) ||
-        c.email.toLowerCase().includes(q)
-      )
+      if (!this.search) {
+        return this.clientes
+      }
+      const term = this.search.toLowerCase()
+      return this.clientes.filter(c => {
+        return (
+          (c.ruc && c.ruc.toLowerCase().includes(term)) ||
+          (c.nombre_empresa && c.nombre_empresa.toLowerCase().includes(term)) ||
+          (c.nombre_contacto && c.nombre_contacto.toLowerCase().includes(term)) ||
+          (c.telefono && c.telefono.toLowerCase().includes(term)) ||
+          (c.email && c.email.toLowerCase().includes(term)) ||
+          (c.direccion && c.direccion.toLowerCase().includes(term))
+        )
+      })
+    },
+   sortedAndFiltered() {
+  const data = [...this.filtered]
+  
+  if (!this.sortField) {
+    return data
+  }
+
+  return data.sort((a, b) => {
+    let aVal = a[this.sortField]
+    let bVal = b[this.sortField]
+
+    if (aVal === null || aVal === undefined) aVal = ''
+    if (bVal === null || bVal === undefined) bVal = ''
+
+    if (this.sortField === 'cliente_id') {
+      aVal = Number(aVal) || 0
+      bVal = Number(bVal) || 0
+      return this.sortOrder === 'asc' ? aVal - bVal : bVal - aVal
     }
+
+    const aStr = String(aVal).toLowerCase()
+    const bStr = String(bVal).toLowerCase()
+
+    if (this.sortOrder === 'asc') {
+      return aStr.localeCompare(bStr, 'es', { numeric: true })
+    } else {
+      return bStr.localeCompare(aStr, 'es', { numeric: true })
+    }
+  })
+}
+    
   },
 
   methods: {
+    toggleSort(field) {
+  if (this.sortField === field) {
+    this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
+  } else {
+    this.sortField = field
+    this.sortOrder = 'asc'
+  }
+},
   async fetchClientes() {
     this.loading = true
     this.error = ''
@@ -278,7 +401,33 @@ export default {
       }
       
       this.fetchClientes()
+    },
+
+    // Modal handlers
+    openCreateModal() {
+      this.formEditId = null
+      this.showFormModal = true
+    },
+
+    openEditModal(id) {
+      this.formEditId = id
+      this.showFormModal = true
+    },
+
+    onModalClose() {
+      this.showFormModal = false
+      this.formEditId = null
+    },
+
+    onModalSaved(detail) {
+      this.notification = {
+        show: true,
+        message: detail && detail.action === 'updated' ? 'Cliente actualizado' : 'Cliente creado',
+        type: 'success'
+      }
+      this.fetchClientes()
     }
   }
+  
 }
 </script>
