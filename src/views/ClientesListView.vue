@@ -8,7 +8,7 @@
       <div class="topbar-title">
         Clientes
         <span class="chip" aria-live="polite" title="Total de clientes">
-          <template v-if="!loading">{{ clientes.length }}</template>
+          <template v-if="!loading">{{ totalClientes }}</template>
           <template v-else>...</template>
         </span>
       </div>
@@ -45,86 +45,86 @@
         </div>
         <div v-if="loading" class="loading-state">Cargando clientes...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
-        <div v-else-if="filtered.length === 0" class="empty-state">
+        <div v-else-if="clientes.length === 0" class="empty-state">
           <div class="empty-icon">👥</div>
           <h3>No hay clientes registrados</h3>
           <p>Comienza agregando tu primer cliente</p>
         </div>
         <table v-else class="table">
-        <thead>
-          <tr>
-            <th class="sortable-header" @click="toggleSort('cliente_id')">
-            <div class="header-content">
-            <span>ID</span>
-            <div class="sort-indicator">
-              <i v-if="sortField === 'cliente_id' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-              <i v-else-if="sortField === 'cliente_id' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-               <i v-else class="fa-solid fa-sort"></i>
-        </div>
-      </div>
-    </th>
-    
-    <th class="sortable-header" @click="toggleSort('ruc')">
-      <div class="header-content">
-        <span>RUC</span>
-        <div class="sort-indicator">
-          <i v-if="sortField === 'ruc' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-          <i v-else-if="sortField === 'ruc' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-          <i v-else class="fa-solid fa-sort"></i>
-        </div>
-      </div>
-    </th>
-    
-    <th class="sortable-header" @click="toggleSort('nombre_empresa')">
-      <div class="header-content">
-        <span>Empresa</span>
-        <div class="sort-indicator">
-          <i v-if="sortField === 'nombre_empresa' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-          <i v-else-if="sortField === 'nombre_empresa' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-          <i v-else class="fa-solid fa-sort"></i>
-        </div>
-      </div>
-    </th>
-    
-    <th class="sortable-header" @click="toggleSort('nombre_contacto')">
-      <div class="header-content">
-        <span>Contacto</span>
-        <div class="sort-indicator">
-          <i v-if="sortField === 'nombre_contacto' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-          <i v-else-if="sortField === 'nombre_contacto' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-          <i v-else class="fa-solid fa-sort"></i>
-        </div>
-      </div>
-    </th>
-    
-    <th class="sortable-header" @click="toggleSort('telefono')">
-      <div class="header-content">
-        <span>Teléfono</span>
-        <div class="sort-indicator">
-          <i v-if="sortField === 'telefono' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-          <i v-else-if="sortField === 'telefono' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-          <i v-else class="fa-solid fa-sort"></i>
-        </div>
-      </div>
-    </th>
-    
-    <th class="sortable-header" @click="toggleSort('email')">
-      <div class="header-content">
-        <span>Email</span>
-        <div class="sort-indicator">
-          <i v-if="sortField === 'email' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-          <i v-else-if="sortField === 'email' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-          <i v-else class="fa-solid fa-sort"></i>
-        </div>
-      </div>
-    </th>
-    
-    <th>Dirección</th>
-    <th style="width:100px; text-align:center">Acciones</th>
-  </tr>
-</thead>
+          <thead>
+            <tr>
+              <th class="sortable-header" @click="toggleSort('cliente_id')">
+                <div class="header-content">
+                  <span>ID</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'cliente_id' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'cliente_id' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+              
+              <th class="sortable-header" @click="toggleSort('ruc')">
+                <div class="header-content">
+                  <span>RUC</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'ruc' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'ruc' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+              
+              <th class="sortable-header" @click="toggleSort('nombre_empresa')">
+                <div class="header-content">
+                  <span>Empresa</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'nombre_empresa' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'nombre_empresa' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+              
+              <th class="sortable-header" @click="toggleSort('nombre_contacto')">
+                <div class="header-content">
+                  <span>Contacto</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'nombre_contacto' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'nombre_contacto' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+              
+              <th class="sortable-header" @click="toggleSort('telefono')">
+                <div class="header-content">
+                  <span>Teléfono</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'telefono' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'telefono' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+              
+              <th class="sortable-header" @click="toggleSort('email')">
+                <div class="header-content">
+                  <span>Email</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'email' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'email' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+              
+              <th>Dirección</th>
+              <th style="width:100px; text-align:center">Acciones</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr v-for="c in sortedAndFiltered" :key="c.cliente_id || c.id">
+            <tr v-for="c in paginatedData" :key="c.cliente_id || c.id">
               <td class="h">{{ c.cliente_id || c.id }}</td>
               <td class="h">{{ c.ruc }}</td>
               <td class="h">{{ c.nombre_empresa }}</td>
@@ -145,11 +145,52 @@
                 </Tooltip>
               </td>
             </tr>
-            <tr v-if="filtered.length === 0">
-              <td colspan="8" style="text-align:center; color:#6b7c93; padding: 16px;">Sin resultados</td>
-            </tr>
           </tbody>
         </table>
+
+        <!-- Paginación -->
+        <div v-if="clientes.length > 0" class="pagination-container">
+          <div class="pagination-info">
+            <span>Mostrando {{ startItem }}-{{ endItem }} de {{ totalClientes }} clientes</span>
+          </div>
+          <div class="pagination-controls">
+            <button 
+              class="btn-secondary" 
+              @click="previousPage" 
+              :disabled="currentPage === 1"
+            >
+              ← Anterior
+            </button>
+            <div class="page-indicator">
+              <label for="page-input">Página:</label>
+              <input 
+                id="page-input"
+                v-model.number="currentPage" 
+                @change="goToPage"
+                type="number" 
+                :min="1" 
+                :max="totalPages"
+                class="page-input"
+              />
+              <span>de {{ totalPages }}</span>
+            </div>
+            <button 
+              class="btn-secondary" 
+              @click="nextPage" 
+              :disabled="currentPage === totalPages || totalPages === 0"
+            >
+              Siguiente →
+            </button>
+          </div>
+          <div class="pagination-size">
+            <label for="page-size-select">Items por página:</label>
+            <select v-model.number="pageSize" @change="changePageSize" id="page-size-select" class="page-size-select">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -166,7 +207,7 @@
       :mode="importExportDialog.mode"
       :data="clientes"
       :columns="exportColumns"
-      :item-count="clientes.length"
+      :item-count="totalClientes"
       entity-name="Clientes"
       :api-endpoint="apiEndpoint"
       @close="importExportDialog.show = false"
@@ -204,14 +245,17 @@ export default {
   name: 'ClientesListView',
   components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification, ClienteFormModal },
   data() {
-  
     return {
       search: '',
       clientes: [],
+      allClientes: [], // Almacena TODOS los clientes
       loading: false,
       error: '',
       sortField: null,
       sortOrder: 'asc',
+      currentPage: 1,
+      pageSize: 20,
+      totalClientes: 0,
       confirmDialog: {
         show: false,
         title: '¿Eliminar cliente?',
@@ -245,12 +289,13 @@ export default {
   },
 
   computed: {
+    // Obtener clientes filtrados por búsqueda (de TODOS los clientes)
     filtered() {
       if (!this.search) {
-        return this.clientes
+        return this.allClientes
       }
       const term = this.search.toLowerCase()
-      return this.clientes.filter(c => {
+      return this.allClientes.filter(c => {
         return (
           (c.ruc && c.ruc.toLowerCase().includes(term)) ||
           (c.nombre_empresa && c.nombre_empresa.toLowerCase().includes(term)) ||
@@ -261,68 +306,116 @@ export default {
         )
       })
     },
-   sortedAndFiltered() {
-  const data = [...this.filtered]
-  
-  if (!this.sortField) {
-    return data
-  }
-
-  return data.sort((a, b) => {
-    let aVal = a[this.sortField]
-    let bVal = b[this.sortField]
-
-    if (aVal === null || aVal === undefined) aVal = ''
-    if (bVal === null || bVal === undefined) bVal = ''
-
-    if (this.sortField === 'cliente_id') {
-      aVal = Number(aVal) || 0
-      bVal = Number(bVal) || 0
-      return this.sortOrder === 'asc' ? aVal - bVal : bVal - aVal
-    }
-
-    const aStr = String(aVal).toLowerCase()
-    const bStr = String(bVal).toLowerCase()
-
-    if (this.sortOrder === 'asc') {
-      return aStr.localeCompare(bStr, 'es', { numeric: true })
-    } else {
-      return bStr.localeCompare(aStr, 'es', { numeric: true })
-    }
-  })
-}
     
+    // Ordenar los datos filtrados
+    sortedAndFiltered() {
+      const data = [...this.filtered]
+      
+      if (!this.sortField) {
+        return data
+      }
+
+      return data.sort((a, b) => {
+        let aVal = a[this.sortField]
+        let bVal = b[this.sortField]
+
+        if (aVal === null || aVal === undefined) aVal = ''
+        if (bVal === null || bVal === undefined) bVal = ''
+
+        if (this.sortField === 'cliente_id') {
+          aVal = Number(aVal) || 0
+          bVal = Number(bVal) || 0
+          return this.sortOrder === 'asc' ? aVal - bVal : bVal - aVal
+        }
+
+        const aStr = String(aVal).toLowerCase()
+        const bStr = String(bVal).toLowerCase()
+
+        if (this.sortOrder === 'asc') {
+          return aStr.localeCompare(bStr, 'es', { numeric: true })
+        } else {
+          return bStr.localeCompare(aStr, 'es', { numeric: true })
+        }
+      })
+    },
+    
+    // Aplicar paginación a los datos ordenados y filtrados
+    paginatedData() {
+      const start = (this.currentPage - 1) * this.pageSize
+      const end = start + this.pageSize
+      return this.sortedAndFiltered.slice(start, end)
+    },
+    
+    // Actualizar total basado en datos filtrados
+    totalFiltered() {
+      return this.filtered.length
+    },
+    
+    totalPages() {
+      return Math.ceil(this.totalFiltered / this.pageSize)
+    },
+    startItem() {
+      return this.totalFiltered === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1
+    },
+    endItem() {
+      return Math.min(this.currentPage * this.pageSize, this.totalFiltered)
+    }
   },
 
   methods: {
     toggleSort(field) {
-  if (this.sortField === field) {
-    this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
-  } else {
-    this.sortField = field
-    this.sortOrder = 'asc'
-  }
-},
-  async fetchClientes() {
-    this.loading = true
-    this.error = ''
-    try {
-      const data = await clientesService.getClientes()
+      if (this.sortField === field) {
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortField = field
+        this.sortOrder = 'asc'
+      }
+    },
 
-      // Soporte para paginación de DRF
-      this.clientes = Array.isArray(data) ? data : data.results || []
-    } catch (e) {
-      console.error('Error al listar clientes', e)
-      this.error = 'No se pudo cargar la lista de clientes.'
-    } finally {
-      this.loading = false
-    }
-  },
-    onSearch() {},
+    async fetchClientes() {
+      this.loading = true
+      this.error = ''
+      try {
+        // Cargar TODOS los clientes (sin paginación en frontend)
+        let allData = []
+        let page = 1
+        let hasMore = true
+        
+        while (hasMore) {
+          const response = await clientesService.getClientes(page, 100) // 100 items por solicitud
+          
+          if (response.results) {
+            allData = allData.concat(response.results)
+            this.totalClientes = response.count || 0
+            // Verificar si hay más páginas
+            hasMore = !!response.next
+            page++
+          } else {
+            // Fallback si no hay paginación
+            allData = Array.isArray(response) ? response : []
+            this.totalClientes = allData.length
+            hasMore = false
+          }
+        }
+        
+        this.allClientes = allData
+        this.clientes = allData // Para compatibilidad con export
+        this.currentPage = 1 // Reset a primera página
+      } catch (e) {
+        console.error('Error al listar clientes', e)
+        this.error = 'No se pudo cargar la lista de clientes.'
+      } finally {
+        this.loading = false
+      }
+    },
+
+    onSearch() {
+      // Resetear a la primera página cuando se busca
+      this.currentPage = 1
+    },
 
     clearSearch() {
       this.search = ''
-      // Poner focus en el campo de búsqueda después de limpiar
       this.$nextTick(() => {
         const searchInput = document.querySelector('.search-input')
         if (searchInput) {
@@ -332,7 +425,32 @@ export default {
     },
 
     reload() {
+      this.currentPage = 1
       this.fetchClientes()
+    },
+
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+      }
+    },
+
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+      }
+    },
+
+    goToPage() {
+      if (this.currentPage < 1) {
+        this.currentPage = 1
+      } else if (this.currentPage > this.totalPages) {
+        this.currentPage = this.totalPages
+      }
+    },
+
+    changePageSize() {
+      this.currentPage = 1
     },
 
     openImport() {
@@ -352,9 +470,11 @@ export default {
       const id = this.confirmDialog.clienteId
       try {
         await clientesService.deleteCliente(id)
-        this.clientes = this.clientes.filter(
+        this.allClientes = this.allClientes.filter(
           c => (c.cliente_id || c.id) !== id
         )
+        this.clientes = this.allClientes
+        this.totalClientes--
         this.confirmDialog.show = false
         this.notification = {
           show: true,
@@ -400,10 +520,10 @@ export default {
         }
       }
       
+      this.currentPage = 1
       this.fetchClientes()
     },
 
-    // Modal handlers
     openCreateModal() {
       this.formEditId = null
       this.showFormModal = true
@@ -425,9 +545,9 @@ export default {
         message: detail && detail.action === 'updated' ? 'Cliente actualizado' : 'Cliente creado',
         type: 'success'
       }
+      this.currentPage = 1
       this.fetchClientes()
     }
   }
-  
 }
 </script>

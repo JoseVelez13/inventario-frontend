@@ -1,8 +1,19 @@
 import api from "./api"
 
 export default {
-  async getClientes() {
-    const res = await api.get("/clientes/")
+  /**
+   * Obtener lista de clientes con paginación
+   * @param {number} page - Número de página (por defecto 1)
+   * @param {number} pageSize - Cantidad de items por página (por defecto 20)
+   * @returns {Promise} Objeto con: { count, next, previous, results }
+   */
+  async getClientes(page = 1, pageSize = 20) {
+    const res = await api.get("/clientes/", {
+      params: {
+        page,
+        page_size: pageSize
+      }
+    })
     return res.data
   },
 
