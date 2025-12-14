@@ -41,10 +41,6 @@ const crumbs = computed(() => {
   if (path.includes('/productos')) {
     breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
     breadcrumbs.push({ label: 'Productos', path: '/productos' })
-    
-    if (path.includes('/nuevo')) {
-      breadcrumbs.push({ label: 'Nuevo Producto', path: '/productos/nuevo' })
-    }
   }
 
   // Materia Prima

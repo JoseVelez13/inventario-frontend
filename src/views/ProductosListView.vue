@@ -4,7 +4,13 @@
     <Breadcrumbs />
 
     <div class="topbar">
-      <div class="topbar-title">Productos</div>
+      <div class="topbar-title">
+        Productos
+        <span class="chip" aria-live="polite" title="Total de productos">
+          <template v-if="!loading">{{ totalProductos }}</template>
+          <template v-else>...</template>
+        </span>
+      </div>
       <div class="topbar-actions">
         <Tooltip text="Volver a la página anterior">
           <button class="btn-secondary" @click="$router.back()">Atrás</button>
@@ -19,7 +25,7 @@
           <button class="btn-secondary" @click="openExport">📤 Exportar</button>
         </Tooltip>
         <Tooltip text="Crear un nuevo producto">
-          <button class="btn-primary" @click="$router.push('/productos/nuevo')">Nuevo</button>
+          <button class="btn-primary" @click="openCreateModal">Nuevo</button>
         </Tooltip>
       </div>
     </div>
@@ -47,17 +53,77 @@
         <table v-else class="table">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Código</th>
-              <th>Nombre</th>
-              <th>Descripción</th>
-              <th>Unidad</th>
-              <th>Peso</th>
+              <th class="sortable-header" @click="toggleSort('producto_id')">
+                <div class="header-content">
+                  <span>ID</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'producto_id' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'producto_id' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
+              <th class="sortable-header" @click="toggleSort('product_code')">
+                <div class="header-content">
+                  <span>Código</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'product_code' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'product_code' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
+              <th class="sortable-header" @click="toggleSort('name')">
+                <div class="header-content">
+                  <span>Nombre</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'name' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'name' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
+              <th class="sortable-header" @click="toggleSort('description')">
+                <div class="header-content">
+                  <span>Descripción</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'description' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'description' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
+              <th class="sortable-header" @click="toggleSort('unit')">
+                <div class="header-content">
+                  <span>Unidad</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'unit' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'unit' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
+              <th class="sortable-header" @click="toggleSort('weight')">
+                <div class="header-content">
+                  <span>Peso</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'weight' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'weight' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
               <th style="width:100px; text-align:center">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in filtered" :key="p.producto_id || p.id">
+            <tr v-for="p in paginatedData" :key="p.producto_id || p.id">
               <td>{{ p.producto_id || p.id }}</td>
               <td><strong>{{ p.product_code }}</strong></td>
               <td>{{ p.name }}</td>
@@ -66,7 +132,7 @@
               <td>{{ p.weight }} kg</td>
               <td class="action-buttons">
                 <Tooltip text="Editar producto">
-                  <button class="btn-icon btn-edit" @click="$router.push(`/productos/nuevo?edit=${p.producto_id || p.id}`)">
+                  <button class="btn-icon btn-edit" @click.prevent="openEditModal(p.producto_id || p.id)">
                     ✏️
                   </button>
                 </Tooltip>
@@ -79,6 +145,29 @@
             </tr>
           </tbody>
         </table>
+        <!-- Paginación similar a clientes -->
+        <div v-if="allProductos.length > 0" class="pagination-container">
+          <div class="pagination-info">
+            <span>Mostrando {{ startItem }}-{{ endItem }} de {{ totalFiltered }} productos</span>
+          </div>
+          <div class="pagination-controls">
+            <button class="btn-secondary" @click="previousPage" :disabled="currentPage === 1">← Anterior</button>
+            <div class="page-indicator">
+              <label for="page-input">Página:</label>
+              <input id="page-input" v-model.number="currentPage" @change="goToPage" type="number" :min="1" :max="totalPages" class="page-input" />
+              <span>de {{ totalPages }}</span>
+            </div>
+            <button class="btn-secondary" @click="nextPage" :disabled="currentPage === totalPages || totalPages === 0">Siguiente →</button>
+          </div>
+          <div class="pagination-size">
+            <label for="page-size-select">Items por página:</label>
+            <select v-model.number="pageSize" @change="changePageSize" id="page-size-select" class="page-size-select">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -104,9 +193,16 @@
       entity-name="Productos"
       :data="exportData"
       :columns="exportColumns"
-      :item-count="productos.length"
+      :item-count="totalFiltered"
       @close="importExportDialog.show = false"
       @import-complete="handleImportComplete"
+    />
+
+    <ProductoFormModal
+      :show="showFormModal"
+      :edit-id="formEditId"
+      @close="onModalClose"
+      @saved="onModalSaved"
     />
   </div>
 </template>
@@ -118,20 +214,27 @@ import Tooltip from '../components/Tooltip.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import Notification from '../components/Notification.vue'
 import ImportExportDialog from '../components/ImportExportDialog.vue'
-import '../assets/styles/Productos.css'
+import ProductoFormModal from '../components/ProductoFormModal.vue'
+import '../assets/styles/Clientes.css'
 import productosService from '../services/productosService'
 
 export default {
   name: 'ProductosListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, Notification, ImportExportDialog },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, Notification, ImportExportDialog, ProductoFormModal },
   
   data() {
     return {
       search: '',
       productos: [],
+      allProductos: [],
       unidades: [],
       loading: false,
       error: '',
+      sortField: null,
+      sortOrder: 'asc',
+      currentPage: 1,
+      pageSize: 20,
+      totalProductos: 0,
       confirmDialog: {
         show: false,
         title: '¿Eliminar producto?',
@@ -148,6 +251,10 @@ export default {
         show: false,
         mode: 'export'
       }
+      ,
+      // Modal/form state
+      showFormModal: false,
+      formEditId: null
     }
   },
 
@@ -159,13 +266,55 @@ export default {
   computed: {
     filtered() {
       const q = this.search.trim().toLowerCase()
-      if (!q) return this.productos
-      return this.productos.filter(p =>
-        String(p.producto_id || p.id).includes(q) ||
-        p.product_code.toLowerCase().includes(q) ||
-        p.name.toLowerCase().includes(q) ||
+      if (!q) return this.allProductos
+      return this.allProductos.filter(p =>
+        String(p.producto_id || p.id).toLowerCase().includes(q) ||
+        (p.product_code || '').toLowerCase().includes(q) ||
+        (p.name || '').toLowerCase().includes(q) ||
         (p.description || '').toLowerCase().includes(q)
       )
+    },
+
+    sortedAndFiltered() {
+      const data = [...this.filtered]
+      if (!this.sortField) return data
+      return data.sort((a, b) => {
+        let aVal = a[this.sortField]
+        let bVal = b[this.sortField]
+        if (aVal === null || aVal === undefined) aVal = ''
+        if (bVal === null || bVal === undefined) bVal = ''
+        if (['producto_id','weight'].includes(this.sortField)) {
+          aVal = Number(aVal) || 0
+          bVal = Number(bVal) || 0
+          return this.sortOrder === 'asc' ? aVal - bVal : bVal - aVal
+        }
+        const aStr = String(aVal).toLowerCase()
+        const bStr = String(bVal).toLowerCase()
+        if (this.sortOrder === 'asc') return aStr.localeCompare(bStr, 'es', { numeric: true })
+        return bStr.localeCompare(aStr, 'es', { numeric: true })
+      })
+    },
+
+    paginatedData() {
+      const start = (this.currentPage - 1) * this.pageSize
+      const end = start + this.pageSize
+      return this.sortedAndFiltered.slice(start, end)
+    },
+
+    totalFiltered() {
+      return this.filtered.length
+    },
+
+    totalPages() {
+      return Math.ceil(this.totalFiltered / this.pageSize)
+    },
+
+    startItem() {
+      return this.totalFiltered === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1
+    },
+
+    endItem() {
+      return Math.min(this.currentPage * this.pageSize, this.totalFiltered)
     },
 
     exportData() {
@@ -218,8 +367,28 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const data = await productosService.getProductos()
-        this.productos = Array.isArray(data) ? data : data.results || []
+        // Cargar TODOS los productos (paginación por backend)
+        let allData = []
+        let page = 1
+        let hasMore = true
+
+        while (hasMore) {
+          const res = await productosService.getProductos({ page, page_size: 100 })
+          if (res.results) {
+            allData = allData.concat(res.results)
+            this.totalProductos = res.count || allData.length
+            hasMore = !!res.next
+            page++
+          } else {
+            allData = Array.isArray(res) ? res : []
+            this.totalProductos = allData.length
+            hasMore = false
+          }
+        }
+
+        this.allProductos = allData
+        this.productos = allData
+        this.currentPage = 1
       } catch (e) {
         console.error('Error al listar productos', e)
         this.error = 'No se pudo cargar la lista de productos.'
@@ -229,6 +398,32 @@ export default {
     },
 
     onSearch() {},
+
+    toggleSort(field) {
+      if (this.sortField === field) {
+        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
+      } else {
+        this.sortField = field
+        this.sortOrder = 'asc'
+      }
+    },
+
+    previousPage() {
+      if (this.currentPage > 1) this.currentPage--
+    },
+
+    nextPage() {
+      if (this.currentPage < this.totalPages) this.currentPage++
+    },
+
+    goToPage() {
+      if (this.currentPage < 1) this.currentPage = 1
+      else if (this.currentPage > this.totalPages) this.currentPage = this.totalPages
+    },
+
+    changePageSize() {
+      this.currentPage = 1
+    },
 
     clearSearch() {
       this.search = ''
@@ -241,6 +436,7 @@ export default {
     },
 
     reload() {
+      this.currentPage = 1
       this.fetchProductos()
     },
 
@@ -290,6 +486,27 @@ export default {
     deleteProducto(id) {
       this.confirmDialog.productId = id
       this.confirmDialog.show = true
+    },
+
+    openCreateModal() {
+      this.formEditId = null
+      this.showFormModal = true
+    },
+
+    openEditModal(id) {
+      this.formEditId = id
+      this.showFormModal = true
+    },
+
+    onModalClose() {
+      this.showFormModal = false
+      this.formEditId = null
+    },
+
+    onModalSaved(detail) {
+      this.showNotification('success', detail && detail.action === 'updated' ? 'Producto actualizado' : 'Producto creado', '')
+      this.currentPage = 1
+      this.fetchProductos()
     },
 
     async onConfirmDelete() {

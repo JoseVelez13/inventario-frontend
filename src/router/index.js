@@ -5,7 +5,6 @@ import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
 import ClientesListView from '../views/ClientesListView.vue'
 import ProductosListView from '../views/ProductosListView.vue'
-import ProductoCreateView from '../views/ProductoCreateView.vue'
 import MateriasPrimasListView from '../views/MateriasPrimasListView.vue'
 import MateriaPrimaCreateView from '../views/MateriaPrimaCreateView.vue'
 import authService from '../services/auth'
@@ -46,12 +45,6 @@ const routes = [
     name: 'Productos',
     component: ProductosListView,
     meta: { title: 'Productos - Sistema Innoquim' }
-  },
-  {
-    path: '/productos/nuevo',
-    name: 'ProductoNuevo',
-    component: ProductoCreateView,
-    meta: { title: 'Nuevo Producto - Sistema Innoquim' }
   },
   {
     path: '/materias-primas',
