@@ -8,9 +8,11 @@ import ProductosListView from '../views/ProductosListView.vue'
 import ProductoCreateView from '../views/ProductoCreateView.vue'
 import MateriasPrimasListView from '../views/MateriasPrimasListView.vue'
 import MateriaPrimaCreateView from '../views/MateriaPrimaCreateView.vue'
+import MainLayout from '../components/MainLayout.vue'
 import authService from '../services/auth'
 
 const routes = [
+  // Rutas SIN sidebar (Inicio y Login)
   { 
     path: '/', 
     name: 'Inicio',
@@ -23,49 +25,58 @@ const routes = [
     component: LoginView,
     meta: { 
       title: 'Iniciar Sesión - Sistema Innoquim',
-      hideForAuth: true // Ocultar si ya está autenticado
+      hideForAuth: true
     }
   },
-  { 
-    path: '/dashboard', 
-    name: 'Dashboard',
-    component: DashboardView, 
-    meta: { 
-      requiresAuth: true,
-      title: 'Dashboard - Sistema Innoquim'
-    } 
-  },
+  
+  // Rutas CON sidebar (todas las demás)
   {
-    path: '/clientes',
-    name: 'Clientes',
-    component: ClientesListView,
-    meta: { title: 'Clientes - Sistema Innoquim' }
+    path: '/',
+    component: MainLayout,
+    children: [
+      { 
+        path: 'dashboard', 
+        name: 'Dashboard',
+        component: DashboardView, 
+        meta: { 
+          requiresAuth: true,
+          title: 'Dashboard - Sistema Innoquim'
+        } 
+      },
+      {
+        path: 'clientes',
+        name: 'Clientes',
+        component: ClientesListView,
+        meta: { title: 'Clientes - Sistema Innoquim' }
+      },
+      {
+        path: 'productos',
+        name: 'Productos',
+        component: ProductosListView,
+        meta: { title: 'Productos - Sistema Innoquim' }
+      },
+      {
+        path: 'productos/nuevo',
+        name: 'ProductoNuevo',
+        component: ProductoCreateView,
+        meta: { title: 'Nuevo Producto - Sistema Innoquim' }
+      },
+      {
+        path: 'materias-primas',
+        name: 'MateriasPrimas',
+        component: MateriasPrimasListView,
+        meta: { title: 'Materias Primas - Sistema Innoquim' }
+      },
+      {
+        path: 'materias-primas/nuevo',
+        name: 'MateriaPrimaNuevo',
+        component: MateriaPrimaCreateView,
+        meta: { title: 'Nueva Materia Prima - Sistema Innoquim' }
+      }
+    ]
   },
-  {
-    path: '/productos',
-    name: 'Productos',
-    component: ProductosListView,
-    meta: { title: 'Productos - Sistema Innoquim' }
-  },
-  {
-    path: '/productos/nuevo',
-    name: 'ProductoNuevo',
-    component: ProductoCreateView,
-    meta: { title: 'Nuevo Producto - Sistema Innoquim' }
-  },
-  {
-    path: '/materias-primas',
-    name: 'MateriasPrimas',
-    component: MateriasPrimasListView,
-    meta: { title: 'Materias Primas - Sistema Innoquim' }
-  },
-  {
-    path: '/materias-primas/nuevo',
-    name: 'MateriaPrimaNuevo',
-    component: MateriaPrimaCreateView,
-    meta: { title: 'Nueva Materia Prima - Sistema Innoquim' }
-  },
-  // ruta fallback para errores (si alguien entra a /xd123)
+  
+  // ruta fallback para errores
   { path: '/:pathMatch(.*)*', redirect: '/' }
 ]
 
