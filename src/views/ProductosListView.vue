@@ -504,7 +504,12 @@ export default {
     },
 
     onModalSaved(detail) {
-      this.showNotification('success', detail && detail.action === 'updated' ? 'Producto actualizado' : 'Producto creado', '')
+      const isUpdate = detail && detail.action === 'updated'
+      this.showNotification(
+        'success', 
+        isUpdate ? '✅ Producto actualizado' : '✅ Producto creado', 
+        isUpdate ? 'El producto se actualizó correctamente' : 'El producto se guardó exitosamente'
+      )
       this.currentPage = 1
       this.fetchProductos()
     },

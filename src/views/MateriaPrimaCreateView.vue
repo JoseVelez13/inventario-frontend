@@ -93,10 +93,10 @@
               v-model.number="form.stock_minimo" 
               type="number" 
               min="0"
-              step="0.01"
+              step="1"
               placeholder="0"
             />
-            <small>Cantidad mínima requerida en inventario</small>
+            <small>Cantidad mínima requerida en inventario (número entero)</small>
           </div>
 
           <div class="form-group">
@@ -106,10 +106,10 @@
               v-model.number="form.stock_maximo" 
               type="number" 
               min="0"
-              step="0.01"
+              step="1"
               placeholder="Opcional"
             />
-            <small>Límite superior de inventario (opcional)</small>
+            <small>Límite superior de inventario (opcional, número entero)</small>
           </div>
         </form>
       </div>
@@ -200,7 +200,7 @@ export default {
           nombre: this.form.nombre,
           descripcion: this.form.descripcion || '',
           unidad_id: parseInt(this.form.unidad_id),
-          stock_minimo: parseFloat(this.form.stock_minimo) || 0,
+          stock_minimo: parseInt(this.form.stock_minimo) || 0,
         }
 
         if (this.form.densidad !== null && this.form.densidad !== '') {
@@ -208,7 +208,7 @@ export default {
         }
 
         if (this.form.stock_maximo !== null && this.form.stock_maximo !== '') {
-          payload.stock_maximo = parseFloat(this.form.stock_maximo)
+          payload.stock_maximo = parseInt(this.form.stock_maximo)
         }
 
         if (this.isEdit) {

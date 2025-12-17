@@ -3,7 +3,7 @@
     <div v-if="visible" class="dialog-overlay" @click="close">
       <div class="dialog-card form-modal" @click.stop>
         <div class="modal-header">
-          <h2>{{ isEdit ? 'Editar Producto' : 'Nuevo Producto' }}</h2>
+          <h2>{{ isEdit ? 'Editar Materia Prima' : 'Nueva Materia Prima' }}</h2>
           <button class="btn-icon" @click="close" aria-label="Cerrar">✖</button>
         </div>
 
@@ -11,30 +11,65 @@
           <form @submit.prevent="submit">
             <div class="form-grid">
               <div class="form-field">
-                <label for="product_code">Código</label>
-                <input id="product_code" v-model="form.product_code" maxlength="50" />
+                <label for="codigo">Código *</label>
+                <input id="codigo" v-model="form.codigo" required maxlength="50" placeholder="Ej: MP-001" />
               </div>
 
               <div class="form-field">
-                <label for="name">Nombre</label>
-                <input id="name" v-model="form.name" maxlength="150" />
+                <label for="nombre">Nombre *</label>
+                <input id="nombre" v-model="form.nombre" required maxlength="100" placeholder="Ej: Polietileno" />
               </div>
 
               <div class="form-field full">
-                <label for="description">Descripción</label>
-                <textarea id="description" v-model="form.description"></textarea>
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" v-model="form.descripcion" rows="2" placeholder="Descripción opcional"></textarea>
               </div>
 
               <div class="form-field">
-                <label for="unit">Unidad</label>
-                <select id="unit" v-model.number="form.unit">
-                  <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }} ({{ u.simbolo }})</option>
+                <label for="unidad_id">Unidad de Medida *</label>
+                <select id="unidad_id" v-model.number="form.unidad_id" required>
+                  <option value="" disabled>Selecciona una unidad</option>
+                  <option v-for="u in unidades" :key="u.id" :value="u.id">
+                    {{ u.nombre }} ({{ u.simbolo }})
+                  </option>
                 </select>
               </div>
 
               <div class="form-field">
-                <label for="weight">Peso (kg)</label>
-                <input id="weight" v-model.number="form.weight" type="number" step="0.001" min="0" />
+                <label for="densidad">Densidad (g/cm³)</label>
+                <input 
+                  id="densidad" 
+                  v-model.number="form.densidad" 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  placeholder="Ej: 0.95"
+                />
+              </div>
+
+              <div class="form-field">
+                <label for="stock_minimo">Stock Mínimo *</label>
+                <input 
+                  id="stock_minimo" 
+                  v-model.number="form.stock_minimo" 
+                  type="number" 
+                  step="1" 
+                  min="0" 
+                  required
+                  placeholder="0"
+                />
+              </div>
+
+              <div class="form-field">
+                <label for="stock_maximo">Stock Máximo</label>
+                <input 
+                  id="stock_maximo" 
+                  v-model.number="form.stock_maximo" 
+                  type="number" 
+                  step="1" 
+                  min="0" 
+                  placeholder="Opcional"
+                />
               </div>
             </div>
 
@@ -49,8 +84,8 @@
 </template>
 
 <script setup>
-import { ref, watch, reactive } from 'vue'
-import productosService from '../services/productosService'
+import { ref, watch, reactive, onMounted } from 'vue'
+import materiasPrimasService from '../services/materiasPrimasService'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -64,51 +99,116 @@ const loading = ref(false)
 const unidades = ref([])
 
 const form = reactive({
-  product_code: '',
-  name: '',
-  description: '',
-  unit: null,
-  weight: 0.0
+  codigo: '',
+  nombre: '',
+  descripcion: '',
+  unidad_id: '',
+  densidad: null,
+  stock_minimo: 0,
+  stock_maximo: null
 })
 
-watch(() => props.show, (v) => { visible.value = v })
-watch(() => props.editId, (id) => { if (id) loadProducto(id) })
+watch(() => props.show, (v) => { 
+  visible.value = v
+  if (v) {
+    if (props.editId) {
+      loadMateriaPrima(props.editId)
+    } else {
+      resetForm()
+    }
+  }
+})
 
-function resetForm() {
-  form.product_code = ''
-  form.name = ''
-  form.description = ''
-  form.unit = null
-  form.weight = 0.0
-  isEdit.value = false
-}
+watch(() => props.editId, (id) => { 
+  isEdit.value = !!id
+  if (id && props.show) loadMateriaPrima(id) 
+})
 
-async function loadUnidades() {
+onMounted(() => {
+  fetchUnidades()
+})
+
+async function fetchUnidades() {
   try {
     const token = localStorage.getItem('access_token')
-    const res = await fetch('http://localhost:8000/api/unidades/', {
-      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+    const response = await fetch('http://localhost:8000/api/unidades/', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     })
-    const data = await res.json()
+    const data = await response.json()
     unidades.value = Array.isArray(data) ? data : data.results || []
   } catch (e) {
-    console.error('Error cargando unidades', e)
+    console.error('Error al cargar unidades', e)
   }
 }
 
-async function loadProducto(id) {
-  if (!id) return
-  loading.value = true
+function resetForm() {
+  form.codigo = ''
+  form.nombre = ''
+  form.descripcion = ''
+  form.unidad_id = ''
+  form.densidad = null
+  form.stock_minimo = 0
+  form.stock_maximo = null
+  isEdit.value = false
+}
+
+async function loadMateriaPrima(id) {
   try {
-    const data = await productosService.getProducto(id)
-    form.product_code = data.product_code || ''
-    form.name = data.name || ''
-    form.description = data.description || ''
-    form.unit = data.unit || null
-    form.weight = data.weight || 0.0
+    loading.value = true
+    const data = await materiasPrimasService.getMateriaPrima(id)
+    form.codigo = data.codigo
+    form.nombre = data.nombre
+    form.descripcion = data.descripcion || ''
+    form.unidad_id = data.unidad_id || data.unidad
+    form.densidad = data.densidad || null
+    form.stock_minimo = data.stock_minimo || 0
+    form.stock_maximo = data.stock_maximo || null
     isEdit.value = true
   } catch (e) {
-    console.error('Error cargando producto', e)
+    console.error('Error al cargar materia prima', e)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function submit() {
+  try {
+    loading.value = true
+
+    const payload = {
+      codigo: form.codigo,
+      nombre: form.nombre,
+      descripcion: form.descripcion || '',
+      unidad_id: parseInt(form.unidad_id),
+      stock_minimo: parseInt(form.stock_minimo) || 0
+    }
+
+    if (form.densidad !== null && form.densidad !== '') {
+      payload.densidad = parseFloat(form.densidad)
+    }
+
+    if (form.stock_maximo !== null && form.stock_maximo !== '') {
+      payload.stock_maximo = parseInt(form.stock_maximo)
+    }
+
+    if (props.editId) {
+      await materiasPrimasService.updateMateriaPrima(props.editId, payload)
+      emit('saved', { action: 'updated' })
+    } else {
+      await materiasPrimasService.createMateriaPrima(payload)
+      emit('saved', { action: 'created' })
+    }
+
+    // Pequeño delay para que la notificación se muestre antes de cerrar el modal
+    setTimeout(() => {
+      close()
+    }, 100)
+  } catch (e) {
+    console.error('Error guardando materia prima', e)
+    alert('Error al guardar la materia prima')
   } finally {
     loading.value = false
   }
@@ -119,35 +219,6 @@ function close() {
   resetForm()
   emit('close')
 }
-
-async function submit() {
-  try {
-    const payload = {
-      product_code: form.product_code,
-      name: form.name,
-      description: form.description || null,
-      unit: form.unit || 1,
-      weight: form.weight || 0
-    }
-
-    if (props.editId) {
-      await productosService.updateProducto(props.editId, payload)
-      emit('saved', { action: 'updated' })
-    } else {
-      await productosService.createProducto(payload)
-      emit('saved', { action: 'created' })
-    }
-
-    // Pequeño delay para que la notificación se muestre antes de cerrar el modal
-    setTimeout(() => {
-      close()
-    }, 100)
-  } catch (e) {
-    console.error('Error guardando producto', e)
-  }
-}
-
-loadUnidades()
 </script>
 
 <style scoped>
