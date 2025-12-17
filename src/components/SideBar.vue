@@ -40,6 +40,7 @@
 
 <script>
 import { Offcanvas } from 'bootstrap'
+import '../assets/styles/SideBar.css'
 
 export default {
   name: 'SideBar',
@@ -141,36 +142,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.offcanvas {
-  width: 280px !important;
-}
-
-.nav-link {
-  color: #495057;
-  padding: 1rem 1.5rem;
-  transition: all 0.3s ease;
-  border-left: 3px solid transparent;
-  cursor: pointer;
-  text-decoration: none;
-  display: block;
-}
-
-.nav-link:hover {
-  background-color: #f8f9fa;
-  color: #0d6efd;
-  border-left-color: #0d6efd;
-}
-
-.nav-link.active {
-  background-color: #e7f1ff;
-  color: #0d6efd;
-  border-left-color: #0d6efd;
-  font-weight: 500;
-}
-
-.offcanvas-header {
-  background-color: #f8f9fa;
-}
-</style>
