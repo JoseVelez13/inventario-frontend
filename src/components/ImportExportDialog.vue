@@ -38,7 +38,30 @@
           <div v-if="step === 1" class="import-step">
             <p class="description">Selecciona un archivo para importar {{ entityName }}s:</p>
             
-            <div class="file-upload-area" @click="$refs.fileInput.click()" 
+            <!-- Botones de descarga de plantillas -->
+            <div class="template-download-section">
+              <h4 class="template-title">Descargar Plantilla</h4>
+              <p class="template-help">
+                Descarga la plantilla con las columnas necesarias y ejemplos de datos
+              </p>
+              <div class="template-buttons">
+                <button class="btn-template excel-template" @click="downloadTemplate('excel')">
+                  <span class="icon">📊</span>
+                  <span class="label">Excel</span>
+                </button>
+                <button class="btn-template csv-template" @click="downloadTemplate('csv')">
+                  <span class="icon">📄</span>
+                  <span class="label">CSV</span>
+                </button>
+                <button class="btn-template json-template" @click="downloadTemplate('json')">
+                  <span class="icon">{ }</span>
+                  <span class="label">JSON</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="file-upload-area" 
+                 @click="triggerFileInput"
                  @dragover.prevent="dragover = true" 
                  @dragleave="dragover = false"
                  @drop.prevent="handleDrop"
@@ -46,12 +69,13 @@
               <input ref="fileInput" type="file" hidden 
                      accept=".xlsx,.csv,.json" 
                      @change="handleFileSelect">
-              <div class="upload-icon">📁</div>
+              <div class="upload-icon">Archivo</div>
               <p v-if="!selectedFile" class="upload-text">
-                Haz clic o arrastra un archivo aquí
+                Haz clic o arrastra un archivo aqui
               </p>
               <p v-else class="selected-file">
-                <strong>{{ selectedFile.name }}</strong> ({{ formatFileSize(selectedFile.size) }})
+                <strong v-text="selectedFile.name"></strong> 
+                <span v-text="'(' + formatFileSize(selectedFile.size) + ')'"></span>
               </p>
               <p class="formats-supported">Formatos: Excel (.xlsx), CSV (.csv), JSON (.json)</p>
             </div>
@@ -61,7 +85,7 @@
             </button>
           </div>
 
-          <!-- Paso 2: Vista previa y validación -->
+          <!-- Paso 2: Vista previa y validacion -->
           <div v-if="step === 2" class="preview-step">
             <div class="preview-header">
               <h3>Vista Previa ({{ parsedData.length }} registros)</h3>
@@ -77,7 +101,7 @@
                   <span class="error-msg">{{ error.message }}</span>
                 </div>
                 <p v-if="validationErrors.length > 5" class="more-errors">
-                  ...y {{ validationErrors.length - 5 }} errores más
+                  ...y {{ validationErrors.length - 5 }} errores mas
                 </p>
               </div>
             </div>
@@ -108,7 +132,7 @@
               </p>
             </div>
 
-            <!-- Botones de acción -->
+            <!-- Botones de accion -->
             <div class="action-buttons">
               <button class="btn-secondary" @click="close">Cancelar</button>
               <button class="btn-primary" @click="confirmImport" 
@@ -138,6 +162,8 @@ import * as XLSX from 'xlsx'
 import Papa from 'papaparse'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import ExcelJS from 'exceljs'
+import logo from '../assets/img/logo.png'
 
 export default {
   name: 'ImportExportDialog',
@@ -182,16 +208,24 @@ export default {
       step: 1, // 1: seleccionar, 2: previa, 3: importando
       selectedFile: null,
       parsedData: [],
+      originalColumns: [], // Guardar columnas originales del archivo
       validationErrors: [],
       dragover: false,
       importProgress: 0,
       importedCount: 0,
-      totalToImport: 0
+      totalToImport: 0,
+      logoBase64: null
     }
+  },
+
+  mounted() {
+    this.loadLogoAsBase64()
   },
 
   computed: {
     previewColumns() {
+      // Usar columnas originales si están disponibles, sino usar las del primer item
+      if (this.originalColumns.length > 0) return this.originalColumns
       if (this.parsedData.length === 0) return []
       return Object.keys(this.parsedData[0]).filter(k => !k.startsWith('_'))
     },
@@ -220,45 +254,456 @@ export default {
       this.step = 1
       this.selectedFile = null
       this.parsedData = []
+      this.originalColumns = []
       this.validationErrors = []
       this.importProgress = 0
     },
 
-    // ========== EXPORTAR ==========
-    exportExcel() {
+    triggerFileInput() {
+      this.$refs.fileInput.click()
+    },
+
+    // ========== DESCARGAR PLANTILLA ==========
+    async downloadTemplate(format = 'excel') {
       try {
-        // Preparar datos con encabezados personalizados
-        const dataToExport = this.data.map(item => {
-          const row = {}
-          this.columns.forEach(col => {
-            row[col.label] = item[col.key] !== undefined && item[col.key] !== null ? item[col.key] : '-'
-          })
-          return row
-        })
-
-        const ws = XLSX.utils.json_to_sheet(dataToExport)
+        let templateData = []
+        let columnHeaders = []
         
-        // Ajustar ancho de columnas automáticamente
-        const colWidths = this.columns.map(col => ({
-          wch: Math.max(col.label.length, 15)
-        }))
-        ws['!cols'] = colWidths
+        // Generar plantilla según el tipo de entidad
+        if (this.entityName === 'Productos' || this.entityName === 'producto') {
+          columnHeaders = ['Código', 'Nombre', 'Descripción', 'Unidad', 'Peso']
+          templateData = [
+            {
+              'Código': 'P001',
+              'Nombre': 'Jabón Líquido Antibacterial',
+              'Descripción': 'Jabón líquido para limpieza de manos',
+              'Unidad': 'kg',
+              'Peso': '1.5'
+            }
+          ]
+        } else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
+          columnHeaders = ['RUC', 'Nombre Empresa', 'Nombre Contacto', 'Teléfono', 'Email', 'Dirección']
+          templateData = [
+            {
+              'RUC': '1234567890001',
+              'Nombre Empresa': 'Distribuidora ABC S.A.',
+              'Nombre Contacto': 'Juan Pérez',
+              'Teléfono': '0987654321',
+              'Email': 'contacto@distribuidoraabc.com',
+              'Dirección': 'Av. Principal 123, Quito'
+            }
+          ]
+        } else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
+          columnHeaders = ['Código', 'Nombre', 'Descripción', 'Unidad', 'Densidad', 'Stock Mínimo', 'Stock Máximo']
+          templateData = [
+            {
+              'Código': 'MP001',
+              'Nombre': 'Lauril Sulfato de Sodio',
+              'Descripción': 'Surfactante aniónico para limpieza',
+              'Unidad': 'kg',
+              'Densidad': '1.2',
+              'Stock Mínimo': '100',
+              'Stock Máximo': '1000'
+            }
+          ]
+        } else {
+          columnHeaders = ['Campo1', 'Campo2']
+          templateData = [
+            {
+              'Campo1': 'Ejemplo1',
+              'Campo2': 'Ejemplo2'
+            }
+          ]
+        }
+        
+        const fileName = `Plantilla_${this.entityName}_${this.getTimestamp()}`
 
-        // Estilo de encabezados (color de fondo)
-        const range = XLSX.utils.decode_range(ws['!ref'])
-        for (let C = range.s.c; C <= range.e.c; ++C) {
-          const address = XLSX.utils.encode_col(C) + "1"
-          if (!ws[address]) continue
-          ws[address].s = {
-            font: { bold: true, color: { rgb: "FFFFFF" } },
-            fill: { fgColor: { rgb: "4F6F8F" } },
-            alignment: { horizontal: "center", vertical: "center" }
+        if (format === 'excel') {
+          // Usar ExcelJS para plantilla con estilos profesionales
+          const workbook = new ExcelJS.Workbook()
+          workbook.creator = 'Sistema Innoquim'
+          const worksheet = workbook.addWorksheet('Plantilla')
+          
+          // Logo en encabezado
+          if (this.logoBase64) {
+            try {
+              const base64Data = this.logoBase64.split(',')[1]
+              const imageId = workbook.addImage({
+                base64: base64Data,
+                extension: 'png'
+              })
+              const lastCol = Math.max(0, columnHeaders.length - 1)
+              worksheet.addImage(imageId, {
+                tl: { col: lastCol, row: 1 },
+                ext: { width: 60, height: 60 },
+                editAs: 'absolute'
+              })
+            } catch (err) {
+              console.warn('No se pudo agregar logo:', err)
+            }
           }
+          
+          // Fila 1: TITULO
+          worksheet.mergeCells('A1:' + this.getColumnLetter(columnHeaders.length) + '1')
+          const titleCell = worksheet.getCell('A1')
+          titleCell.value = 'SISTEMA INNOQUIM - PLANTILLA DE IMPORTACIÓN'
+          titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } }
+          titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F6F8F' } }
+          titleCell.alignment = { horizontal: 'center', vertical: 'middle' }
+          titleCell.border = {
+            top: { style: 'thick', color: { argb: 'FF1E3A5F' } },
+            bottom: { style: 'medium', color: { argb: 'FF1E3A5F' } },
+            left: { style: 'thick', color: { argb: 'FF1E3A5F' } },
+            right: { style: 'thick', color: { argb: 'FF1E3A5F' } }
+          }
+          worksheet.getRow(1).height = 35
+          
+          // Fila 2: SUBTITULO
+          worksheet.mergeCells('A2:' + this.getColumnLetter(columnHeaders.length) + '2')
+          const subtitleCell = worksheet.getCell('A2')
+          subtitleCell.value = 'Plantilla para ' + this.entityName
+          subtitleCell.font = { name: 'Arial', size: 12, bold: true, color: { argb: 'FF2C5F7F' } }
+          subtitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F3F8' } }
+          subtitleCell.alignment = { horizontal: 'center', vertical: 'middle' }
+          subtitleCell.border = {
+            bottom: { style: 'medium', color: { argb: 'FF4F6F8F' } },
+            left: { style: 'thick', color: { argb: 'FF1E3A5F' } },
+            right: { style: 'thick', color: { argb: 'FF1E3A5F' } }
+          }
+          worksheet.getRow(2).height = 50
+          
+          // Fila 3: vacia
+          worksheet.getRow(3).height = 8
+          
+          // Fila 4: INSTRUCCIONES
+          worksheet.mergeCells('A4:' + this.getColumnLetter(columnHeaders.length) + '4')
+          const instrCell = worksheet.getCell('A4')
+          instrCell.value = 'INSTRUCCIONES: Llene los datos a partir de la fila 7. No modifique los encabezados. Elimine la fila de ejemplo antes de importar.'
+          instrCell.font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF6B7280' } }
+          instrCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }
+          instrCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true }
+          instrCell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'medium', color: { argb: 'FFF59E0B' } },
+            right: { style: 'medium', color: { argb: 'FFF59E0B' } }
+          }
+          worksheet.getRow(4).height = 35
+          
+          // Fila 5: vacia
+          worksheet.getRow(5).height = 8
+          
+          // Fila 6: ENCABEZADOS DE COLUMNAS
+          const headerRow = worksheet.getRow(6)
+          columnHeaders.forEach((header, index) => {
+            const cell = headerRow.getCell(index + 1)
+            cell.value = header
+            cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F6F8F' } }
+            cell.alignment = { horizontal: 'center', vertical: 'middle' }
+            cell.border = {
+              top: { style: 'thick', color: { argb: 'FF2C5F7F' } },
+              bottom: { style: 'thick', color: { argb: 'FF2C5F7F' } },
+              left: { style: 'medium', color: { argb: 'FFFFFFFF' } },
+              right: { style: 'medium', color: { argb: 'FFFFFFFF' } }
+            }
+          })
+          headerRow.height = 28
+          
+          // Fila 7: DATOS DE EJEMPLO
+          const exampleRow = worksheet.getRow(7)
+          columnHeaders.forEach((header, index) => {
+            const cell = exampleRow.getCell(index + 1)
+            cell.value = templateData[0][header]
+            cell.font = { name: 'Arial', size: 10, color: { argb: 'FF6B7280' }, italic: true }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } }
+            cell.alignment = { horizontal: 'left', vertical: 'middle' }
+            cell.border = {
+              top: { style: 'hair', color: { argb: 'FFE5E7EB' } },
+              bottom: { style: 'hair', color: { argb: 'FFE5E7EB' } },
+              left: { style: 'hair', color: { argb: 'FFE5E7EB' } },
+              right: { style: 'hair', color: { argb: 'FFE5E7EB' } }
+            }
+          })
+          exampleRow.height = 20
+          
+          // Ajustar anchos de columna
+          columnHeaders.forEach((header, index) => {
+            const maxLength = Math.max(header.length, String(templateData[0][header]).length)
+            worksheet.getColumn(index + 1).width = Math.max(maxLength + 5, 15)
+          })
+          
+          // Congelar encabezados
+          worksheet.views = [
+            { state: 'frozen', xSplit: 0, ySplit: 6 }
+          ]
+          
+          // Establecer que por defecto todas las columnas estén desbloqueadas
+          worksheet.columns.forEach(column => {
+            column.eachCell({ includeEmpty: false }, (cell) => {
+              if (!cell.protection) {
+                cell.protection = { locked: false }
+              }
+            })
+          })
+          
+          // Bloquear específicamente solo las filas de encabezado (1-6)
+          for (let i = 1; i <= 6; i++) {
+            const row = worksheet.getRow(i)
+            row.eachCell({ includeEmpty: true }, (cell) => {
+              cell.protection = { locked: true }
+            })
+          }
+          
+          // Asegurar que la fila 7 en adelante estén desbloqueadas
+          for (let i = 7; i <= 100; i++) {
+            const row = worksheet.getRow(i)
+            columnHeaders.forEach((header, colIndex) => {
+              const cell = row.getCell(colIndex + 1)
+              cell.protection = { locked: false }
+            })
+          }
+          
+          // Activar protección de la hoja
+          worksheet.protect('', {
+            selectLockedCells: true,
+            selectUnlockedCells: true,
+            formatCells: true,
+            formatColumns: true,
+            formatRows: true,
+            insertRows: true,
+            insertColumns: false,
+            deleteRows: true,
+            deleteColumns: false,
+            sort: true,
+            autoFilter: true
+          })
+          
+          // Guardar archivo
+          const buffer = await workbook.xlsx.writeBuffer()
+          const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+          const url = window.URL.createObjectURL(blob)
+          const link = document.createElement('a')
+          link.href = url
+          link.download = `${fileName}.xlsx`
+          link.click()
+          window.URL.revokeObjectURL(url)
+        } else if (format === 'csv') {
+          const csv = Papa.unparse(templateData, {
+            quotes: true,
+            delimiter: ",",
+            header: true
+          })
+          const BOM = '\uFEFF'
+          this.downloadFile(BOM + csv, `${fileName}.csv`, 'text/csv;charset=utf-8')
+        } else if (format === 'json') {
+          const json = JSON.stringify(templateData, null, 2)
+          this.downloadFile(json, `${fileName}.json`, 'application/json')
         }
 
-        const wb = XLSX.utils.book_new()
-        XLSX.utils.book_append_sheet(wb, ws, this.entityName.substring(0, 31)) // Max 31 chars
-        XLSX.writeFile(wb, `${this.entityName}_${this.getTimestamp()}.xlsx`)
+        console.log(`Plantilla ${format.toUpperCase()} descargada exitosamente`)
+      } catch (error) {
+        console.error('Error al descargar plantilla:', error)
+        alert('Error al generar la plantilla')
+      }
+    },
+
+    // ========== EXPORTAR ==========
+    async exportExcel() {
+      try {
+        // Crear un nuevo libro de Excel con ExcelJS
+        const workbook = new ExcelJS.Workbook()
+        
+        // Configurar propiedades del documento
+        workbook.creator = 'Sistema Innoquim'
+        workbook.lastModifiedBy = 'Sistema Innoquim'
+        workbook.created = new Date()
+        workbook.modified = new Date()
+        
+        // Crear hoja
+        const worksheet = workbook.addWorksheet(this.entityName.substring(0, 31))
+        
+        // ===== AGREGAR LOGO EN ENCABEZADO (ESQUINA DERECHA) =====
+        if (this.logoBase64) {
+          try {
+            const base64Data = this.logoBase64.split(',')[1]
+            const imageId = workbook.addImage({
+              base64: base64Data,
+              extension: 'png'
+            })
+            
+            // Logo pequeño en la esquina derecha de la fila 2
+            const lastCol = Math.max(0, this.columns.length - 1)
+            worksheet.addImage(imageId, {
+              tl: { col: lastCol, row: 1 },
+              ext: { width: 60, height: 60 },
+              editAs: 'absolute'
+            })
+          } catch (err) {
+            console.warn('No se pudo agregar logo en Excel:', err)
+          }
+        }
+        
+        const now = new Date()
+        const fechaHora = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        
+        // ===== TITULO PRINCIPAL (Fila 1) =====
+        worksheet.mergeCells('A1:' + this.getColumnLetter(this.columns.length) + '1')
+        const titleCell = worksheet.getCell('A1')
+        titleCell.value = 'SISTEMA INNOQUIM'
+        titleCell.font = { name: 'Arial', size: 18, bold: true, color: { argb: 'FFFFFFFF' } }
+        titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F6F8F' } }
+        titleCell.alignment = { horizontal: 'center', vertical: 'middle' }
+        titleCell.border = {
+          top: { style: 'thick', color: { argb: 'FF1E3A5F' } },
+          bottom: { style: 'medium', color: { argb: 'FF1E3A5F' } },
+          left: { style: 'thick', color: { argb: 'FF1E3A5F' } },
+          right: { style: 'thick', color: { argb: 'FF1E3A5F' } }
+        }
+        worksheet.getRow(1).height = 35
+        
+        // ===== SUBTITULO (Fila 2) =====
+        worksheet.mergeCells('A2:' + this.getColumnLetter(this.columns.length) + '2')
+        const subtitleCell = worksheet.getCell('A2')
+        subtitleCell.value = 'Reporte de ' + this.entityName
+        subtitleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FF2C5F7F' } }
+        subtitleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE8F3F8' } }
+        subtitleCell.alignment = { horizontal: 'center', vertical: 'middle' }
+        subtitleCell.border = {
+          bottom: { style: 'medium', color: { argb: 'FF4F6F8F' } },
+          left: { style: 'thick', color: { argb: 'FF1E3A5F' } },
+          right: { style: 'thick', color: { argb: 'FF1E3A5F' } }
+        }
+        worksheet.getRow(2).height = 50
+        
+        // Fila 3 vacia
+        worksheet.getRow(3).height = 8
+        
+        // ===== INFORMACION (Filas 4-6) =====
+        const infoData = [
+          ['Fecha de exportacion:', fechaHora],
+          ['Total de registros:', this.data.length],
+          ['Generado por:', 'Sistema de Gestion de Inventario - Innoquim']
+        ]
+        
+        infoData.forEach((info, index) => {
+          const rowNum = 4 + index
+          const labelCell = worksheet.getCell('A' + rowNum)
+          const valueCell = worksheet.getCell('B' + rowNum)
+          
+          labelCell.value = info[0]
+          labelCell.font = { bold: true, size: 10, color: { argb: 'FF4F6F8F' } }
+          labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4F8' } }
+          labelCell.alignment = { horizontal: 'right', vertical: 'middle' }
+          labelCell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            left: { style: 'medium', color: { argb: 'FF4F6F8F' } },
+            right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
+          }
+          
+          valueCell.value = info[1]
+          valueCell.font = { size: 10, color: { argb: 'FF1F2937' } }
+          valueCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } }
+          valueCell.alignment = { horizontal: 'left', vertical: 'middle' }
+          valueCell.border = {
+            top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+            right: { style: 'medium', color: { argb: 'FF4F6F8F' } }
+          }
+          
+          // Fusionar desde B hasta la ultima columna de datos
+          const endCol = this.getColumnLetter(this.columns.length)
+          worksheet.mergeCells('B' + rowNum + ':' + endCol + rowNum)
+          
+          worksheet.getRow(rowNum).height = 20
+        })
+        
+        // Filas 7-8 vacias
+        worksheet.getRow(7).height = 8
+        worksheet.getRow(8).height = 8
+        
+        // ===== HEADERS DE DATOS (Fila 9) =====
+        const headerRow = worksheet.getRow(9)
+        this.columns.forEach((col, index) => {
+          const cell = headerRow.getCell(index + 1)
+          cell.value = col.label
+          cell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FFFFFFFF' } }
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4F6F8F' } }
+          cell.alignment = { horizontal: 'center', vertical: 'middle' }
+          cell.border = {
+            top: { style: 'thick', color: { argb: 'FF2C5F7F' } },
+            bottom: { style: 'thick', color: { argb: 'FF2C5F7F' } },
+            left: { style: 'medium', color: { argb: 'FFFFFFFF' } },
+            right: { style: 'medium', color: { argb: 'FFFFFFFF' } }
+          }
+        })
+        headerRow.height = 28
+        
+        // ===== DATOS (Desde fila 10) =====
+        this.data.forEach((item, rowIndex) => {
+          const row = worksheet.getRow(10 + rowIndex)
+          const isEven = rowIndex % 2 === 0
+          const bgColor = isEven ? 'FFFFFFFF' : 'FFF8FAFC'
+          
+          this.columns.forEach((col, colIndex) => {
+            const cell = row.getCell(colIndex + 1)
+            const value = item[col.key]
+            cell.value = value !== undefined && value !== null ? value : '-'
+            cell.font = { size: 10, color: { argb: 'FF1F2937' } }
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } }
+            cell.alignment = { horizontal: 'left', vertical: 'middle' }
+            cell.border = {
+              top: { style: 'hair', color: { argb: 'FFE5E7EB' } },
+              bottom: { style: 'hair', color: { argb: 'FFE5E7EB' } },
+              left: { style: 'hair', color: { argb: 'FFE5E7EB' } },
+              right: { style: 'hair', color: { argb: 'FFE5E7EB' } }
+            }
+          })
+        })
+        
+        // ===== AJUSTAR ANCHOS DE COLUMNA =====
+        this.columns.forEach((col, index) => {
+          let maxLength = col.label.length
+          if (index === 0) {
+            worksheet.getColumn(index + 1).width = 30
+          } else if (index === this.columns.length - 1) {
+            // Ultima columna mas ancha para el logo
+            this.data.slice(0, 100).forEach(item => {
+              const value = String(item[col.key] || '')
+              maxLength = Math.max(maxLength, value.length)
+            })
+            worksheet.getColumn(index + 1).width = Math.max(Math.min(Math.max(maxLength + 2, 15), 50), 12)
+          } else {
+            this.data.slice(0, 100).forEach(item => {
+              const value = String(item[col.key] || '')
+              maxLength = Math.max(maxLength, value.length)
+            })
+            worksheet.getColumn(index + 1).width = Math.min(Math.max(maxLength + 2, 15), 50)
+          }
+        })
+        
+        // ===== AUTO-FILTRO =====
+        worksheet.autoFilter = {
+          from: { row: 9, column: 1 },
+          to: { row: 9, column: this.columns.length }
+        }
+        
+        // ===== CONGELAR PANELES =====
+        worksheet.views = [
+          { state: 'frozen', xSplit: 0, ySplit: 9 }
+        ]
+        
+        // ===== GUARDAR ARCHIVO =====
+        const buffer = await workbook.xlsx.writeBuffer()
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = this.entityName + '_' + this.getTimestamp() + '.xlsx'
+        link.click()
+        window.URL.revokeObjectURL(url)
+        
         this.close()
       } catch (error) {
         console.error('Error al exportar Excel:', error)
@@ -268,24 +713,27 @@ export default {
 
     exportCSV() {
       try {
-        // Preparar datos con encabezados personalizados
-        const dataToExport = this.data.map(item => {
-          const row = {}
-          this.columns.forEach(col => {
-            row[col.label] = item[col.key] !== undefined && item[col.key] !== null ? item[col.key] : '-'
-          })
-          return row
-        })
-
-        const csv = Papa.unparse(dataToExport, {
-          quotes: true,
-          delimiter: ",",
-          header: true
+        const now = new Date()
+        const fechaHora = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        
+        // BOM para correcta visualizacion en Excel
+        const BOM = '\uFEFF'
+        let csvContent = BOM
+        
+        // Encabezados simples
+        csvContent += this.columns.map(col => '"' + col.label + '"').join(',') + '\n'
+        
+        // Datos
+        this.data.forEach((item) => {
+          csvContent += this.columns.map(col => {
+            const value = item[col.key]
+            const finalValue = value !== undefined && value !== null ? String(value) : ''
+            return '"' + finalValue.replace(/"/g, '""') + '"'
+          }).join(',') + '\n'
         })
         
-        // Agregar BOM para correcta visualización de caracteres especiales en Excel
-        const BOM = '\uFEFF'
-        this.downloadFile(BOM + csv, `${this.entityName}_${this.getTimestamp()}.csv`, 'text/csv;charset=utf-8')
+        // Descargar archivo
+        this.downloadFile(csvContent, this.entityName + '_' + this.getTimestamp() + '.csv', 'text/csv;charset=utf-8')
         this.close()
       } catch (error) {
         console.error('Error al exportar CSV:', error)
@@ -295,14 +743,18 @@ export default {
 
     exportJSON() {
       try {
+        const now = new Date()
+        const fechaHora = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        
         const exportData = {
-          metadata: {
-            entity: this.entityName,
-            exportDate: new Date().toISOString(),
-            totalRecords: this.data.length,
-            exportedBy: 'Sistema Innoquim'
-          },
-          columns: this.columns,
+          system: "SISTEMA INNOQUIM",
+          entity: this.entityName,
+          exportDate: fechaHora,
+          totalRecords: this.data.length,
+          columns: this.columns.map(col => ({
+            key: col.key,
+            label: col.label
+          })),
           data: this.data
         }
         const json = JSON.stringify(exportData, null, 2)
@@ -322,26 +774,75 @@ export default {
           format: 'a4'
         })
         
-        // Encabezado del documento
+        const pageWidth = doc.internal.pageSize.getWidth()
+        const pageHeight = doc.internal.pageSize.getHeight()
+        
+        // ===== ENCABEZADO ESTILO EXCEL =====
+        
+        // Fila 1: TITULO PRINCIPAL (azul oscuro)
         doc.setFillColor(79, 111, 143)
-        doc.rect(0, 0, 297, 35, 'F')
-        
-        // Logo/Título
+        doc.rect(0, 0, pageWidth, 12, 'F')
         doc.setTextColor(255, 255, 255)
-        doc.setFontSize(20)
+        doc.setFontSize(16)
         doc.setFont('helvetica', 'bold')
-        doc.text('SISTEMA INNOQUIM', 14, 15)
+        doc.text('SISTEMA INNOQUIM', pageWidth / 2, 8, { align: 'center' })
         
-        doc.setFontSize(14)
-        doc.setFont('helvetica', 'normal')
-        doc.text(`Reporte de ${this.entityName}`, 14, 24)
+        // Fila 2: SUBTITULO (celeste)
+        doc.setFillColor(232, 243, 248)
+        doc.rect(0, 12, pageWidth, 10, 'F')
+        doc.setTextColor(44, 95, 127)
+        doc.setFontSize(13)
+        doc.setFont('helvetica', 'bold')
+        doc.text('Reporte de ' + this.entityName, pageWidth / 2, 18.5, { align: 'center' })
         
-        // Información adicional
+        // Logo en fila 2 (esquina derecha, más grande)
+        if (this.logoBase64) {
+          try {
+            doc.addImage(this.logoBase64, 'PNG', pageWidth - 30, 13, 26, 13)
+          } catch (err) {
+            console.warn('Error al agregar logo en encabezado:', err)
+          }
+        }
+        
+        // Fila 3: espacio vacio
+        doc.setFillColor(255, 255, 255)
+        doc.rect(0, 22, pageWidth, 3, 'F')
+        
+        // Filas 4-6: INFORMACION (estilo Excel con etiquetas)
+        doc.setTextColor(79, 111, 143)
         doc.setFontSize(9)
-        const fecha = new Date()
-        const fechaHora = `${fecha.toLocaleDateString('es-PE')} ${fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`
-        doc.text(`Fecha de exportacion: ${fechaHora}`, 14, 30)
-        doc.text(`Total de registros: ${this.data.length}`, 180, 30)
+        doc.setFont('helvetica', 'bold')
+        
+        const now = new Date()
+        const fechaHora = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
+        
+        // Fila 4: Fecha de exportacion
+        doc.setFillColor(240, 244, 248)
+        doc.rect(14, 25, 55, 6, 'F')
+        doc.text('Fecha de exportacion:', 68, 29, { align: 'right' })
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(31, 41, 55)
+        doc.text(fechaHora, 70, 29)
+        
+        // Fila 5: Total de registros
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(79, 111, 143)
+        doc.setFillColor(240, 244, 248)
+        doc.rect(14, 31, 55, 6, 'F')
+        doc.text('Total de registros:', 68, 35, { align: 'right' })
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(31, 41, 55)
+        doc.text(String(this.data.length), 70, 35)
+        
+        // Fila 6: Generado por
+        doc.setFont('helvetica', 'bold')
+        doc.setTextColor(79, 111, 143)
+        doc.setFillColor(240, 244, 248)
+        doc.rect(14, 37, 55, 6, 'F')
+        doc.text('Generado por:', 68, 41, { align: 'right' })
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(31, 41, 55)
+        doc.text('Sistema de Gestion de Inventario - Innoquim', 70, 41)
         
         // Preparar datos de la tabla
         const tableData = this.data.map(item => 
@@ -358,7 +859,7 @@ export default {
         autoTable(doc, {
           head: [headers],
           body: tableData,
-          startY: 40,
+          startY: 48,
           theme: 'striped',
           styles: { 
             fontSize: 8,
@@ -391,7 +892,7 @@ export default {
             doc.setFont('helvetica', 'normal')
             
             doc.text(
-              `Pagina ${pageNumber} de ${pageCount}`,
+              'Pagina ' + pageNumber + ' de ' + pageCount,
               14,
               doc.internal.pageSize.height - 10
             )
@@ -454,9 +955,41 @@ export default {
             const data = new Uint8Array(e.target.result)
             const workbook = XLSX.read(data, { type: 'array' })
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-            this.parsedData = XLSX.utils.sheet_to_json(firstSheet)
+            
+            // Verificar si es una plantilla de Innoquim (tiene encabezados decorativos)
+            const cellA1 = firstSheet['A1']
+            const isInnoquimTemplate = cellA1 && cellA1.v && cellA1.v.toString().includes('SISTEMA INNOQUIM')
+            
+            if (isInnoquimTemplate) {
+              // Plantilla profesional: headers en fila 6 (índice 5), datos desde fila 7 (índice 6)
+              // Primero obtener los headers de la fila 6
+              const headerRange = XLSX.utils.decode_range(firstSheet['!ref'])
+              const headers = []
+              for (let col = headerRange.s.c; col <= headerRange.e.c; col++) {
+                const cellAddress = XLSX.utils.encode_cell({ r: 5, c: col }) // Fila 6 (0-indexed)
+                const cell = firstSheet[cellAddress]
+                headers.push(cell ? cell.v : `Column${col}`)
+              }
+              
+              // Luego obtener los datos desde la fila 7 usando esos headers
+              this.parsedData = XLSX.utils.sheet_to_json(firstSheet, { 
+                range: 6, // Empezar desde fila 7 (0-indexed)
+                header: headers, // Usar los headers de la fila 6
+                defval: '' // Valor por defecto para celdas vacías
+              })
+            } else {
+              // Plantilla simple o archivo externo: primera fila son headers
+              this.parsedData = XLSX.utils.sheet_to_json(firstSheet)
+            }
+            
+            // Guardar las columnas originales del archivo
+            if (this.parsedData.length > 0) {
+              this.originalColumns = Object.keys(this.parsedData[0]).filter(k => !k.startsWith('_'))
+            }
+            
             console.log('Excel parseado:', this.parsedData.length, 'filas')
             console.log('Primera fila:', this.parsedData[0])
+            console.log('Columnas originales:', this.originalColumns)
             resolve()
           } catch (error) {
             reject(error)
@@ -512,37 +1045,12 @@ export default {
         
         // Validaciones según el tipo de entidad
         if (this.entityName === 'Productos' || this.entityName === 'producto') {
-          // Mapeo de unidades de texto a IDs (según la base de datos)
-          const unidadTextoAId = {
-            'kg': 2, 'kilogramo': 2, 'kilo': 2,
-            'g': 3, 'gramo': 3, 'gramos': 3,
-            'l': 4, 'litro': 4, 'litros': 4,
-            'ml': 5, 'mililitro': 5, 'mililitros': 5,
-            'u': 6, 'unidad': 6, 'unidades': 6, 'pieza': 6, 'piezas': 6,
-            'caja': 7, 'cajas': 7,
-            'gal': 8, 'galón': 8, 'galon': 8, 'galones': 8,
-            'bbl': 9, 'barril': 9, 'barriles': 9,
-            'botella': 4, 'botellas': 4, 'frasco': 4 // Asumiendo líquido = litros
-          }
-
-          // Extraer unidad del texto
-          let unidadId = 2 // Por defecto Kilogramo (kg)
-          const unidadTexto = (item.unit || item.unidad || item['Unidad de Medida'] || item.unidad_medida || '').toString().toLowerCase()
-          
-          // Buscar coincidencia en el texto de unidad
-          for (const [texto, id] of Object.entries(unidadTextoAId)) {
-            if (unidadTexto.includes(texto)) {
-              unidadId = id
-              break
-            }
-          }
-
           // Normalizar nombres de campos - IMPORTANTE: asignar directamente al item
           item.product_code = item.product_code || item.codigo || item.code || item['Código'] || item['código'] || ''
           item.name = item.name || item.nombre || item['Nombre'] || item['Nombre del Producto'] || item.producto || ''
           item.description = item.description || item.descripcion || item['Descripción'] || item['descripción'] || ''
-          item.unit = unidadId
-          item.weight = parseFloat(item.weight || item.peso || item['Peso (kg)'] || item.peso_kg || 0)
+          item.unit = (item.unit || item.unidad || item['Unidad'] || item['Unidad de Medida'] || item.unidad_medida || 'kg').toString().trim()
+          item.weight = parseFloat(item.weight || item.peso || item['Peso'] || item['Peso (kg)'] || item.peso_kg || 0)
           
           if (idx === 0) {
             console.log('validateData - primera fila después de normalizar:', {
@@ -574,33 +1082,52 @@ export default {
           }
         } 
         else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
-          // Normalizar campos de clientes
-          item.ruc = item.ruc || item.RUC || item['RUC'] || ''
-          item.nombre_empresa = item.nombre_empresa || item.empresa || item['Empresa'] || item['Nombre Empresa'] || ''
-          item.nombre_contacto = item.nombre_contacto || item.contacto || item['Contacto'] || item['Nombre Contacto'] || ''
-          item.telefono = item.telefono || item['Teléfono'] || item['Telefono'] || item.phone || ''
-          item.email = item.email || item.Email || item['Email'] || item.correo || ''
-          item.direccion = item.direccion || item['Dirección'] || item['Direccion'] || item.address || ''
-
-          if (idx === 0) {
-            console.log('validateData - cliente normalizado:', item)
+          // Debug: ver qué columnas tiene realmente el item
+          if (idx === 0 || idx === 1) {
+            console.log(`Fila ${idx + 1} - Columnas disponibles:`, Object.keys(item))
+            console.log(`Fila ${idx + 1} - Valores:`, item)
+          }
+          
+          // Buscar columnas de forma flexible (case-insensitive y sin espacios)
+          const findValue = (possibleNames) => {
+            for (const key of Object.keys(item)) {
+              const normalizedKey = key.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+              for (const name of possibleNames) {
+                const normalizedName = name.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+                if (normalizedKey === normalizedName) {
+                  return item[key]
+                }
+              }
+            }
+            return ''
+          }
+          
+          // Normalizar campos de clientes buscando flexiblemente
+          const rucValue = findValue(['RUC', 'ruc', 'Ruc'])
+          const empresaValue = findValue(['Nombre Empresa', 'nombre_empresa', 'Empresa', 'empresa', 'NombreEmpresa'])
+          const contactoValue = findValue(['Nombre Contacto', 'nombre_contacto', 'Contacto', 'contacto', 'NombreContacto'])
+          const telefonoValue = findValue(['Teléfono', 'Telefono', 'telefono', 'phone', 'Phone'])
+          const emailValue = findValue(['Email', 'email', 'correo', 'Correo'])
+          const direccionValue = findValue(['Dirección', 'Direccion', 'direccion', 'address', 'Address'])
+          
+          // Agregar campos normalizados (para la importación posterior)
+          item._normalized = {
+            ruc: rucValue,
+            nombre_empresa: empresaValue,
+            nombre_contacto: contactoValue,
+            telefono: telefonoValue,
+            email: emailValue,
+            direccion: direccionValue
           }
 
-          if (!item.ruc || !item.nombre_empresa) {
+          console.log(`Fila ${idx + 1} - Normalizado:`, item._normalized)
+
+          if (!rucValue || !empresaValue) {
             item._hasError = true
             this.validationErrors.push({
               row: rowNum,
               message: 'Faltan campos obligatorios (RUC o Empresa)',
               severity: 'error'
-            })
-          }
-
-          if (!item.email) {
-            item._hasWarning = true
-            this.validationErrors.push({
-              row: rowNum,
-              message: 'Email no especificado',
-              severity: 'warning'
             })
           }
         }
@@ -655,18 +1182,20 @@ export default {
             product_code: String(item.product_code || '').trim(),
             name: String(item.name || '').trim(),
             description: String(item.description || '').trim(),
-            unit: Number(item.unit) || 2,
-            weight: Number(item.weight) || 0.1
+            unit: String(item.unit || 'kg').trim(),
+            weight: parseFloat(item.weight) || 0.1
           }
         } 
         else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
+          // Usar los campos normalizados del objeto _normalized
+          const normalized = item._normalized || {}
           return {
-            ruc: String(item.ruc || '').trim(),
-            nombre_empresa: String(item.nombre_empresa || '').trim(),
-            nombre_contacto: String(item.nombre_contacto || '').trim(),
-            telefono: String(item.telefono || '').trim(),
-            email: String(item.email || '').trim(),
-            direccion: String(item.direccion || '').trim()
+            ruc: String(normalized.ruc || '').trim(),
+            nombre_empresa: String(normalized.nombre_empresa || '').trim(),
+            nombre_contacto: String(normalized.nombre_contacto || '').trim(),
+            telefono: String(normalized.telefono || '').trim(),
+            email: String(normalized.email || '').trim(),
+            direccion: String(normalized.direccion || '').trim()
           }
         }
         else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
@@ -700,10 +1229,35 @@ export default {
       return new Date().toISOString().slice(0, 19).replace(/:/g, '-')
     },
 
-    formatFileSize(bytes) {
-      if (bytes < 1024) return bytes + ' B'
-      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
-      return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+    getColumnLetter(colNumber) {
+      let letter = ''
+      while (colNumber > 0) {
+        const remainder = (colNumber - 1) % 26
+        letter = String.fromCharCode(65 + remainder) + letter
+        colNumber = Math.floor((colNumber - 1) / 26)
+      }
+      return letter
+    },
+
+    loadLogoAsBase64() {
+      const img = new Image()
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas')
+          canvas.width = img.width
+          canvas.height = img.height
+          const ctx = canvas.getContext('2d')
+          ctx.drawImage(img, 0, 0)
+          this.logoBase64 = canvas.toDataURL('image/png')
+          console.log('✅ Logo cargado como base64')
+        } catch (err) {
+          console.error('Error al convertir logo:', err)
+        }
+      }
+      img.onerror = (err) => {
+        console.error('Error al cargar logo:', err)
+      }
+      img.src = logo
     },
 
     downloadFile(content, filename, type) {
@@ -714,6 +1268,14 @@ export default {
       a.download = filename
       a.click()
       URL.revokeObjectURL(url)
+    },
+
+    formatFileSize(bytes) {
+      if (bytes === 0) return '0 Bytes'
+      const k = 1024
+      const sizes = ['Bytes', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
     }
   }
 }
@@ -835,6 +1397,107 @@ export default {
   font-size: 14px;
   font-weight: 600;
   color: #374151;
+}
+
+/* Sección de descarga de plantilla */
+.template-download-section {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  border: 1px solid #BFDBFE;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.template-title {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1E40AF;
+}
+
+.template-help {
+  font-size: 13px;
+  color: #1E40AF;
+  margin: 0 0 16px 0;
+  font-weight: 500;
+}
+
+.template-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.btn-template {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Inter', sans-serif;
+}
+
+.btn-template .icon {
+  font-size: 28px;
+}
+
+.btn-template .label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.excel-template {
+  border-color: #10B981;
+}
+
+.excel-template:hover {
+  background: #D1FAE5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+
+.csv-template {
+  border-color: #F59E0B;
+}
+
+.csv-template:hover {
+  background: #FEF3C7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
+.json-template {
+  border-color: #3B82F6;
+}
+
+.json-template .icon {
+  color: #3B82F6;
+  font-weight: bold;
+}
+
+.json-template:hover {
+  background: #DBEAFE;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.btn-template:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 600px) {
+  .template-buttons {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Área de subida de archivos */

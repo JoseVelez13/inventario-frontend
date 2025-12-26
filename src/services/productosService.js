@@ -30,7 +30,22 @@ class ProductosService {
    * @returns {Promise} Producto creado
    */
   async createProducto(productoData) {
-    const response = await api.post('/productos/', productoData)
+    // Asegurar que los datos tengan el formato correcto
+    const cleanData = {
+      product_code: String(productoData.product_code),
+      name: String(productoData.name),
+      description: String(productoData.description),
+      unit: Number(productoData.unit), // ID de la unidad (ForeignKey)
+      weight: Number(productoData.weight)
+    }
+    
+    console.log('productosService.createProducto - Datos limpios:', cleanData)
+    
+    const response = await api.post('/productos/', cleanData, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
     return response.data
   }
 

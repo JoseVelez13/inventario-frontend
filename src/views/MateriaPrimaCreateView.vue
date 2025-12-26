@@ -126,7 +126,7 @@
 
 <script>
 import HeaderGlobal from '../components/HeaderGlobal.vue'
-import Breadcrumbs from '../components/Breadcrumbs.vue'
+import Breadcrumbs from '../components/Breadcrumbs.vue'  
 import Tooltip from '../components/Tooltip.vue'
 import Notification from '../components/Notification.vue'
 import '../assets/styles/MateriasPrimas.css'

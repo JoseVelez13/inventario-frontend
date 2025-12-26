@@ -217,6 +217,7 @@ import ImportExportDialog from '../components/ImportExportDialog.vue'
 import ProductoFormModal from '../components/ProductoFormModal.vue'
 import '../assets/styles/Clientes.css'
 import productosService from '../services/productosService'
+import unidadesService from '../services/unidadesService'
 
 export default {
   name: 'ProductosListView',
@@ -227,7 +228,7 @@ export default {
       search: '',
       productos: [],
       allProductos: [],
-      unidades: [],
+      unidades: [], // Lista de unidades para mapeo
       loading: false,
       error: '',
       sortField: null,
@@ -452,16 +453,35 @@ export default {
       let successCount = 0
       let errorCount = 0
 
+      // Cargar unidades si no están cargadas
+      if (this.unidades.length === 0) {
+        try {
+          const response = await unidadesService.getUnidades()
+          this.unidades = response.results || response
+        } catch (e) {
+          console.error('Error al cargar unidades:', e)
+          // Usar valores por defecto si falla
+          this.unidades = [
+            { id: 2, symbol: 'kg', name: 'Kilogramo' },
+            { id: 3, symbol: 'g', name: 'Gramo' },
+            { id: 4, symbol: 'l', name: 'Litro' },
+            { id: 5, symbol: 'ml', name: 'Mililitro' },
+            { id: 6, symbol: 'u', name: 'Unidad' }
+          ]
+        }
+      }
+
       for (const item of importedData) {
         try {
-          // Limpiar objeto: solo enviar campos que el backend espera
-          // Asegurarse de que sean valores simples, no arrays
+          // Convertir texto de unidad a ID
+          const unitId = unidadesService.mapTextToId(item.unit, this.unidades)
+          
           const cleanData = {
             product_code: String(item.product_code || '').trim(),
             name: String(item.name || '').trim(),
             description: String(item.description || '').trim(),
-            unit: Number(item.unit) || 1,
-            weight: Number(item.weight) || 0.1
+            unit: unitId,
+            weight: parseFloat(item.weight) || 0.1
           }
           
           console.log('Enviando al backend:', cleanData)
