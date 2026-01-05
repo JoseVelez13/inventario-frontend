@@ -19,8 +19,11 @@
                   maxlength="13" 
                   minlength="13" 
                   inputmode="numeric" 
-                  placeholder="Ej: 1234567890001" 
+                  pattern="[0-9]{13}"
+                  placeholder="Ej: 1234567890001"
+                  title="El RUC debe tener exactamente 13 dígitos numéricos"
                 />
+                <small style="color: #666; font-size: 0.85em; display: block; margin-top: 4px;">Debe tener 13 dígitos numéricos</small>
               </div>
 
               <div class="form-field">
@@ -179,11 +182,14 @@ async function submit() {
       tipo_producto: form.tipo_producto || null
     }
 
+    console.log('Enviando proveedor:', payload)
+
     if (props.editId) {
       await proveedoresService.updateProveedor(props.editId, payload)
       emit('saved', { action: 'updated' })
     } else {
-      await proveedoresService.createProveedor(payload)
+      const response = await proveedoresService.createProveedor(payload)
+      console.log('Respuesta del servidor:', response)
       emit('saved', { action: 'created' })
     }
 
@@ -191,7 +197,26 @@ async function submit() {
       close()
     }, 100)
   } catch (e) {
-    console.error('Error guardando proveedor', e)
+    console.error('Error guardando proveedor:', e)
+    console.error('Detalles del error:', e.response?.data)
+    
+    // Procesar errores de validación del backend
+    if (e.response?.data) {
+      const errors = e.response.data
+      let errorMsg = 'Error de validación:\n\n'
+      
+      for (const [field, messages] of Object.entries(errors)) {
+        if (Array.isArray(messages)) {
+          errorMsg += `${field}: ${messages.join(', ')}\n`
+        } else {
+          errorMsg += `${field}: ${messages}\n`
+        }
+      }
+      
+      alert(errorMsg)
+    } else {
+      alert('Error al guardar: ' + (e.message || 'Error desconocido'))
+    }
   }
 }
 </script>
