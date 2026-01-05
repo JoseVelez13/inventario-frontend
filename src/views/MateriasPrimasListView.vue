@@ -234,6 +234,7 @@ import Notification from '../components/Notification.vue'
 import MateriaPrimaFormModal from '../components/MateriaPrimaFormModal.vue'
 import '../assets/styles/MateriasPrimas.css'
 import materiasPrimasService from '../services/materiasPrimasService'
+import unidadesService from '../services/unidadesService'
 
 export default {
   name: 'MateriasPrimasListView',
@@ -243,6 +244,7 @@ export default {
     return {
       search: '',
       materiasPrimas: [],
+      unidades: [],
       loading: false,
       error: '',
       sortField: 'materia_prima_id',
@@ -479,12 +481,52 @@ export default {
       let successCount = 0
       let errorCount = 0
 
+      // Cargar unidades si no están cargadas
+      if (this.unidades.length === 0) {
+        try {
+          const response = await unidadesService.getUnidades()
+          this.unidades = response.results || response
+        } catch (e) {
+          console.error('Error al cargar unidades:', e)
+          // Usar valores por defecto
+          this.unidades = [
+            { id: 2, symbol: 'kg', name: 'Kilogramo' },
+            { id: 3, symbol: 'g', name: 'Gramo' },
+            { id: 4, symbol: 'l', name: 'Litro' }
+          ]
+        }
+      }
+
       for (const materiaPrima of importedData) {
         try {
-          await materiasPrimasService.createMateriaPrima(materiaPrima)
+          // Convertir texto de unidad a ID
+          const unidadId = unidadesService.mapTextToId(materiaPrima.unidad_text, this.unidades)
+          
+          const cleanData = {
+            codigo: String(materiaPrima.codigo || '').trim(),
+            nombre: String(materiaPrima.nombre || '').trim(),
+            descripcion: String(materiaPrima.descripcion || '').trim(),
+            unidad_id: unidadId,
+            densidad: parseFloat(materiaPrima.densidad) || 0,
+            stock_minimo: parseInt(materiaPrima.stock_minimo) || 0,
+            stock_maximo: parseInt(materiaPrima.stock_maximo) || 0
+          }
+          
+          console.log('Importando materia prima:', {
+            original: materiaPrima,
+            unidadText: materiaPrima.unidad_text,
+            unidadId: unidadId,
+            cleanData: cleanData
+          })
+          
+          await materiasPrimasService.createMateriaPrima(cleanData)
           successCount++
         } catch (e) {
-          console.error('Error al importar materia prima:', e)
+          console.error('Error al importar materia prima:', {
+            item: materiaPrima,
+            error: e.message,
+            response: e.response?.data
+          })
           errorCount++
         }
       }

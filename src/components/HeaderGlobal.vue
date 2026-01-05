@@ -75,6 +75,22 @@
           </div>
 
           <div class="nav-section">
+            <div class="nav-section-title">Catálogos</div>
+            <router-link to="/proveedores" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-truck"></i>
+              <span>Proveedores</span>
+            </router-link>
+            <router-link to="/almacenes" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-warehouse"></i>
+              <span>Almacenes</span>
+            </router-link>
+            <router-link to="/unidades" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-ruler"></i>
+              <span>Unidades</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
             <div class="nav-section-title">Sistema</div>
             <button class="sidebar-item" @click="logout">
               <i class="fa-solid fa-right-from-bracket"></i>

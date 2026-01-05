@@ -293,6 +293,19 @@ export default {
               'Dirección': 'Av. Principal 123, Quito'
             }
           ]
+        } else if (this.entityName === 'Proveedores' || this.entityName === 'proveedor') {
+          columnHeaders = ['RUC', 'Nombre Empresa', 'Nombre Contacto', 'Teléfono', 'Email', 'Dirección', 'Tipo Producto']
+          templateData = [
+            {
+              'RUC': '9876543210001',
+              'Nombre Empresa': 'Química Industrial XYZ Ltda.',
+              'Nombre Contacto': 'María González',
+              'Teléfono': '0991234567',
+              'Email': 'ventas@quimicaxyz.com',
+              'Dirección': 'Parque Industrial Norte, Km 5',
+              'Tipo Producto': 'Materias primas químicas'
+            }
+          ]
         } else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
           columnHeaders = ['Código', 'Nombre', 'Descripción', 'Unidad', 'Densidad', 'Stock Mínimo', 'Stock Máximo']
           templateData = [
@@ -304,6 +317,28 @@ export default {
               'Densidad': '1.2',
               'Stock Mínimo': '100',
               'Stock Máximo': '1000'
+            }
+          ]
+        } else if (this.entityName === 'Almacenes' || this.entityName === 'almacen') {
+          columnHeaders = ['Nombre', 'Dirección']
+          templateData = [
+            {
+              'Nombre': 'Bodega Principal',
+              'Dirección': 'Parque Industrial Norte, Km 5'
+            }
+          ]
+        } else if (this.entityName === 'Unidades' || this.entityName === 'unidad') {
+          columnHeaders = ['Nombre', 'Símbolo', 'Factor de Conversión']
+          templateData = [
+            {
+              'Nombre': 'Kilogramo',
+              'Símbolo': 'kg',
+              'Factor de Conversión': '1.0'
+            },
+            {
+              'Nombre': 'Gramo',
+              'Símbolo': 'g',
+              'Factor de Conversión': '0.001'
             }
           ]
         } else {
@@ -1045,24 +1080,41 @@ export default {
         
         // Validaciones según el tipo de entidad
         if (this.entityName === 'Productos' || this.entityName === 'producto') {
-          // Normalizar nombres de campos - IMPORTANTE: asignar directamente al item
-          item.product_code = item.product_code || item.codigo || item.code || item['Código'] || item['código'] || ''
-          item.name = item.name || item.nombre || item['Nombre'] || item['Nombre del Producto'] || item.producto || ''
-          item.description = item.description || item.descripcion || item['Descripción'] || item['descripción'] || ''
-          item.unit = (item.unit || item.unidad || item['Unidad'] || item['Unidad de Medida'] || item.unidad_medida || 'kg').toString().trim()
-          item.weight = parseFloat(item.weight || item.peso || item['Peso'] || item['Peso (kg)'] || item.peso_kg || 0)
-          
-          if (idx === 0) {
-            console.log('validateData - primera fila después de normalizar:', {
-              product_code: item.product_code,
-              name: item.name,
-              description: item.description,
-              unit: item.unit,
-              weight: item.weight
-            })
+          // Buscar columnas de forma flexible (case-insensitive y sin espacios)
+          const findValue = (possibleNames) => {
+            for (const key of Object.keys(item)) {
+              const normalizedKey = key.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+              for (const name of possibleNames) {
+                const normalizedName = name.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+                if (normalizedKey === normalizedName) {
+                  return item[key]
+                }
+              }
+            }
+            return ''
           }
           
-          if (!item.product_code || !item.name) {
+          // Extraer valores flexiblemente
+          const codigoValue = findValue(['Código', 'codigo', 'code', 'product_code', 'productcode'])
+          const nombreValue = findValue(['Nombre', 'nombre', 'name', 'producto'])
+          const descripcionValue = findValue(['Descripción', 'Descripcion', 'descripcion', 'description'])
+          const unidadValue = findValue(['Unidad', 'unidad', 'unit', 'UnidaddeMedida', 'unidad_medida'])
+          const pesoValue = findValue(['Peso', 'peso', 'weight', 'Peso(kg)'])
+          
+          // Guardar valores normalizados
+          item._normalized = {
+            product_code: codigoValue || '',
+            name: nombreValue || '',
+            description: descripcionValue || '',
+            unit: (unidadValue || 'kg').toString().trim(),
+            weight: parseFloat(pesoValue) || 0.1
+          }
+          
+          if (idx === 0) {
+            console.log('validateData - primera fila después de normalizar:', item._normalized)
+          }
+          
+          if (!item._normalized.product_code || !item._normalized.name) {
             item._hasError = true
             this.validationErrors.push({
               row: rowNum,
@@ -1071,14 +1123,14 @@ export default {
             })
           }
           
-          if (!item.weight || item.weight <= 0) {
+          if (!item._normalized.weight || item._normalized.weight <= 0) {
             item._hasWarning = true
             this.validationErrors.push({
               row: rowNum,
               message: 'Peso inválido o no especificado. Se usará 0.1 kg',
               severity: 'warning'
             })
-            item.weight = 0.1
+            item._normalized.weight = 0.1
           }
         } 
         else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
@@ -1131,21 +1183,160 @@ export default {
             })
           }
         }
-        else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
-          // Normalizar campos de materias primas
-          item.codigo = item.codigo || item['Código'] || item.code || ''
-          item.nombre = item.nombre || item['Nombre'] || item.name || ''
-          item.descripcion = item.descripcion || item['Descripción'] || item.description || ''
-          item.unidad = item.unidad || item['Unidad'] || item.unit || 'kg'
-          item.densidad = parseFloat(item.densidad || item['Densidad (g/cm³)'] || item['Densidad'] || item.density || 0)
-          item.stock_minimo = parseInt(item.stock_minimo || item['Stock Mínimo'] || item['Stock Minimo'] || item.min_stock || 0)
-          item.stock_maximo = parseInt(item.stock_maximo || item['Stock Máximo'] || item['Stock Maximo'] || item.max_stock || 0)
-
-          if (idx === 0) {
-            console.log('validateData - materia prima normalizada:', item)
+        else if (this.entityName === 'Proveedores' || this.entityName === 'proveedor') {
+          // Buscar columnas de forma flexible
+          const findValue = (possibleNames) => {
+            for (const key of Object.keys(item)) {
+              const normalizedKey = key.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+              for (const name of possibleNames) {
+                const normalizedName = name.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+                if (normalizedKey === normalizedName) {
+                  return item[key]
+                }
+              }
+            }
+            return ''
+          }
+          
+          // Normalizar campos de proveedores
+          const rucValue = findValue(['RUC', 'ruc', 'Ruc'])
+          const empresaValue = findValue(['Nombre Empresa', 'nombre_empresa', 'Empresa', 'empresa', 'NombreEmpresa'])
+          const contactoValue = findValue(['Nombre Contacto', 'nombre_contacto', 'Contacto', 'contacto', 'NombreContacto'])
+          const telefonoValue = findValue(['Teléfono', 'Telefono', 'telefono', 'phone', 'Phone'])
+          const emailValue = findValue(['Email', 'email', 'correo', 'Correo'])
+          const direccionValue = findValue(['Dirección', 'Direccion', 'direccion', 'address', 'Address'])
+          const tipoProductoValue = findValue(['Tipo Producto', 'TipoProducto', 'tipo_producto', 'TipodeProducto'])
+          
+          // Agregar campos normalizados
+          item._normalized = {
+            ruc: rucValue,
+            nombre_empresa: empresaValue,
+            nombre_contacto: contactoValue,
+            telefono: telefonoValue,
+            email: emailValue,
+            direccion: direccionValue,
+            tipo_producto: tipoProductoValue
           }
 
-          if (!item.codigo || !item.nombre) {
+          if (!rucValue || !empresaValue) {
+            item._hasError = true
+            this.validationErrors.push({
+              row: rowNum,
+              message: 'Faltan campos obligatorios (RUC o Empresa)',
+              severity: 'error'
+            })
+          }
+        }
+        else if (this.entityName === 'Almacenes' || this.entityName === 'almacen') {
+          // Buscar columnas de forma flexible
+          const findValue = (possibleNames) => {
+            for (const key of Object.keys(item)) {
+              const normalizedKey = key.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+              for (const name of possibleNames) {
+                const normalizedName = name.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+                if (normalizedKey === normalizedName) {
+                  return item[key]
+                }
+              }
+            }
+            return ''
+          }
+          
+          // Normalizar campos de almacenes
+          const nombreValue = findValue(['Nombre', 'nombre', 'name', 'NombreAlmacén', 'NombreAlmacen'])
+          const direccionValue = findValue(['Dirección', 'Direccion', 'direccion', 'address', 'Address'])
+          
+          // Agregar campos normalizados
+          item._normalized = {
+            nombre: nombreValue,
+            direccion: direccionValue
+          }
+
+          if (!nombreValue) {
+            item._hasError = true
+            this.validationErrors.push({
+              row: rowNum,
+              message: 'Falta campo obligatorio (Nombre)',
+              severity: 'error'
+            })
+          }
+        }
+        else if (this.entityName === 'Unidades' || this.entityName === 'unidad') {
+          // Buscar columnas de forma flexible
+          const findValue = (possibleNames) => {
+            for (const key of Object.keys(item)) {
+              const normalizedKey = key.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+              for (const name of possibleNames) {
+                const normalizedName = name.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+                if (normalizedKey === normalizedName) {
+                  return item[key]
+                }
+              }
+            }
+            return ''
+          }
+          
+          // Normalizar campos de unidades
+          const nombreValue = findValue(['Nombre', 'nombre', 'name'])
+          const simboloValue = findValue(['Símbolo', 'Simbolo', 'simbolo', 'symbol', 'Symbol'])
+          const factorValue = findValue(['FactordeConversión', 'FactordeConversion', 'factor_conversion', 'factor'])
+          
+          // Agregar campos normalizados
+          item._normalized = {
+            nombre: nombreValue,
+            simbolo: simboloValue,
+            factor_conversion: parseFloat(factorValue) || null
+          }
+
+          if (!nombreValue || !simboloValue) {
+            item._hasError = true
+            this.validationErrors.push({
+              row: rowNum,
+              message: 'Faltan campos obligatorios (Nombre o Símbolo)',
+              severity: 'error'
+            })
+          }
+        }
+        else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
+          // Buscar columnas de forma flexible
+          const findValue = (possibleNames) => {
+            for (const key of Object.keys(item)) {
+              const normalizedKey = key.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+              for (const name of possibleNames) {
+                const normalizedName = name.toLowerCase().replace(/\s+/g, '').replace(/[áàâã]/g, 'a').replace(/[éèê]/g, 'e').replace(/[íìî]/g, 'i').replace(/[óòô]/g, 'o').replace(/[úùû]/g, 'u')
+                if (normalizedKey === normalizedName) {
+                  return item[key]
+                }
+              }
+            }
+            return ''
+          }
+          
+          // Extraer valores flexiblemente
+          const codigoValue = findValue(['Código', 'codigo', 'code'])
+          const nombreValue = findValue(['Nombre', 'nombre', 'name'])
+          const descripcionValue = findValue(['Descripción', 'Descripcion', 'descripcion', 'description'])
+          const unidadValue = findValue(['Unidad', 'unidad', 'unit'])
+          const densidadValue = findValue(['Densidad', 'densidad', 'density', 'Densidad(g/cm³)'])
+          const stockMinValue = findValue(['StockMínimo', 'StockMinimo', 'stock_minimo', 'min_stock'])
+          const stockMaxValue = findValue(['StockMáximo', 'StockMaximo', 'stock_maximo', 'max_stock'])
+          
+          // Guardar valores normalizados (unidad como texto para luego convertir a ID)
+          item._normalized = {
+            codigo: codigoValue || '',
+            nombre: nombreValue || '',
+            descripcion: descripcionValue || '',
+            unidad_text: (unidadValue || 'kg').toString().trim(),
+            densidad: parseFloat(densidadValue) || 0,
+            stock_minimo: parseInt(stockMinValue) || 0,
+            stock_maximo: parseInt(stockMaxValue) || 0
+          }
+
+          if (idx === 0) {
+            console.log('validateData - materia prima normalizada:', item._normalized)
+          }
+
+          if (!item._normalized.codigo || !item._normalized.nombre) {
             item._hasError = true
             this.validationErrors.push({
               row: rowNum,
@@ -1154,14 +1345,14 @@ export default {
             })
           }
 
-          if (!item.stock_minimo || item.stock_minimo <= 0) {
+          if (!item._normalized.stock_minimo || item._normalized.stock_minimo <= 0) {
             item._hasWarning = true
             this.validationErrors.push({
               row: rowNum,
               message: 'Stock mínimo no especificado. Se usará 0',
               severity: 'warning'
             })
-            item.stock_minimo = 0
+            item._normalized.stock_minimo = 0
           }
         }
       })
@@ -1177,13 +1368,14 @@ export default {
       // Crear objetos limpios SOLO con los campos normalizados
       const cleanedData = validData.map(item => {
         if (this.entityName === 'Productos' || this.entityName === 'producto') {
-          // FORZAR que sean valores simples, no arrays
+          // Usar los campos normalizados del objeto _normalized
+          const normalized = item._normalized || {}
           return {
-            product_code: String(item.product_code || '').trim(),
-            name: String(item.name || '').trim(),
-            description: String(item.description || '').trim(),
-            unit: String(item.unit || 'kg').trim(),
-            weight: parseFloat(item.weight) || 0.1
+            product_code: String(normalized.product_code || '').trim(),
+            name: String(normalized.name || '').trim(),
+            description: String(normalized.description || '').trim(),
+            unit: String(normalized.unit || 'kg').trim(),
+            weight: parseFloat(normalized.weight) || 0.1
           }
         } 
         else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
@@ -1198,15 +1390,47 @@ export default {
             direccion: String(normalized.direccion || '').trim()
           }
         }
-        else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
+        else if (this.entityName === 'Proveedores' || this.entityName === 'proveedor') {
+          // Usar los campos normalizados del objeto _normalized
+          const normalized = item._normalized || {}
           return {
-            codigo: String(item.codigo || '').trim(),
-            nombre: String(item.nombre || '').trim(),
-            descripcion: String(item.descripcion || '').trim(),
-            unidad: String(item.unidad || 'kg').trim(),
-            densidad: Number(item.densidad) || 0,
-            stock_minimo: Number(item.stock_minimo) || 0,
-            stock_maximo: Number(item.stock_maximo) || 0
+            ruc: String(normalized.ruc || '').trim(),
+            nombre_empresa: String(normalized.nombre_empresa || '').trim(),
+            nombre_contacto: String(normalized.nombre_contacto || '').trim(),
+            telefono: String(normalized.telefono || '').trim(),
+            email: String(normalized.email || '').trim(),
+            direccion: String(normalized.direccion || '').trim(),
+            tipo_producto: String(normalized.tipo_producto || '').trim()
+          }
+        }
+        else if (this.entityName === 'Almacenes' || this.entityName === 'almacen') {
+          // Usar los campos normalizados del objeto _normalized
+          const normalized = item._normalized || {}
+          return {
+            nombre: String(normalized.nombre || '').trim(),
+            direccion: String(normalized.direccion || '').trim()
+          }
+        }
+        else if (this.entityName === 'Unidades' || this.entityName === 'unidad') {
+          // Usar los campos normalizados del objeto _normalized
+          const normalized = item._normalized || {}
+          return {
+            nombre: String(normalized.nombre || '').trim(),
+            simbolo: String(normalized.simbolo || '').trim(),
+            factor_conversion: parseFloat(normalized.factor_conversion) || null
+          }
+        }
+        else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
+          // Usar los campos normalizados del objeto _normalized
+          const normalized = item._normalized || {}
+          return {
+            codigo: String(normalized.codigo || '').trim(),
+            nombre: String(normalized.nombre || '').trim(),
+            descripcion: String(normalized.descripcion || '').trim(),
+            unidad_text: String(normalized.unidad_text || 'kg').trim(),
+            densidad: parseFloat(normalized.densidad) || 0,
+            stock_minimo: parseInt(normalized.stock_minimo) || 0,
+            stock_maximo: parseInt(normalized.stock_maximo) || 0
           }
         }
         return item

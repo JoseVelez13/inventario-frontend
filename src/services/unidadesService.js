@@ -14,6 +14,47 @@ class UnidadesService {
   }
 
   /**
+   * Obtener una unidad por ID
+   * @param {number} id - ID de la unidad
+   * @returns {Promise} Datos de la unidad
+   */
+  async getUnidad(id) {
+    const response = await api.get(`/unidades/${id}/`)
+    return response.data
+  }
+
+  /**
+   * Crear una nueva unidad
+   * @param {Object} data - Datos de la unidad
+   * @returns {Promise} Unidad creada
+   */
+  async createUnidad(data) {
+    const response = await api.post('/unidades/', data)
+    return response.data
+  }
+
+  /**
+   * Actualizar una unidad
+   * @param {number} id - ID de la unidad
+   * @param {Object} data - Datos actualizados
+   * @returns {Promise} Unidad actualizada
+   */
+  async updateUnidad(id, data) {
+    const response = await api.put(`/unidades/${id}/`, data)
+    return response.data
+  }
+
+  /**
+   * Eliminar una unidad
+   * @param {number} id - ID de la unidad
+   * @returns {Promise}
+   */
+  async deleteUnidad(id) {
+    const response = await api.delete(`/unidades/${id}/`)
+    return response.data
+  }
+
+  /**
    * Mapear texto de unidad a ID
    * @param {string} unitText - Texto de la unidad (kg, g, l, etc)
    * @param {Array} unidades - Lista de unidades disponibles

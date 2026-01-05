@@ -484,12 +484,27 @@ export default {
             weight: parseFloat(item.weight) || 0.1
           }
           
-          console.log('Enviando al backend:', cleanData)
+          console.log('Importando producto:', {
+            original: item,
+            unitText: item.unit,
+            unitId: unitId,
+            cleanData: cleanData
+          })
+          
           await productosService.createProducto(cleanData)
           successCount++
         } catch (e) {
-          console.error('Error al importar:', item, e)
-          console.error('Respuesta del servidor:', e.response?.data)
+          console.error('Error al importar producto:', {
+            item: item,
+            cleanData: {
+              product_code: item.product_code,
+              name: item.name,
+              unit: item.unit,
+              unitId: unidadesService.mapTextToId(item.unit, this.unidades)
+            },
+            error: e.message,
+            response: e.response?.data
+          })
           errorCount++
         }
       }

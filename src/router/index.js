@@ -7,6 +7,9 @@ import ClientesListView from '../views/ClientesListView.vue'
 import ProductosListView from '../views/ProductosListView.vue'
 import MateriasPrimasListView from '../views/MateriasPrimasListView.vue'
 import MateriaPrimaCreateView from '../views/MateriaPrimaCreateView.vue'
+import ProveedoresListView from '../views/ProveedoresListView.vue'
+import AlmacenesListView from '../views/AlmacenesListView.vue'
+import UnidadesListView from '../views/UnidadesListView.vue'
 import authService from '../services/auth'
 
 const routes = [
@@ -57,6 +60,24 @@ const routes = [
     name: 'MateriaPrimaNuevo',
     component: MateriaPrimaCreateView,
     meta: { title: 'Nueva Materia Prima - Sistema Innoquim' }
+  },
+  {
+    path: '/proveedores',
+    name: 'Proveedores',
+    component: ProveedoresListView,
+    meta: { title: 'Proveedores - Sistema Innoquim' }
+  },
+  {
+    path: '/almacenes',
+    name: 'Almacenes',
+    component: AlmacenesListView,
+    meta: { title: 'Almacenes - Sistema Innoquim' }
+  },
+  {
+    path: '/unidades',
+    name: 'Unidades',
+    component: UnidadesListView,
+    meta: { title: 'Unidades de Medida - Sistema Innoquim' }
   },
   // ruta fallback para errores (si alguien entra a /xd123)
   { path: '/:pathMatch(.*)*', redirect: '/' }
