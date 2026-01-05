@@ -88,7 +88,7 @@
               </th>
               
               <th>Factor de Conversión</th>
-              <th>Acciones</th>
+              <th style="width:100px; text-align:center">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -100,12 +100,12 @@
               <td class="action-buttons">
                 <Tooltip text="Editar unidad">
                   <button class="btn-icon btn-edit" @click="openEditModal(unidad.id)" aria-label="Editar">
-                    <i class="fa-solid fa-pen-to-square"></i>
+                    ✏️
                   </button>
                 </Tooltip>
                 <Tooltip text="Eliminar unidad">
                   <button class="btn-icon btn-delete" @click="deleteUnidad(unidad.id)" aria-label="Eliminar">
-                    <i class="fa-solid fa-trash"></i>
+                    🗑️
                   </button>
                 </Tooltip>
               </td>
