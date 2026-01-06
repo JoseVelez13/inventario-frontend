@@ -1,0 +1,20 @@
+# Node modules
+node_modules
+npm-debug.log
+
+# Archivos de desarrollo
+.git
+.gitignore
+.vscode
+.idea
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de entorno
+.env.local
+.env.*.local
+
+# Archivos de build
+dist
