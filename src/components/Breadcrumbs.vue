@@ -43,14 +43,50 @@ const crumbs = computed(() => {
     breadcrumbs.push({ label: 'Productos', path: '/productos' })
   }
 
-  // Materia Prima
-  if (path.includes('/materia-prima')) {
+  // Materias Primas
+  if (path.includes('/materias-primas')) {
     breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
-    breadcrumbs.push({ label: 'Materia Prima', path: '/materia-prima' })
+    breadcrumbs.push({ label: 'Materias Primas', path: '/materias-primas' })
     
     if (path.includes('/nuevo')) {
-      breadcrumbs.push({ label: 'Nueva Materia Prima', path: '/materia-prima/nuevo' })
+      breadcrumbs.push({ label: 'Nueva Materia Prima', path: '/materias-primas/nuevo' })
     }
+  }
+
+  // Proveedores
+  if (path.includes('/proveedores')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Proveedores', path: '/proveedores' })
+  }
+
+  // Almacenes
+  if (path.includes('/almacenes')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Almacenes', path: '/almacenes' })
+  }
+
+  // Unidades
+  if (path.includes('/unidades')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Unidades de Medida', path: '/unidades' })
+  }
+
+  // Kardex
+  if (path.includes('/kardex')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Kardex', path: '/kardex' })
+  }
+
+  // Recepciones de Material
+  if (path.includes('/recepciones-material')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Recepciones de Material', path: '/recepciones-material' })
+  }
+
+  // Recepciones de Productos
+  if (path.includes('/recepciones-productos')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Recepciones de Productos', path: '/recepciones-productos' })
   }
 
   return breadcrumbs

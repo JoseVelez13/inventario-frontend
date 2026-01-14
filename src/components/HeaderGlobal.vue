@@ -91,6 +91,22 @@
           </div>
 
           <div class="nav-section">
+            <div class="nav-section-title">Inventario</div>
+            <router-link to="/kardex" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-chart-simple"></i>
+              <span>Kardex</span>
+            </router-link>
+            <router-link to="/recepciones-material" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-dolly"></i>
+              <span>Recepciones Material</span>
+            </router-link>
+            <router-link to="/recepciones-productos" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-boxes-stacked"></i>
+              <span>Recepciones Productos</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
             <div class="nav-section-title">Sistema</div>
             <button class="sidebar-item" @click="logout">
               <i class="fa-solid fa-right-from-bracket"></i>
