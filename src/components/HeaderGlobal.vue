@@ -17,12 +17,10 @@
 
     <!-- MENÚ SUPERIOR -->
     <nav class="nav-menu">
+      <NotificationBell />
+      
       <button class="nav-item" @click="$router.push('/')">
         <i class="fa-solid fa-house"></i> Inicio
-      </button>
-
-      <button class="nav-item" @click="$router.push('/dashboard')">
-        <i class="fa-solid fa-table"></i> Dashboard
       </button>
 
       <button class="nav-item" @click="logout">
@@ -51,10 +49,6 @@
             <router-link to="/" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-house"></i>
               <span>Inicio</span>
-            </router-link>
-            <router-link to="/dashboard" class="sidebar-item" @click="closeSidebar">
-              <i class="fa-solid fa-chart-line"></i>
-              <span>Dashboard</span>
             </router-link>
           </div>
 
@@ -121,9 +115,11 @@
 <script>
 import '../assets/styles/HeaderGlobal.css'
 import logo from '../assets/img/logo.png'
+import NotificationBell from './NotificationBell.vue'
 
 export default {
   name: 'HeaderComponent',
+  components: { NotificationBell },
   data() {
     return {
       logo,

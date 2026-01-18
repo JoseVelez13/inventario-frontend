@@ -40,8 +40,8 @@
   transform: scale(0.95);
 }
 
-.header-global .left-section { display: flex; align-items: center; gap: 18px; }
-.header-global .logo { height: 85px; width: auto; object-fit: contain; }
+.header-global .left-section { display: flex; align-items: center; gap: 8px; }
+.header-global .logo { height: 60px; width: auto; object-fit: contain; }
 .header-global .system-info { display:flex; flex-direction:column; line-height:1.2; gap: 2px; }
 .header-global .title { font-size: 18px; margin: 0; font-weight: 700; letter-spacing: 0.5px; font-family: 'Inter', 'Roboto', sans-serif; color: var(--color-primary, #4F6F8F); }
 .header-global .subtitle { font-size: 13px; margin: 0; color: var(--color-text-light, #6B7280); font-weight: 400; }

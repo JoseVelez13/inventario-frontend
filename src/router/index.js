@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import InicioView from '../views/InicioView.vue'
-import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
+import LoginView from '../views/LoginView.vue'
 import ClientesListView from '../views/ClientesListView.vue'
 import ProductosListView from '../views/ProductosListView.vue'
 import MateriasPrimasListView from '../views/MateriasPrimasListView.vue'
@@ -13,14 +12,16 @@ import UnidadesListView from '../views/UnidadesListView.vue'
 import KardexListView from '../views/KardexListView.vue'
 import RecepcionesMaterialListView from '../views/RecepcionesMaterialListView.vue'
 import RecepcionesItemListView from '../views/RecepcionesItemListView.vue'
+import LoteProduccionListView from '../views/LoteProduccionListView.vue'
+import LoteProduccionDetailView from '../views/LoteProduccionDetailView.vue'
 import authService from '../services/auth'
 
 const routes = [
   { 
     path: '/', 
     name: 'Inicio',
-    component: InicioView,
-    meta: { title: 'Inicio - Sistema Innoquim' }
+    component: DashboardView,
+    meta: { title: 'Dashboard - Sistema Innoquim', requiresAuth: true }
   },
   { 
     path: '/login', 
@@ -99,6 +100,18 @@ const routes = [
     name: 'RecepcionesProductos',
     component: RecepcionesItemListView,
     meta: { title: 'Recepciones de Productos - Sistema Innoquim' }
+  },
+  {
+    path: '/lotes-produccion',
+    name: 'LotesProduccion',
+    component: LoteProduccionListView,
+    meta: { title: 'Lotes de Producción - Sistema Innoquim' }
+  },
+  {
+    path: '/lotes-produccion/:id',
+    name: 'LoteProduccionDetail',
+    component: LoteProduccionDetailView,
+    meta: { title: 'Detalle de Lote - Sistema Innoquim' }
   },
   // ruta fallback para errores (si alguien entra a /xd123)
   { path: '/:pathMatch(.*)*', redirect: '/' }

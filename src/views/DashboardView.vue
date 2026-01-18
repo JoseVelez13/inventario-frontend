@@ -41,6 +41,17 @@
             <div class="module-badge active">Activo</div>
           </div>
         </Tooltip>
+
+        <Tooltip text="Ir al módulo de Lotes de Producción" position="bottom">
+          <div class="module-card" @click="$router.push('/lotes-produccion')" role="button" tabindex="0">
+            <div class="module-icon">⚙️</div>
+            <div class="module-info">
+              <h3>Lotes de Producción</h3>
+              <p>Gestión de producción</p>
+            </div>
+            <div class="module-badge active">Activo</div>
+          </div>
+        </Tooltip>
       </div>
     </div>
   </div>
