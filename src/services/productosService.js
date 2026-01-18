@@ -106,6 +106,33 @@ class ProductosService {
     })
     return response.data
   }
+
+  /**
+   * Obtener todos los productos para verificar notificaciones
+   * @returns {Promise} Todos los productos
+   */
+  async getAllProductos() {
+    let allProducts = []
+    let page = 1
+    let hasMore = true
+
+    while (hasMore) {
+      const response = await this.getProductos({ page, page_size: 100 })
+      
+      if (response.results) {
+        allProducts = allProducts.concat(response.results)
+        hasMore = !!response.next
+        page++
+      } else if (Array.isArray(response)) {
+        allProducts = response
+        hasMore = false
+      } else {
+        hasMore = false
+      }
+    }
+
+    return allProducts
+  }
 }
 
 export default new ProductosService()
