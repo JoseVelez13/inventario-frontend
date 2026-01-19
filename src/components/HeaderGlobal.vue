@@ -19,6 +19,8 @@
     <nav class="nav-menu">
       <NotificationBell />
       
+      <DarkModeToggle />
+      
       <button class="nav-item" @click="$router.push('/')">
         <i class="fa-solid fa-house"></i> Inicio
       </button>
@@ -116,10 +118,11 @@
 import '../assets/styles/HeaderGlobal.css'
 import logo from '../assets/img/logo.png'
 import NotificationBell from './NotificationBell.vue'
+import DarkModeToggle from './DarkModeToggle.vue'
 
 export default {
   name: 'HeaderComponent',
-  components: { NotificationBell },
+  components: { NotificationBell, DarkModeToggle },
   data() {
     return {
       logo,

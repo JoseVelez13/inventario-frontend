@@ -107,7 +107,6 @@
                   </div>
                 </div>
               </th>
-
               <th class="sortable-header" @click="toggleSort('weight')">
                 <div class="header-content">
                   <span>Peso</span>
@@ -119,17 +118,38 @@
                 </div>
               </th>
 
+              <th class="sortable-header" @click="toggleSort('stock')">
+                <div class="header-content">
+                  <span>Stock</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'stock' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'stock' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
+              <th>Estado</th>
+
               <th style="width:100px; text-align:center">Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="p in paginatedData" :key="p.producto_id || p.id">
+            <tr v-for="p in paginatedData" :key="p.producto_id || p.id" class="animate-fade-in">
               <td>{{ p.producto_id || p.id }}</td>
               <td><strong>{{ p.product_code }}</strong></td>
               <td>{{ p.name }}</td>
               <td>{{ p.description || '-' }}</td>
               <td>{{ getUnidadNombre(p.unit) }}</td>
               <td>{{ p.weight }} kg</td>
+              <td>
+                <span class="stock-display" :class="getStockClass(p.stock)">
+                  {{ p.stock !== undefined ? p.stock : 'N/A' }}
+                </span>
+              </td>
+              <td>
+                <StatusBadge v-bind="getStockStatusBadge(p.stock)" />
+              </td>
               <td class="action-buttons">
                 <Tooltip text="Editar producto">
                   <button class="btn-icon btn-edit" @click.prevent="openEditModal(p.producto_id || p.id)">
@@ -215,13 +235,15 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import Notification from '../components/Notification.vue'
 import ImportExportDialog from '../components/ImportExportDialog.vue'
 import ProductoFormModal from '../components/ProductoFormModal.vue'
+import StatusBadge from '../components/StatusBadge.vue'
+import { getStockStatus } from '../utils/statusUtils'
 import '../assets/styles/Clientes.css'
 import productosService from '../services/productosService'
 import unidadesService from '../services/unidadesService'
 
 export default {
   name: 'ProductosListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, Notification, ImportExportDialog, ProductoFormModal },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, Notification, ImportExportDialog, ProductoFormModal, StatusBadge },
   
   data() {
     return {
@@ -434,6 +456,17 @@ export default {
           searchInput.focus()
         }
       })
+    },
+
+    getStockClass(stock) {
+      if (stock === 0 || stock === null) return 'stock-danger'
+      if (stock <= 10) return 'stock-warning'
+      if (stock <= 20) return 'stock-info'
+      return 'stock-success'
+    },
+
+    getStockStatusBadge(stock) {
+      return getStockStatus(stock, 10)
     },
 
     reload() {

@@ -14,6 +14,7 @@ import RecepcionesMaterialListView from '../views/RecepcionesMaterialListView.vu
 import RecepcionesItemListView from '../views/RecepcionesItemListView.vue'
 import LoteProduccionListView from '../views/LoteProduccionListView.vue'
 import LoteProduccionDetailView from '../views/LoteProduccionDetailView.vue'
+import NotFoundView from '../views/NotFoundView.vue'
 import authService from '../services/auth'
 
 const routes = [
@@ -113,8 +114,13 @@ const routes = [
     component: LoteProduccionDetailView,
     meta: { title: 'Detalle de Lote - Sistema Innoquim' }
   },
-  // ruta fallback para errores (si alguien entra a /xd123)
-  { path: '/:pathMatch(.*)*', redirect: '/' }
+  // Página 404 personalizada
+  { 
+    path: '/:pathMatch(.*)*', 
+    name: 'NotFound',
+    component: NotFoundView,
+    meta: { title: 'Página no encontrada - Sistema Innoquim' }
+  }
 ]
 
 const router = createRouter({
