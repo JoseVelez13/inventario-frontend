@@ -77,6 +77,16 @@ const crumbs = computed(() => {
     breadcrumbs.push({ label: 'Kardex', path: '/kardex' })
   }
 
+  // Lotes de Producción
+  if (path.includes('/lotes-produccion')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Lotes de Producción', path: '/lotes-produccion' })
+    
+    if (path.match(/\/lotes-produccion\/[^/]+$/)) {
+      breadcrumbs.push({ label: 'Detalle del Lote', path: path })
+    }
+  }
+
   // Recepciones de Material
   if (path.includes('/recepciones-material')) {
     breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })

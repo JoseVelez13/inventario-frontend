@@ -15,6 +15,14 @@ class ProductosService {
   }
 
   /**
+   * Alias para obtener todos los productos (compatibilidad con Dashboard)
+   * @returns {Promise} Lista de todos los productos
+   */
+  async getAll() {
+    return this.getProductos({ page_size: 1000 })
+  }
+
+  /**
    * Obtener un producto por ID
    * @param {number} id - ID del producto
    * @returns {Promise} Datos del producto

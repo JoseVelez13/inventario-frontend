@@ -17,6 +17,14 @@ export default {
     return res.data
   },
 
+  /**
+   * Alias para obtener todos los clientes (compatibilidad con Dashboard)
+   * @returns {Promise} Lista de todos los clientes
+   */
+  async getAll() {
+    return this.getClientes(1, 1000)
+  },
+
   async getCliente(id) {
     const res = await api.get(`/clientes/${id}/`)
     return res.data

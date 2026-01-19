@@ -4,7 +4,13 @@
     <Breadcrumbs />
 
     <div class="topbar">
-      <div class="topbar-title">Materias Primas</div>
+      <div class="topbar-title">
+        Materias Primas
+        <span class="chip" aria-live="polite" title="Total de materias primas">
+          <template v-if="!loading">{{ totalMateriasPrimas }}</template>
+          <template v-else>...</template>
+        </span>
+      </div>
       <div class="topbar-actions">
         <Tooltip text="Volver a la página anterior">
           <button class="btn-secondary" @click="$router.back()">Atrás</button>
@@ -307,7 +313,8 @@ export default {
     },
 
     totalPages() {
-      return Math.ceil(this.totalMateriasPrimas / this.itemsPerPage)
+      const pages = Math.ceil(this.totalMateriasPrimas / this.itemsPerPage)
+      return pages > 0 ? pages : 1
     },
 
     paginatedData() {
@@ -333,6 +340,9 @@ export default {
       try {
         const data = await materiasPrimasService.getMateriasPrimas()
         this.materiasPrimas = Array.isArray(data) ? data : data.results || []
+        
+        // Resetear a página 1 después de cargar datos
+        this.currentPage = 1
       } catch (e) {
         console.error('Error al listar materias primas', e)
         this.error = 'No se pudo cargar la lista de materias primas.'
@@ -341,10 +351,13 @@ export default {
       }
     },
 
-    onSearch() {},
+onSearch() {
+  this.currentPage = 1 // Resetear a página 1 al buscar
+},
 
-    clearSearch() {
-      this.search = ''
+clearSearch() {
+  this.search = ''
+  this.currentPage = 1 // Resetear a página 1 al limpiar búsqueda
       this.$nextTick(() => {
         const searchInput = document.querySelector('.search-input')
         if (searchInput) {
@@ -507,9 +520,16 @@ export default {
             nombre: String(materiaPrima.nombre || '').trim(),
             descripcion: String(materiaPrima.descripcion || '').trim(),
             unidad_id: unidadId,
-            densidad: parseFloat(materiaPrima.densidad) || 0,
-            stock_minimo: parseInt(materiaPrima.stock_minimo) || 0,
-            stock_maximo: parseInt(materiaPrima.stock_maximo) || 0
+            stock_minimo: parseInt(materiaPrima.stock_minimo) || 0
+          }
+          
+          // Campos opcionales - solo agregar si tienen valor
+          if (materiaPrima.densidad && !isNaN(parseFloat(materiaPrima.densidad))) {
+            cleanData.densidad = parseFloat(materiaPrima.densidad)
+          }
+          
+          if (materiaPrima.stock_maximo && !isNaN(parseInt(materiaPrima.stock_maximo))) {
+            cleanData.stock_maximo = parseInt(materiaPrima.stock_maximo)
           }
           
           console.log('Importando materia prima:', {
@@ -519,7 +539,19 @@ export default {
             cleanData: cleanData
           })
           
-          await materiasPrimasService.createMateriaPrima(cleanData)
+          // Verificar si ya existe por código
+          const existente = this.materiasPrimas.find(mp => mp.codigo === cleanData.codigo)
+          
+          if (existente) {
+            // Actualizar la materia prima existente
+            await materiasPrimasService.updateMateriaPrima(existente.materia_prima_id || existente.id, cleanData)
+            console.log(`Materia prima actualizada: ${cleanData.codigo}`)
+          } else {
+            // Crear nueva materia prima
+            await materiasPrimasService.createMateriaPrima(cleanData)
+            console.log(`Materia prima creada: ${cleanData.codigo}`)
+          }
+          
           successCount++
         } catch (e) {
           console.error('Error al importar materia prima:', {
