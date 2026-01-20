@@ -25,6 +25,10 @@
         <i class="fa-solid fa-house"></i> Inicio
       </button>
 
+      <button class="nav-item" @click="$router.push('/perfil')">
+        <i class="fa-solid fa-user-circle"></i> Perfil
+      </button>
+
       <button class="nav-item" @click="logout">
         <i class="fa-solid fa-right-from-bracket"></i> Cerrar sesión
       </button>

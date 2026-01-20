@@ -18,6 +18,7 @@ import OrdenClienteListView from '../views/ordenes-cliente/OrdenClienteListView.
 import OrdenClienteDetailView from '../views/ordenes-cliente/OrdenClienteDetailView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import authService from '../services/auth'
+import ProfileView from '../views/ProfileView.vue'
 
 const routes = [
   { 
@@ -42,6 +43,15 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Dashboard - Sistema Innoquim'
+    } 
+  },
+  { 
+    path: '/perfil', 
+    name: 'Profile',
+    component: ProfileView, 
+    meta: { 
+      requiresAuth: true,
+      title: 'Mi Perfil - Sistema Innoquim'
     } 
   },
   {
