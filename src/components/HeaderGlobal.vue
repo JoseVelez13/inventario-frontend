@@ -103,6 +103,22 @@
           </div>
 
           <div class="nav-section">
+            <div class="nav-section-title">Producción</div>
+            <router-link to="/lotes-produccion" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-industry"></i>
+              <span>Lotes de Producción</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">Ventas</div>
+            <router-link to="/ordenes-cliente" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-shopping-cart"></i>
+              <span>Órdenes de Cliente</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
             <div class="nav-section-title">Sistema</div>
             <button class="sidebar-item" @click="logout">
               <i class="fa-solid fa-right-from-bracket"></i>

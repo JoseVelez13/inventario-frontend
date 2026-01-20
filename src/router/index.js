@@ -14,6 +14,8 @@ import RecepcionesMaterialListView from '../views/RecepcionesMaterialListView.vu
 import RecepcionesItemListView from '../views/RecepcionesItemListView.vue'
 import LoteProduccionListView from '../views/LoteProduccionListView.vue'
 import LoteProduccionDetailView from '../views/LoteProduccionDetailView.vue'
+import OrdenClienteListView from '../views/ordenes-cliente/OrdenClienteListView.vue'
+import OrdenClienteDetailView from '../views/ordenes-cliente/OrdenClienteDetailView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import authService from '../services/auth'
 
@@ -113,6 +115,18 @@ const routes = [
     name: 'LoteProduccionDetail',
     component: LoteProduccionDetailView,
     meta: { title: 'Detalle de Lote - Sistema Innoquim' }
+  },
+  {
+    path: '/ordenes-cliente',
+    name: 'OrdenesCliente',
+    component: OrdenClienteListView,
+    meta: { title: 'Órdenes de Cliente - Sistema Innoquim' }
+  },
+  {
+    path: '/ordenes-cliente/:id',
+    name: 'OrdenClienteDetail',
+    component: OrdenClienteDetailView,
+    meta: { title: 'Detalle de Orden - Sistema Innoquim' }
   },
   // Página 404 personalizada
   { 
