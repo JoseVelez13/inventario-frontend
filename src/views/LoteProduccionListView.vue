@@ -317,8 +317,8 @@ const formatDate = (dateString) => {
 }
 
 const formatNumber = (num) => {
-  if (!num) return '0.00'
-  return parseFloat(num).toFixed(2)
+  if (!num) return '0'
+  return Math.round(parseFloat(num)).toLocaleString('es-ES')
 }
 
 // Acciones de CRUD

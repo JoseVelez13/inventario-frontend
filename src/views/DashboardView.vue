@@ -93,6 +93,7 @@ const stats = ref({
   totalClientes: 0,
   totalMateriasPrimas: 0,
   lotesActivos: 0,
+  unidadesEnProduccion: 0,
   productosCrecimiento: 0,
   clientesCrecimiento: 0,
   materiasBajoStock: 0,
@@ -144,7 +145,13 @@ const fetchStats = async () => {
     stats.value.materiasBajoStock = stats.value.materiasStockBajo + stats.value.materiasAgotadas
     
     // Datos REALES de lotes de producción
-    stats.value.lotesActivos = lotesArray.filter(l => l.status === 'in_progress' || l.status === 'pending').length
+    const lotesEnProduccion = lotesArray.filter(l => l.status === 'in_progress' || l.status === 'pending')
+    stats.value.lotesActivos = lotesEnProduccion.length
+    
+    // Calcular unidades totales en producción (suma de quantity de cada lote activo)
+    stats.value.unidadesEnProduccion = lotesEnProduccion.reduce((total, lote) => {
+      return total + (lote.quantity || lote.produced_quantity || 0)
+    }, 0)
     
     // Calcular lotes completados HOY
     const hoy = new Date().toISOString().split('T')[0]

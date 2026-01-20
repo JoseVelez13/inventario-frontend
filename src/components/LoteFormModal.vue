@@ -55,12 +55,12 @@
               id="produced_quantity" 
               v-model.number="form.produced_quantity" 
               type="number"
-              min="0.01"
-              step="0.01"
-              placeholder="0.00"
+              min="1"
+              step="1"
+              placeholder="100"
               required
             />
-            <small class="help-text">Cantidad total producida</small>
+            <small class="help-text">Cantidad total producida (unidades enteras)</small>
           </div>
 
           <!-- Unidad -->

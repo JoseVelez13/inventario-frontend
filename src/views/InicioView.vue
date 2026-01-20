@@ -441,4 +441,42 @@
   .features-header h2 { font-size: 2rem; }
   .cta-section h2 { font-size: 2rem; }
 }
+
+/* Modo Oscuro */
+:global(.dark-mode) .features-section {
+  background: #1a1a2e;
+}
+
+:global(.dark-mode) .features-header h2 {
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+:global(.dark-mode) .features-header p {
+  color: #ffffff;
+}
+
+:global(.dark-mode) .feature-card {
+  background: #2d2d44;
+  border-color: #4d4d6c;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+:global(.dark-mode) .feature-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+  border-color: #6d6d8c;
+  background: #35355c;
+}
+
+:global(.dark-mode) .feature-card h3 {
+  color: #ffffff;
+}
+
+:global(.dark-mode) .feature-card > p {
+  color: #ffffff;
+}
+
+:global(.dark-mode) .feature-list li {
+  color: #ffffff;
+}
 </style>

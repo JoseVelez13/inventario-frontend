@@ -338,8 +338,26 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const data = await materiasPrimasService.getMateriasPrimas()
-        this.materiasPrimas = Array.isArray(data) ? data : data.results || []
+        // Cargar TODAS las páginas de materias primas
+        let allMateriasPrimas = []
+        let page = 1
+        let hasMore = true
+        
+        while (hasMore) {
+          const data = await materiasPrimasService.getMateriasPrimas({ page, page_size: 100 })
+          const items = Array.isArray(data) ? data : data.results || []
+          allMateriasPrimas = [...allMateriasPrimas, ...items]
+          
+          // Si hay paginación, verificar si hay más páginas
+          if (data.next) {
+            page++
+          } else {
+            hasMore = false
+          }
+        }
+        
+        this.materiasPrimas = allMateriasPrimas
+        console.log(`Materias primas cargadas: ${this.materiasPrimas.length}`)
         
         // Resetear a página 1 después de cargar datos
         this.currentPage = 1
@@ -490,11 +508,39 @@ clearSearch() {
     },
 
     async handleImportComplete(importedData) {
-      console.log('Datos importados:', importedData)
+      console.log('📥 Iniciando importación de', importedData.length, 'registros')
       let successCount = 0
       let errorCount = 0
 
-      // Cargar unidades si no están cargadas
+      // PRIMERO: Cargar TODAS las materias primas del backend (todas las páginas)
+      try {
+        let allMateriasPrimas = []
+        let page = 1
+        let hasMore = true
+        
+        while (hasMore) {
+          const data = await materiasPrimasService.getMateriasPrimas({ page, page_size: 100 })
+          const items = Array.isArray(data) ? data : data.results || []
+          allMateriasPrimas = [...allMateriasPrimas, ...items]
+          
+          console.log(`📄 Página ${page}: ${items.length} registros cargados`)
+          
+          // Si hay paginación, verificar si hay más páginas
+          if (data.next) {
+            page++
+          } else {
+            hasMore = false
+          }
+        }
+        
+        this.materiasPrimas = allMateriasPrimas
+        console.log(`✅ Total materias primas cargadas: ${this.materiasPrimas.length}`)
+        console.log('📋 Códigos existentes:', this.materiasPrimas.map(mp => mp.codigo).join(', '))
+      } catch (e) {
+        console.error('❌ Error al cargar materias primas:', e)
+      }
+
+      // SEGUNDO: Cargar unidades si no están cargadas
       if (this.unidades.length === 0) {
         try {
           const response = await unidadesService.getUnidades()
@@ -510,6 +556,7 @@ clearSearch() {
         }
       }
 
+      // TERCERO: Procesar cada registro
       for (const materiaPrima of importedData) {
         try {
           // Convertir texto de unidad a ID
@@ -532,32 +579,29 @@ clearSearch() {
             cleanData.stock_maximo = parseInt(materiaPrima.stock_maximo)
           }
           
-          console.log('Importando materia prima:', {
-            original: materiaPrima,
-            unidadText: materiaPrima.unidad_text,
-            unidadId: unidadId,
-            cleanData: cleanData
-          })
-          
           // Verificar si ya existe por código
           const existente = this.materiasPrimas.find(mp => mp.codigo === cleanData.codigo)
           
           if (existente) {
             // Actualizar la materia prima existente
-            await materiasPrimasService.updateMateriaPrima(existente.materia_prima_id || existente.id, cleanData)
-            console.log(`Materia prima actualizada: ${cleanData.codigo}`)
+            const materiaPrimaId = existente.materia_prima_id || existente.id
+            console.log(`🔄 Actualizando materia prima existente: ${cleanData.codigo} (ID: ${materiaPrimaId})`)
+            await materiasPrimasService.updateMateriaPrima(materiaPrimaId, cleanData)
+            console.log(`✅ Materia prima actualizada: ${cleanData.codigo}`)
+            successCount++
           } else {
             // Crear nueva materia prima
+            console.log(`➕ Creando nueva materia prima: ${cleanData.codigo}`)
             await materiasPrimasService.createMateriaPrima(cleanData)
-            console.log(`Materia prima creada: ${cleanData.codigo}`)
+            console.log(`✅ Materia prima creada: ${cleanData.codigo}`)
+            successCount++
           }
           
-          successCount++
         } catch (e) {
-          console.error('Error al importar materia prima:', {
-            item: materiaPrima,
+          console.error('❌ Error al importar materia prima:', {
+            codigo: materiaPrima.codigo,
             error: e.message,
-            response: e.response?.data
+            detail: e.response?.data
           })
           errorCount++
         }

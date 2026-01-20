@@ -120,13 +120,19 @@ const routes = [
     path: '/ordenes-cliente',
     name: 'OrdenesCliente',
     component: OrdenClienteListView,
-    meta: { title: 'Órdenes de Cliente - Sistema Innoquim' }
+    meta: { 
+      title: 'Órdenes de Cliente - Sistema Innoquim',
+      breadcrumb: 'Órdenes de Cliente'
+    }
   },
   {
     path: '/ordenes-cliente/:id',
     name: 'OrdenClienteDetail',
     component: OrdenClienteDetailView,
-    meta: { title: 'Detalle de Orden - Sistema Innoquim' }
+    meta: { 
+      title: 'Detalle de Orden - Sistema Innoquim',
+      breadcrumb: 'Detalle de Orden'
+    }
   },
   // Página 404 personalizada
   { 

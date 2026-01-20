@@ -45,8 +45,9 @@
               <i class="fa-solid fa-industry"></i>
             </div>
             <div>
-              <p class="mini-label">Lotes Activos</p>
+              <p class="mini-label">Lotes en Producción</p>
               <h4 class="mini-value">{{ stats.lotesActivos || 0 }}</h4>
+              <p class="mini-units">{{ Math.round(stats.unidadesEnProduccion || 0).toLocaleString('es-ES') }} unidades</p>
             </div>
           </div>
         </div>
@@ -55,47 +56,47 @@
 
     <!-- Tarjetas secundarias en grid -->
     <div class="secondary-stats">
-      <div class="compact-card" v-if="stats.productosCrecimiento > 0">
+      <div class="compact-card">
         <div class="compact-icon success">
-          <i class="fa-solid fa-arrow-trend-up"></i>
+          <i class="fa-solid fa-box-open"></i>
         </div>
         <div class="compact-content">
-          <p class="compact-label">Crecimiento en Productos</p>
-          <h4 class="compact-value">+{{ stats.productosCrecimiento }}%</h4>
-          <p class="compact-desc">Incremento este mes</p>
+          <p class="compact-label">Productos en Stock</p>
+          <h4 class="compact-value">{{ stats.productosStock || 0 }}</h4>
+          <p class="compact-desc">Con disponibilidad normal</p>
         </div>
       </div>
 
-      <div class="compact-card" v-if="stats.materiasBajoStock > 0">
+      <div class="compact-card">
         <div class="compact-icon warning">
           <i class="fa-solid fa-triangle-exclamation"></i>
         </div>
         <div class="compact-content">
           <p class="compact-label">Stock Bajo</p>
-          <h4 class="compact-value">{{ stats.materiasBajoStock }}</h4>
-          <p class="compact-desc">Requieren reposición</p>
-        </div>
-      </div>
-
-      <div class="compact-card" v-if="stats.lotesCompletados > 0">
-        <div class="compact-icon info">
-          <i class="fa-solid fa-check-circle"></i>
-        </div>
-        <div class="compact-content">
-          <p class="compact-label">Completados Hoy</p>
-          <h4 class="compact-value">{{ stats.lotesCompletados }}</h4>
-          <p class="compact-desc">Lotes finalizados</p>
+          <h4 class="compact-value">{{ stats.productosStockBajo || 0 }}</h4>
+          <p class="compact-desc">Productos por reponer</p>
         </div>
       </div>
 
       <div class="compact-card">
-        <div class="compact-icon primary">
-          <i class="fa-solid fa-warehouse"></i>
+        <div class="compact-icon danger">
+          <i class="fa-solid fa-circle-xmark"></i>
         </div>
         <div class="compact-content">
-          <p class="compact-label">Gestión Activa</p>
-          <h4 class="compact-value">{{ (stats.totalProductos || 0) + (stats.totalMateriasPrimas || 0) }}</h4>
-          <p class="compact-desc">Items totales</p>
+          <p class="compact-label">Productos Agotados</p>
+          <h4 class="compact-value">{{ stats.productosAgotados || 0 }}</h4>
+          <p class="compact-desc">Sin existencias</p>
+        </div>
+      </div>
+
+      <div class="compact-card">
+        <div class="compact-icon info">
+          <i class="fa-solid fa-flask"></i>
+        </div>
+        <div class="compact-content">
+          <p class="compact-label">Materias con Stock Bajo</p>
+          <h4 class="compact-value">{{ stats.materiasBajoStock || 0 }}</h4>
+          <p class="compact-desc">Requieren reposición</p>
         </div>
       </div>
     </div>
@@ -236,6 +237,14 @@ defineProps({
   font-weight: 700;
 }
 
+.mini-units {
+  margin: 4px 0 0 0;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
 /* Tarjetas secundarias */
 .secondary-stats {
   display: grid;
@@ -290,6 +299,11 @@ defineProps({
 .compact-icon.primary {
   background: #e0e7ff;
   color: #3730a3;
+}
+
+.compact-icon.danger {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .compact-content {

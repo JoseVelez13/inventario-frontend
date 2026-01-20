@@ -99,6 +99,16 @@ const crumbs = computed(() => {
     breadcrumbs.push({ label: 'Recepciones de Productos', path: '/recepciones-productos' })
   }
 
+  // Órdenes de Cliente
+  if (path.includes('/ordenes-cliente')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Órdenes de Cliente', path: '/ordenes-cliente' })
+    
+    if (path.match(/\/ordenes-cliente\/[^/]+$/)) {
+      breadcrumbs.push({ label: 'Detalle de Orden', path: path })
+    }
+  }
+
   return breadcrumbs
 })
 </script>
