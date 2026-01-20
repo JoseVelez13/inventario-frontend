@@ -62,11 +62,12 @@
                 <label for="email">Correo Electrónico</label>
                 <input 
                   id="email" 
-                  type="email" 
+                  type="text" 
                   v-model="form.email" 
                   maxlength="100" 
                   placeholder="contacto@empresa.com"
                 />
+                <small class="help-text">Se permiten letras con tildes y ñ</small>
               </div>
 
               <div class="form-field full">
@@ -111,7 +112,7 @@ const props = defineProps({
   visible: { type: Boolean, default: false },
   editId: { type: [String, Number], default: null }
 })
-const emit = defineEmits(['close', 'saved'])
+const emit = defineEmits(['close', 'saved', 'error'])
 
 const isEdit = ref(false)
 const loading = ref(false)
@@ -203,19 +204,42 @@ async function submit() {
     // Procesar errores de validación del backend
     if (e.response?.data) {
       const errors = e.response.data
-      let errorMsg = 'Error de validación:\n\n'
+      let errorMsg = ''
       
       for (const [field, messages] of Object.entries(errors)) {
+        const fieldName = field === 'ruc' ? 'RUC' : 
+                         field === 'email' ? 'Correo Electrónico' : 
+                         field === 'nombre_empresa' ? 'Nombre de Empresa' : 
+                         field === 'telefono' ? 'Teléfono' :
+                         field === 'nombre_contacto' ? 'Nombre de Contacto' : field
+        
         if (Array.isArray(messages)) {
-          errorMsg += `${field}: ${messages.join(', ')}\n`
+          messages.forEach(msg => {
+            // Traducir mensajes comunes del backend
+            let translatedMsg = msg
+            if (msg.includes('already exists')) translatedMsg = 'ya está registrado'
+            else if (msg.includes('Enter a valid email')) translatedMsg = 'Ingrese un correo electrónico válido'
+            else if (msg.includes('This field may not be blank')) translatedMsg = 'Este campo es obligatorio'
+            else if (msg.includes('This field is required')) translatedMsg = 'Este campo es requerido'
+            else if (msg.includes('Ensure this field has no more than')) translatedMsg = 'Máximo de caracteres excedido'
+            
+            errorMsg += `${fieldName}: ${translatedMsg}. `
+          })
         } else {
-          errorMsg += `${field}: ${messages}\n`
+          let translatedMsg = messages
+          if (messages.includes('already exists')) translatedMsg = 'ya está registrado'
+          else if (messages.includes('Enter a valid email')) translatedMsg = 'Ingrese un correo electrónico válido'
+          
+          errorMsg += `${fieldName}: ${translatedMsg}. `
         }
       }
       
-      alert(errorMsg)
+      console.log('🔴 Emitiendo evento error:', errorMsg || 'Error de validación')
+      emit('error', errorMsg || 'Error de validación')
     } else {
-      alert('Error al guardar: ' + (e.message || 'Error desconocido'))
+      const msg = 'Error al guardar el proveedor. Por favor, verifique los datos e intente nuevamente.'
+      console.log('🔴 Emitiendo evento error:', msg)
+      emit('error', msg)
     }
   }
 }

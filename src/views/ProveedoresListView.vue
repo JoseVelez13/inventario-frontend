@@ -158,7 +158,8 @@
       :visible="showFormModal" 
       :edit-id="formEditId" 
       @close="showFormModal = false" 
-      @saved="handleSaved" 
+      @saved="handleSaved"
+      @error="handleError"
     />
 
     <ConfirmDialog 
@@ -181,7 +182,7 @@
     />
 
     <Notification 
-      v-if="notification.show" 
+      :show="notification.show" 
       :type="notification.type" 
       :title="notification.title" 
       :message="notification.message" 
@@ -413,6 +414,18 @@ export default {
     async handleSaved() {
       await this.fetchProveedores()
       this.showNotification('success', '¡Guardado!', 'Proveedor guardado exitosamente')
+    },
+
+    handleError(errorMsg) {
+      console.log('❌ Error recibido desde modal:', errorMsg)
+      console.log('Mostrando notificación con:', { type: 'error', title: 'Error de validación', message: errorMsg })
+      this.notification = {
+        show: true,
+        type: 'error',
+        title: 'Error de validación',
+        message: errorMsg
+      }
+      console.log('Estado de notificación:', this.notification)
     },
 
     showNotification(type, title, message) {

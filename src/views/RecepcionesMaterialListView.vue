@@ -129,6 +129,7 @@
       :recepcion-id="selectedRecepcionId"
       @close="closeModal"
       @saved="handleSaved"
+      @error="handleError"
     />
 
     <!-- Modal de Confirmación -->
@@ -142,7 +143,8 @@
 
     <!-- Notification -->
     <Notification 
-      v-if="notification.show" 
+      :show="notification.show" 
+      :title="notification.title"
       :message="notification.message" 
       :type="notification.type" 
       @close="notification.show = false"
@@ -180,6 +182,7 @@ const confirmDialog = ref({
 
 const notification = ref({
   show: false,
+  title: '',
   message: '',
   type: 'success'
 })
@@ -227,8 +230,10 @@ const loadRecepciones = async () => {
 }
 
 const openCreateModal = () => {
+  console.log('🔵 Abriendo modal de nueva recepción')
   selectedRecepcionId.value = null
   showModal.value = true
+  console.log('🔵 showModal.value:', showModal.value)
 }
 
 const openEditModal = (id) => {
@@ -244,6 +249,17 @@ const closeModal = () => {
 const handleSaved = () => {
   loadRecepciones()
   showNotification('Recepción guardada correctamente', 'success')
+}
+
+const handleError = (errorMsg) => {
+  console.log('❌ Error recibido desde modal:', errorMsg)
+  notification.value = {
+    show: true,
+    type: 'error',
+    title: 'Error al guardar',
+    message: errorMsg
+  }
+  console.log('Mostrando notificación de error:', notification.value)
 }
 
 const viewRecepcion = (recepcion) => {
@@ -302,11 +318,16 @@ const goToPage = (page) => {
 }
 
 const openExport = () => {
-  showNotification('Funcionalidad de exportación en desarrollo', 'info')
+  showNotification('Funcionalidad de exportación en desarrollo', 'info', 'Información')
 }
 
-const showNotification = (message, type = 'success') => {
-  notification.value = { show: true, message, type }
+const showNotification = (message, type = 'success', title = '') => {
+  if (!title) {
+    title = type === 'success' ? 'Éxito' : 
+            type === 'error' ? 'Error' : 
+            type === 'warning' ? 'Advertencia' : 'Información'
+  }
+  notification.value = { show: true, message, type, title }
 }
 
 const formatDate = (dateString) => {
