@@ -180,17 +180,17 @@ export default {
       try {
         this.loading = true
         
-        // Construir payload plano evitando Proxy
+        // Construir payload - client debe ser un NUMBER (ID del cliente)
         const payload = {
-          order_code: String(this.form.order_code),
-          client: String(this.form.client),
+          order_code: String(this.form.order_code).trim(),
+          client: Number(this.form.client), // ID numérico del cliente
           order_date: String(this.form.order_date),
           tax_rate: Number(this.form.tax_rate) || 0,
-          notes: String(this.form.notes || '')
+          notes: String(this.form.notes || '').trim()
         }
         
         console.log('Payload enviado:', payload)
-        console.log('Tipo de client:', typeof payload.client)
+        console.log('Client ID:', payload.client, '- Tipo:', typeof payload.client)
         
         if (this.isEdit) {
           await updateOrdenCliente(this.editId, payload)
