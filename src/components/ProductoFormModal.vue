@@ -11,52 +11,109 @@
           <form @submit.prevent="submit">
             <div class="form-grid">
               <div class="form-field">
-                <label for="product_code">Código *</label>
-                <input id="product_code" v-model="form.product_code" maxlength="50" required />
+                <label for="product_code">Código <span class="required">*</span></label>
+                <input 
+                  id="product_code" 
+                  v-model="form.product_code" 
+                  maxlength="50"
+                  placeholder="Ej: PROD-001"
+                  @blur="validateField('product_code')"
+                  :class="{ 'input-error': errors.product_code }"
+                />
+                <FormErrorMessage :error="errors.product_code" />
               </div>
 
               <div class="form-field">
-                <label for="name">Nombre *</label>
-                <input id="name" v-model="form.name" maxlength="150" required />
+                <label for="name">Nombre <span class="required">*</span></label>
+                <input 
+                  id="name" 
+                  v-model="form.name" 
+                  maxlength="150"
+                  placeholder="Nombre del producto"
+                  @blur="validateField('name')"
+                  :class="{ 'input-error': errors.name }"
+                />
+                <FormErrorMessage :error="errors.name" />
               </div>
 
               <div class="form-field">
-                <label for="categoria_id">Categoría *</label>
-                <select id="categoria_id" v-model="form.categoria_id" required @change="form.categoria_id = parseInt(form.categoria_id)">
+                <label for="categoria_id">Categoría <span class="required">*</span></label>
+                <select 
+                  id="categoria_id" 
+                  v-model="form.categoria_id" 
+                  @change="form.categoria_id = parseInt(form.categoria_id); validateField('categoria_id')"
+                  :class="{ 'input-error': errors.categoria_id }"
+                >
                   <option value="">-- Selecciona una categoría --</option>
                   <option v-if="categorias.length === 0" disabled>Cargando categorías...</option>
                   <option v-for="cat in categorias" :key="cat.id" :value="String(cat.id)">
                     {{ cat.nombre }}
                   </option>
                 </select>
+                <FormErrorMessage :error="errors.categoria_id" />
               </div>
 
               <div class="form-field">
-                <label for="unit">Unidad *</label>
-                <select id="unit" v-model.number="form.unit" required>
-                  <option value="" disabled>-- Selecciona una unidad --</option>
+                <label for="unit">Unidad <span class="required">*</span></label>
+                <select 
+                  id="unit" 
+                  v-model.number="form.unit"
+                  @change="validateField('unit')"
+                  :class="{ 'input-error': errors.unit }"
+                >
+                  <option value="">-- Selecciona una unidad --</option>
                   <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }} ({{ u.simbolo }})</option>
                 </select>
+                <FormErrorMessage :error="errors.unit" />
               </div>
 
               <div class="form-field">
                 <label for="weight">Peso (kg)</label>
-                <input id="weight" v-model.number="form.weight" type="number" step="0.001" min="0" />
+                <input 
+                  id="weight" 
+                  v-model.number="form.weight" 
+                  type="number" 
+                  step="0.001" 
+                  min="0"
+                  placeholder="0.000"
+                  @blur="validateField('weight')"
+                  :class="{ 'input-error': errors.weight }"
+                />
+                <FormErrorMessage :error="errors.weight" />
               </div>
 
               <div class="form-field">
                 <label for="stock">Stock</label>
-                <input id="stock" v-model.number="form.stock" type="number" step="1" min="0" />
+                <input 
+                  id="stock" 
+                  v-model.number="form.stock" 
+                  type="number" 
+                  step="1" 
+                  min="0"
+                  placeholder="0"
+                  @blur="validateField('stock')"
+                  :class="{ 'input-error': errors.stock }"
+                />
+                <FormErrorMessage :error="errors.stock" />
               </div>
 
               <div class="form-field full">
                 <label for="description">Descripción</label>
-                <textarea id="description" v-model="form.description"></textarea>
+                <textarea 
+                  id="description" 
+                  v-model="form.description"
+                  placeholder="Descripción del producto"
+                  @blur="validateField('description')"
+                  :class="{ 'input-error': errors.description }"
+                ></textarea>
+                <FormErrorMessage :error="errors.description" />
               </div>
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn-primary">{{ isEdit ? 'Actualizar' : 'Crear' }}</button>
+              <button type="submit" class="btn-primary" :disabled="loading">
+                {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }}
+              </button>
             </div>
           </form>
         </div>
@@ -69,6 +126,8 @@
 import { ref, watch, reactive, onMounted } from 'vue'
 import productosService from '../services/productosService'
 import categoriasService from '../services/categoriasService'
+import FormErrorMessage from './FormErrorMessage.vue'
+import { useFormValidation } from '../composables/useFormValidation'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -81,6 +140,7 @@ const isEdit = ref(false)
 const loading = ref(false)
 const unidades = ref([])
 const categorias = ref([])
+const { errors, validators, validateField: validateFieldUtil, validateForm: validateFormUtil } = useFormValidation()
 
 const form = reactive({
   product_code: '',
@@ -162,6 +222,35 @@ async function loadProducto(id) {
   }
 }
 
+function validateField(fieldName) {
+  const validationRules = {
+    product_code: [
+      (value) => validators.required(value, 'Código'),
+      (value) => validators.minLength(value, 2, 'Código')
+    ],
+    name: [
+      (value) => validators.required(value, 'Nombre'),
+      (value) => validators.minLength(value, 3, 'Nombre')
+    ],
+    categoria_id: [
+      (value) => validators.required(value, 'Categoría')
+    ],
+    unit: [
+      (value) => validators.required(value, 'Unidad')
+    ],
+    weight: [
+      (value) => validators.minValue(value, 0, 'Peso')
+    ],
+    stock: [
+      (value) => validators.minValue(value, 0, 'Stock')
+    ]
+  }
+
+  if (validationRules[fieldName]) {
+    validateFieldUtil(fieldName, form[fieldName], validationRules[fieldName])
+  }
+}
+
 function close() {
   visible.value = false
   resetForm()
@@ -169,13 +258,29 @@ function close() {
 }
 
 async function submit() {
-  try {
-    // Validar que categoria_id esté seleccionada
-    if (!form.categoria_id || form.categoria_id === '') {
-      alert('Por favor selecciona una categoría')
-      return
-    }
+  const validationRules = {
+    product_code: [
+      (value) => validators.required(value, 'Código'),
+      (value) => validators.minLength(value, 2, 'Código')
+    ],
+    name: [
+      (value) => validators.required(value, 'Nombre'),
+      (value) => validators.minLength(value, 3, 'Nombre')
+    ],
+    categoria_id: [
+      (value) => validators.required(value, 'Categoría')
+    ],
+    unit: [
+      (value) => validators.required(value, 'Unidad')
+    ]
+  }
 
+  if (!validateFormUtil(form, validationRules)) {
+    return
+  }
+
+  try {
+    loading.value = true
     const payload = {
       product_code: form.product_code,
       name: form.name,
@@ -201,6 +306,8 @@ async function submit() {
   } catch (e) {
     console.error('Error guardando producto', e)
     alert(`Error al guardar: ${e.response?.data?.detail || e.message}`)
+  } finally {
+    loading.value = false
   }
 }
 
@@ -305,12 +412,31 @@ loadCategorias()
   transition: all 0.2s;
 }
 
+.form-field input.input-error,
+.form-field select.input-error,
+.form-field textarea.input-error {
+  border-color: #f87171;
+  background-color: #fef2f2;
+}
+
 .form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
   outline: none;
   border-color: #4f6f8f;
   box-shadow: 0 0 0 3px rgba(79, 111, 143, 0.1);
+}
+
+.form-field input.input-error:focus,
+.form-field select.input-error:focus,
+.form-field textarea.input-error:focus {
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1);
+}
+
+.required {
+  color: #f87171;
+  font-weight: bold;
 }
 
 .form-field textarea {
