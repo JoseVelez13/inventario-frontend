@@ -11,7 +11,7 @@
         <!-- MODO EXPORTAR -->
         <div v-if="mode === 'export'" class="dialog-content">
           <p class="description">Selecciona el formato para exportar {{ itemCount }} {{ entityName }}(s):</p>
-          
+
           <div class="format-buttons">
             <button class="format-btn excel" @click="exportExcel">
               <span class="icon">📊</span>
@@ -29,6 +29,13 @@
               <span class="icon">📑</span>
               <span class="label">PDF (.pdf)</span>
             </button>
+            <button class="format-btn drive" @click="exportarADrive('excel')">
+              <span class="icon">
+                <i class="fa-brands fa-google-drive"></i>
+              </span>
+              <span class="label">Google Drive</span>
+              <span class="sublabel">Guardar en la nube</span>
+            </button>
           </div>
         </div>
 
@@ -37,7 +44,7 @@
           <!-- Paso 1: Seleccionar archivo -->
           <div v-if="step === 1" class="import-step">
             <p class="description">Selecciona un archivo para importar {{ entityName }}s:</p>
-            
+
             <!-- Botones de descarga de plantillas -->
             <div class="template-download-section">
               <h4 class="template-title">Descargar Plantilla</h4>
@@ -60,21 +67,15 @@
               </div>
             </div>
 
-            <div class="file-upload-area" 
-                 @click="triggerFileInput"
-                 @dragover.prevent="dragover = true" 
-                 @dragleave="dragover = false"
-                 @drop.prevent="handleDrop"
-                 :class="{ dragover }">
-              <input ref="fileInput" type="file" hidden 
-                     accept=".xlsx,.csv,.json" 
-                     @change="handleFileSelect">
+            <div class="file-upload-area" @click="triggerFileInput" @dragover.prevent="dragover = true"
+              @dragleave="dragover = false" @drop.prevent="handleDrop" :class="{ dragover }">
+              <input ref="fileInput" type="file" hidden accept=".xlsx,.csv,.json" @change="handleFileSelect">
               <div class="upload-icon">Archivo</div>
               <p v-if="!selectedFile" class="upload-text">
                 Haz clic o arrastra un archivo aqui
               </p>
               <p v-else class="selected-file">
-                <strong v-text="selectedFile.name"></strong> 
+                <strong v-text="selectedFile.name"></strong>
                 <span v-text="'(' + formatFileSize(selectedFile.size) + ')'"></span>
               </p>
               <p class="formats-supported">Formatos: Excel (.xlsx), CSV (.csv), JSON (.json)</p>
@@ -117,7 +118,7 @@
                 </thead>
                 <tbody>
                   <tr v-for="(item, idx) in parsedData.slice(0, 10)" :key="idx"
-                      :class="{ 'row-error': item._hasError, 'row-warning': item._hasWarning }">
+                    :class="{ 'row-error': item._hasError, 'row-warning': item._hasWarning }">
                     <td v-for="col in previewColumns" :key="col">{{ item[col] || '-' }}</td>
                     <td>
                       <span v-if="item._hasError" class="badge-error">❌ Error</span>
@@ -135,8 +136,8 @@
             <!-- Botones de accion -->
             <div class="action-buttons">
               <button class="btn-secondary" @click="close">Cancelar</button>
-              <button class="btn-primary" @click="confirmImport" 
-                      :disabled="validationErrors.filter(e => e.severity === 'error').length > 0">
+              <button class="btn-primary" @click="confirmImport"
+                :disabled="validationErrors.filter(e => e.severity === 'error').length > 0">
                 Importar {{ validDataCount }} registro(s)
               </button>
             </div>
@@ -153,6 +154,8 @@
           </div>
         </div>
       </div>
+      <GuardarDriveModal :isOpen="mostrarModalDrive" :archivo="archivoParaDrive" :nombreArchivo="nombreArchivoParaDrive"
+        :tipoReporteDefault="entityName.toLowerCase()" @cerrar="cerrarModalDrive" @guardado="archivoGuardadoEnDrive" />
     </div>
   </transition>
 </template>
@@ -164,10 +167,13 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import ExcelJS from 'exceljs'
 import logo from '../assets/img/logo.png'
+import GuardarDriveModal from './GuardarDriveModal.vue'
 
 export default {
   name: 'ImportExportDialog',
-  
+  components: {
+    GuardarDriveModal
+  },
   props: {
     show: {
       type: Boolean,
@@ -214,7 +220,10 @@ export default {
       importProgress: 0,
       importedCount: 0,
       totalToImport: 0,
-      logoBase64: null
+      logoBase64: null,
+      mostrarModalDrive: false,
+      archivoParaDrive: null,
+      nombreArchivoParaDrive: '',
     }
   },
 
@@ -229,7 +238,7 @@ export default {
       if (this.parsedData.length === 0) return []
       return Object.keys(this.parsedData[0]).filter(k => !k.startsWith('_'))
     },
-    
+
     validDataCount() {
       return this.parsedData.filter(item => !item._hasError).length
     }
@@ -268,7 +277,7 @@ export default {
       try {
         let templateData = []
         let columnHeaders = []
-        
+
         // Generar plantilla según el tipo de entidad
         if (this.entityName === 'Productos' || this.entityName === 'producto') {
           columnHeaders = ['Código', 'Nombre', 'Categoría', 'Descripción', 'Unidad', 'Peso', 'Stock']
@@ -353,7 +362,7 @@ export default {
             }
           ]
         }
-        
+
         const fileName = `Plantilla_${this.entityName}_${this.getTimestamp()}`
 
         if (format === 'excel') {
@@ -361,7 +370,7 @@ export default {
           const workbook = new ExcelJS.Workbook()
           workbook.creator = 'Sistema Innoquim'
           const worksheet = workbook.addWorksheet('Plantilla')
-          
+
           // Logo en encabezado
           if (this.logoBase64) {
             try {
@@ -380,7 +389,7 @@ export default {
               console.warn('No se pudo agregar logo:', err)
             }
           }
-          
+
           // Fila 1: TITULO
           worksheet.mergeCells('A1:' + this.getColumnLetter(columnHeaders.length) + '1')
           const titleCell = worksheet.getCell('A1')
@@ -395,7 +404,7 @@ export default {
             right: { style: 'thick', color: { argb: 'FF1E3A5F' } }
           }
           worksheet.getRow(1).height = 35
-          
+
           // Fila 2: SUBTITULO
           worksheet.mergeCells('A2:' + this.getColumnLetter(columnHeaders.length) + '2')
           const subtitleCell = worksheet.getCell('A2')
@@ -409,10 +418,10 @@ export default {
             right: { style: 'thick', color: { argb: 'FF1E3A5F' } }
           }
           worksheet.getRow(2).height = 50
-          
+
           // Fila 3: vacia
           worksheet.getRow(3).height = 8
-          
+
           // Fila 4: INSTRUCCIONES
           worksheet.mergeCells('A4:' + this.getColumnLetter(columnHeaders.length) + '4')
           const instrCell = worksheet.getCell('A4')
@@ -427,10 +436,10 @@ export default {
             right: { style: 'medium', color: { argb: 'FFF59E0B' } }
           }
           worksheet.getRow(4).height = 35
-          
+
           // Fila 5: vacia
           worksheet.getRow(5).height = 8
-          
+
           // Fila 6: ENCABEZADOS DE COLUMNAS
           const headerRow = worksheet.getRow(6)
           columnHeaders.forEach((header, index) => {
@@ -447,7 +456,7 @@ export default {
             }
           })
           headerRow.height = 28
-          
+
           // Fila 7: DATOS DE EJEMPLO
           const exampleRow = worksheet.getRow(7)
           columnHeaders.forEach((header, index) => {
@@ -464,18 +473,18 @@ export default {
             }
           })
           exampleRow.height = 20
-          
+
           // Ajustar anchos de columna
           columnHeaders.forEach((header, index) => {
             const maxLength = Math.max(header.length, String(templateData[0][header]).length)
             worksheet.getColumn(index + 1).width = Math.max(maxLength + 5, 15)
           })
-          
+
           // Congelar encabezados
           worksheet.views = [
             { state: 'frozen', xSplit: 0, ySplit: 6 }
           ]
-          
+
           // Establecer que por defecto todas las columnas estén desbloqueadas
           worksheet.columns.forEach(column => {
             column.eachCell({ includeEmpty: false }, (cell) => {
@@ -484,7 +493,7 @@ export default {
               }
             })
           })
-          
+
           // Bloquear específicamente solo las filas de encabezado (1-6)
           for (let i = 1; i <= 6; i++) {
             const row = worksheet.getRow(i)
@@ -492,7 +501,7 @@ export default {
               cell.protection = { locked: true }
             })
           }
-          
+
           // Asegurar que la fila 7 en adelante estén desbloqueadas
           for (let i = 7; i <= 100; i++) {
             const row = worksheet.getRow(i)
@@ -501,7 +510,7 @@ export default {
               cell.protection = { locked: false }
             })
           }
-          
+
           // Activar protección de la hoja
           worksheet.protect('', {
             selectLockedCells: true,
@@ -516,7 +525,7 @@ export default {
             sort: true,
             autoFilter: true
           })
-          
+
           // Guardar archivo
           const buffer = await workbook.xlsx.writeBuffer()
           const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
@@ -545,22 +554,97 @@ export default {
         alert('Error al generar la plantilla')
       }
     },
+    async exportarADrive(formato) {
+      try {
+        let blob = null
+        let fileName = `${this.entityName}_${this.getTimestamp()}`
 
+        if (formato === 'excel') {
+          // Generar Excel
+          const workbook = new ExcelJS.Workbook()
+          workbook.creator = 'Sistema Innoquim'
+          const worksheet = workbook.addWorksheet(this.entityName.substring(0, 31))
+
+          // Agregar datos (simplificado, usa tu lógica existente)
+          const headerRow = worksheet.getRow(1)
+          this.columns.forEach((col, index) => {
+            const cell = headerRow.getCell(index + 1)
+            cell.value = col.label
+          })
+
+          this.data.forEach((item, rowIndex) => {
+            const row = worksheet.getRow(2 + rowIndex)
+            this.columns.forEach((col, colIndex) => {
+              row.getCell(colIndex + 1).value = item[col.key]
+            })
+          })
+
+          const buffer = await workbook.xlsx.writeBuffer()
+          blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          })
+          fileName += '.xlsx'
+        }
+        else if (formato === 'csv') {
+          const csv = Papa.unparse(this.data, {
+            quotes: true,
+            delimiter: ",",
+            header: true
+          })
+          const BOM = '\uFEFF'
+          blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' })
+          fileName += '.csv'
+        }
+        else if (formato === 'json') {
+          const json = JSON.stringify(this.data, null, 2)
+          blob = new Blob([json], { type: 'application/json' })
+          fileName += '.json'
+        }
+        else if (formato === 'pdf') {
+          // Para PDF necesitarías convertir el jsPDF a Blob
+          // Por ahora lo dejamos como Excel por defecto
+          console.warn('PDF a Drive aún no implementado, usando Excel')
+          return this.exportarADrive('excel')
+        }
+
+        if (blob) {
+          // Convertir Blob a File
+          this.archivoParaDrive = new File([blob], fileName, { type: blob.type })
+          this.nombreArchivoParaDrive = fileName
+          this.mostrarModalDrive = true
+        }
+      } catch (error) {
+        console.error('Error al preparar archivo para Drive:', error)
+        alert('Error al preparar el archivo')
+      }
+    },
+
+    cerrarModalDrive() {
+      this.mostrarModalDrive = false
+      this.archivoParaDrive = null
+      this.nombreArchivoParaDrive = ''
+    },
+
+    archivoGuardadoEnDrive(resultado) {
+      console.log('Archivo guardado en Drive:', resultado)
+      // Opcional: Cerrar el diálogo principal después de guardar
+      this.close()
+    },
     // ========== EXPORTAR ==========
     async exportExcel() {
       try {
         // Crear un nuevo libro de Excel con ExcelJS
         const workbook = new ExcelJS.Workbook()
-        
+
         // Configurar propiedades del documento
         workbook.creator = 'Sistema Innoquim'
         workbook.lastModifiedBy = 'Sistema Innoquim'
         workbook.created = new Date()
         workbook.modified = new Date()
-        
+
         // Crear hoja
         const worksheet = workbook.addWorksheet(this.entityName.substring(0, 31))
-        
+
         // ===== AGREGAR LOGO EN ENCABEZADO (ESQUINA DERECHA) =====
         if (this.logoBase64) {
           try {
@@ -569,7 +653,7 @@ export default {
               base64: base64Data,
               extension: 'png'
             })
-            
+
             // Logo pequeño en la esquina derecha de la fila 2
             const lastCol = Math.max(0, this.columns.length - 1)
             worksheet.addImage(imageId, {
@@ -581,10 +665,10 @@ export default {
             console.warn('No se pudo agregar logo en Excel:', err)
           }
         }
-        
+
         const now = new Date()
         const fechaHora = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-        
+
         // ===== TITULO PRINCIPAL (Fila 1) =====
         worksheet.mergeCells('A1:' + this.getColumnLetter(this.columns.length) + '1')
         const titleCell = worksheet.getCell('A1')
@@ -599,7 +683,7 @@ export default {
           right: { style: 'thick', color: { argb: 'FF1E3A5F' } }
         }
         worksheet.getRow(1).height = 35
-        
+
         // ===== SUBTITULO (Fila 2) =====
         worksheet.mergeCells('A2:' + this.getColumnLetter(this.columns.length) + '2')
         const subtitleCell = worksheet.getCell('A2')
@@ -613,22 +697,22 @@ export default {
           right: { style: 'thick', color: { argb: 'FF1E3A5F' } }
         }
         worksheet.getRow(2).height = 50
-        
+
         // Fila 3 vacia
         worksheet.getRow(3).height = 8
-        
+
         // ===== INFORMACION (Filas 4-6) =====
         const infoData = [
           ['Fecha de exportacion:', fechaHora],
           ['Total de registros:', this.data.length],
           ['Generado por:', 'Sistema de Gestion de Inventario - Innoquim']
         ]
-        
+
         infoData.forEach((info, index) => {
           const rowNum = 4 + index
           const labelCell = worksheet.getCell('A' + rowNum)
           const valueCell = worksheet.getCell('B' + rowNum)
-          
+
           labelCell.value = info[0]
           labelCell.font = { bold: true, size: 10, color: { argb: 'FF4F6F8F' } }
           labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4F8' } }
@@ -639,7 +723,7 @@ export default {
             left: { style: 'medium', color: { argb: 'FF4F6F8F' } },
             right: { style: 'thin', color: { argb: 'FFD1D5DB' } }
           }
-          
+
           valueCell.value = info[1]
           valueCell.font = { size: 10, color: { argb: 'FF1F2937' } }
           valueCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } }
@@ -649,18 +733,18 @@ export default {
             bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
             right: { style: 'medium', color: { argb: 'FF4F6F8F' } }
           }
-          
+
           // Fusionar desde B hasta la ultima columna de datos
           const endCol = this.getColumnLetter(this.columns.length)
           worksheet.mergeCells('B' + rowNum + ':' + endCol + rowNum)
-          
+
           worksheet.getRow(rowNum).height = 20
         })
-        
+
         // Filas 7-8 vacias
         worksheet.getRow(7).height = 8
         worksheet.getRow(8).height = 8
-        
+
         // ===== HEADERS DE DATOS (Fila 9) =====
         const headerRow = worksheet.getRow(9)
         this.columns.forEach((col, index) => {
@@ -677,13 +761,13 @@ export default {
           }
         })
         headerRow.height = 28
-        
+
         // ===== DATOS (Desde fila 10) =====
         this.data.forEach((item, rowIndex) => {
           const row = worksheet.getRow(10 + rowIndex)
           const isEven = rowIndex % 2 === 0
           const bgColor = isEven ? 'FFFFFFFF' : 'FFF8FAFC'
-          
+
           this.columns.forEach((col, colIndex) => {
             const cell = row.getCell(colIndex + 1)
             const value = item[col.key]
@@ -699,7 +783,7 @@ export default {
             }
           })
         })
-        
+
         // ===== AJUSTAR ANCHOS DE COLUMNA =====
         this.columns.forEach((col, index) => {
           let maxLength = col.label.length
@@ -720,18 +804,18 @@ export default {
             worksheet.getColumn(index + 1).width = Math.min(Math.max(maxLength + 2, 15), 50)
           }
         })
-        
+
         // ===== AUTO-FILTRO =====
         worksheet.autoFilter = {
           from: { row: 9, column: 1 },
           to: { row: 9, column: this.columns.length }
         }
-        
+
         // ===== CONGELAR PANELES =====
         worksheet.views = [
           { state: 'frozen', xSplit: 0, ySplit: 9 }
         ]
-        
+
         // ===== GUARDAR ARCHIVO =====
         const buffer = await workbook.xlsx.writeBuffer()
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
@@ -741,7 +825,7 @@ export default {
         link.download = this.entityName + '_' + this.getTimestamp() + '.xlsx'
         link.click()
         window.URL.revokeObjectURL(url)
-        
+
         this.close()
       } catch (error) {
         console.error('Error al exportar Excel:', error)
@@ -753,14 +837,14 @@ export default {
       try {
         const now = new Date()
         const fechaHora = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-        
+
         // BOM para correcta visualizacion en Excel
         const BOM = '\uFEFF'
         let csvContent = BOM
-        
+
         // Encabezados simples
         csvContent += this.columns.map(col => '"' + col.label + '"').join(',') + '\n'
-        
+
         // Datos
         this.data.forEach((item) => {
           csvContent += this.columns.map(col => {
@@ -769,7 +853,7 @@ export default {
             return '"' + finalValue.replace(/"/g, '""') + '"'
           }).join(',') + '\n'
         })
-        
+
         // Descargar archivo
         this.downloadFile(csvContent, this.entityName + '_' + this.getTimestamp() + '.csv', 'text/csv;charset=utf-8')
         this.close()
@@ -783,7 +867,7 @@ export default {
       try {
         const now = new Date()
         const fechaHora = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-        
+
         const exportData = {
           system: "SISTEMA INNOQUIM",
           entity: this.entityName,
@@ -811,12 +895,12 @@ export default {
           unit: 'mm',
           format: 'a4'
         })
-        
+
         const pageWidth = doc.internal.pageSize.getWidth()
         const pageHeight = doc.internal.pageSize.getHeight()
-        
+
         // ===== ENCABEZADO ESTILO EXCEL =====
-        
+
         // Fila 1: TITULO PRINCIPAL (azul oscuro)
         doc.setFillColor(79, 111, 143)
         doc.rect(0, 0, pageWidth, 12, 'F')
@@ -824,7 +908,7 @@ export default {
         doc.setFontSize(16)
         doc.setFont('helvetica', 'bold')
         doc.text('SISTEMA INNOQUIM', pageWidth / 2, 8, { align: 'center' })
-        
+
         // Fila 2: SUBTITULO (celeste)
         doc.setFillColor(232, 243, 248)
         doc.rect(0, 12, pageWidth, 10, 'F')
@@ -832,7 +916,7 @@ export default {
         doc.setFontSize(13)
         doc.setFont('helvetica', 'bold')
         doc.text('Reporte de ' + this.entityName, pageWidth / 2, 18.5, { align: 'center' })
-        
+
         // Logo en fila 2 (esquina derecha, más grande)
         if (this.logoBase64) {
           try {
@@ -841,19 +925,19 @@ export default {
             console.warn('Error al agregar logo en encabezado:', err)
           }
         }
-        
+
         // Fila 3: espacio vacio
         doc.setFillColor(255, 255, 255)
         doc.rect(0, 22, pageWidth, 3, 'F')
-        
+
         // Filas 4-6: INFORMACION (estilo Excel con etiquetas)
         doc.setTextColor(79, 111, 143)
         doc.setFontSize(9)
         doc.setFont('helvetica', 'bold')
-        
+
         const now = new Date()
         const fechaHora = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' + now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-        
+
         // Fila 4: Fecha de exportacion
         doc.setFillColor(240, 244, 248)
         doc.rect(14, 25, 55, 6, 'F')
@@ -861,7 +945,7 @@ export default {
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(31, 41, 55)
         doc.text(fechaHora, 70, 29)
-        
+
         // Fila 5: Total de registros
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(79, 111, 143)
@@ -871,7 +955,7 @@ export default {
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(31, 41, 55)
         doc.text(String(this.data.length), 70, 35)
-        
+
         // Fila 6: Generado por
         doc.setFont('helvetica', 'bold')
         doc.setTextColor(79, 111, 143)
@@ -881,9 +965,9 @@ export default {
         doc.setFont('helvetica', 'normal')
         doc.setTextColor(31, 41, 55)
         doc.text('Sistema de Gestion de Inventario - Innoquim', 70, 41)
-        
+
         // Preparar datos de la tabla
-        const tableData = this.data.map(item => 
+        const tableData = this.data.map(item =>
           this.columns.map(col => {
             const value = item[col.key]
             if (value === null || value === undefined) return '-'
@@ -899,14 +983,14 @@ export default {
           body: tableData,
           startY: 48,
           theme: 'striped',
-          styles: { 
+          styles: {
             fontSize: 8,
             cellPadding: 3,
             overflow: 'linebreak',
             halign: 'left',
             font: 'helvetica'
           },
-          headStyles: { 
+          headStyles: {
             fillColor: [79, 111, 143],
             textColor: [255, 255, 255],
             fontStyle: 'bold',
@@ -920,21 +1004,21 @@ export default {
             0: { fontStyle: 'bold' }
           },
           margin: { left: 14, right: 14 },
-          didDrawPage: function(data) {
+          didDrawPage: function (data) {
             // Pie de página
             const pageCount = doc.internal.getNumberOfPages()
             const pageNumber = doc.internal.getCurrentPageInfo().pageNumber
-            
+
             doc.setFontSize(8)
             doc.setTextColor(128, 128, 128)
             doc.setFont('helvetica', 'normal')
-            
+
             doc.text(
               'Pagina ' + pageNumber + ' de ' + pageCount,
               14,
               doc.internal.pageSize.height - 10
             )
-            
+
             doc.text(
               'Sistema de Gestion de Inventario - Innoquim',
               doc.internal.pageSize.width / 2,
@@ -993,11 +1077,11 @@ export default {
             const data = new Uint8Array(e.target.result)
             const workbook = XLSX.read(data, { type: 'array' })
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
-            
+
             // Verificar si es una plantilla de Innoquim (tiene encabezados decorativos)
             const cellA1 = firstSheet['A1']
             const isInnoquimTemplate = cellA1 && cellA1.v && cellA1.v.toString().includes('SISTEMA INNOQUIM')
-            
+
             if (isInnoquimTemplate) {
               // Plantilla profesional: headers en fila 6 (índice 5), datos desde fila 7 (índice 6)
               // Primero obtener los headers de la fila 6
@@ -1008,9 +1092,9 @@ export default {
                 const cell = firstSheet[cellAddress]
                 headers.push(cell ? cell.v : `Column${col}`)
               }
-              
+
               // Luego obtener los datos desde la fila 7 usando esos headers
-              this.parsedData = XLSX.utils.sheet_to_json(firstSheet, { 
+              this.parsedData = XLSX.utils.sheet_to_json(firstSheet, {
                 range: 6, // Empezar desde fila 7 (0-indexed)
                 header: headers, // Usar los headers de la fila 6
                 defval: '' // Valor por defecto para celdas vacías
@@ -1019,6 +1103,7 @@ export default {
               // Plantilla simple o archivo externo: primera fila son headers
               this.parsedData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' })
             }
+
             
             // IMPORTANTE: Normalizar y mapear columnas para mantener consistencia
             // Esto asegura que "Categoría", "categoria", "category" todas se encuentren como "categoria"
@@ -1045,7 +1130,7 @@ export default {
             if (this.parsedData.length > 0) {
               this.originalColumns = Object.keys(this.parsedData[0]).filter(k => !k.startsWith('_'))
             }
-            
+
             console.log('Excel parseado:', this.parsedData.length, 'filas')
             console.log('Primera fila (normalizada):', this.parsedData[0])
             console.log('Columnas originales (normalizadas):', this.originalColumns)
@@ -1128,10 +1213,10 @@ export default {
       console.log('validateData - parsedData antes:', this.parsedData.length, 'filas')
       console.log('validateData - primera fila antes:', this.parsedData[0])
       this.validationErrors = []
-      
+
       this.parsedData.forEach((item, idx) => {
         const rowNum = idx + 2 // Excel row (header = 1)
-        
+
         // Validaciones según el tipo de entidad
         if (this.entityName === 'Productos' || this.entityName === 'producto') {
           // Buscar columnas de forma flexible (case-insensitive y sin espacios)
@@ -1147,7 +1232,7 @@ export default {
             }
             return ''
           }
-          
+
           // Extraer valores flexiblemente
           const codigoValue = findValue(['Código', 'codigo', 'code', 'product_code', 'productcode'])
           const nombreValue = findValue(['Nombre', 'nombre', 'name', 'producto'])
@@ -1155,7 +1240,7 @@ export default {
           const categoriaValue = findValue(['Categoría', 'categoria', 'Category', 'category'])
           const unidadValue = findValue(['Unidad', 'unidad', 'unit', 'UnidaddeMedida', 'unidad_medida'])
           const pesoValue = findValue(['Peso', 'peso', 'weight', 'Peso(kg)'])
-          
+
           // Guardar valores normalizados
           item._normalized = {
             product_code: codigoValue || '',
@@ -1165,11 +1250,11 @@ export default {
             unit: (unidadValue || 'kg').toString().trim(),
             weight: parseFloat(pesoValue) || 0.1
           }
-          
+
           if (idx === 0) {
             console.log('validateData - primera fila después de normalizar:', item._normalized)
           }
-          
+
           if (!item._normalized.product_code || !item._normalized.name) {
             item._hasError = true
             this.validationErrors.push({
@@ -1178,7 +1263,7 @@ export default {
               severity: 'error'
             })
           }
-          
+
           if (!item._normalized.weight || item._normalized.weight <= 0) {
             item._hasWarning = true
             this.validationErrors.push({
@@ -1188,14 +1273,14 @@ export default {
             })
             item._normalized.weight = 0.1
           }
-        } 
+        }
         else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
           // Debug: ver qué columnas tiene realmente el item
           if (idx === 0 || idx === 1) {
             console.log(`Fila ${idx + 1} - Columnas disponibles:`, Object.keys(item))
             console.log(`Fila ${idx + 1} - Valores:`, item)
           }
-          
+
           // Buscar columnas de forma flexible (case-insensitive y sin espacios)
           const findValue = (possibleNames) => {
             for (const key of Object.keys(item)) {
@@ -1209,7 +1294,7 @@ export default {
             }
             return ''
           }
-          
+
           // Normalizar campos de clientes buscando flexiblemente
           const rucValue = findValue(['RUC', 'ruc', 'Ruc'])
           const empresaValue = findValue(['Nombre Empresa', 'nombre_empresa', 'Empresa', 'empresa', 'NombreEmpresa'])
@@ -1217,7 +1302,7 @@ export default {
           const telefonoValue = findValue(['Teléfono', 'Telefono', 'telefono', 'phone', 'Phone'])
           const emailValue = findValue(['Email', 'email', 'correo', 'Correo'])
           const direccionValue = findValue(['Dirección', 'Direccion', 'direccion', 'address', 'Address'])
-          
+
           // Agregar campos normalizados (para la importación posterior)
           item._normalized = {
             ruc: rucValue,
@@ -1253,7 +1338,7 @@ export default {
             }
             return ''
           }
-          
+
           // Normalizar campos de proveedores
           const rucValue = findValue(['RUC', 'ruc', 'Ruc'])
           const empresaValue = findValue(['Nombre Empresa', 'nombre_empresa', 'Empresa', 'empresa', 'NombreEmpresa'])
@@ -1262,7 +1347,7 @@ export default {
           const emailValue = findValue(['Email', 'email', 'correo', 'Correo'])
           const direccionValue = findValue(['Dirección', 'Direccion', 'direccion', 'address', 'Address'])
           const tipoProductoValue = findValue(['Tipo Producto', 'TipoProducto', 'tipo_producto', 'TipodeProducto'])
-          
+
           // Agregar campos normalizados
           item._normalized = {
             ruc: rucValue,
@@ -1297,11 +1382,11 @@ export default {
             }
             return ''
           }
-          
+
           // Normalizar campos de almacenes
           const nombreValue = findValue(['Nombre', 'nombre', 'name', 'NombreAlmacén', 'NombreAlmacen'])
           const direccionValue = findValue(['Dirección', 'Direccion', 'direccion', 'address', 'Address'])
-          
+
           // Agregar campos normalizados
           item._normalized = {
             nombre: nombreValue,
@@ -1331,12 +1416,12 @@ export default {
             }
             return ''
           }
-          
+
           // Normalizar campos de unidades
           const nombreValue = findValue(['Nombre', 'nombre', 'name'])
           const simboloValue = findValue(['Símbolo', 'Simbolo', 'simbolo', 'symbol', 'Symbol'])
           const factorValue = findValue(['FactordeConversión', 'FactordeConversion', 'factor_conversion', 'factor'])
-          
+
           // Agregar campos normalizados
           item._normalized = {
             nombre: nombreValue,
@@ -1367,7 +1452,7 @@ export default {
             }
             return ''
           }
-          
+
           // Extraer valores flexiblemente
           const codigoValue = findValue(['Código', 'codigo', 'code'])
           const nombreValue = findValue(['Nombre', 'nombre', 'name'])
@@ -1377,7 +1462,7 @@ export default {
           const densidadValue = findValue(['Densidad', 'densidad', 'density', 'Densidad(g/cm³)'])
           const stockMinValue = findValue(['StockMínimo', 'StockMinimo', 'stock_minimo', 'min_stock'])
           const stockMaxValue = findValue(['StockMáximo', 'StockMaximo', 'stock_maximo', 'max_stock'])
-          
+
           // Guardar valores normalizados (unidad como texto para luego convertir a ID)
           item._normalized = {
             codigo: codigoValue || '',
@@ -1420,7 +1505,7 @@ export default {
       this.step = 3
       const validData = this.parsedData.filter(item => !item._hasError)
       this.totalToImport = validData.length
-      
+
       console.log('confirmImport - validData[0]:', validData[0])
 
       // Crear objetos limpios SOLO con los campos normalizados
@@ -1436,7 +1521,7 @@ export default {
             unit: String(normalized.unit || 'kg').trim(),
             weight: parseFloat(normalized.weight) || 0.1
           }
-        } 
+        }
         else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
           // Usar los campos normalizados del objeto _normalized
           const normalized = item._normalized || {}
@@ -1498,11 +1583,11 @@ export default {
 
       // Emitir datos limpios para que el componente padre los procese
       this.$emit('import-complete', cleanedData)
-      
+
       // Simular progreso (el padre manejará la importación real)
       this.importedCount = validData.length
       this.importProgress = 100
-      
+
       setTimeout(() => {
         this.close()
       }, 1500)
@@ -1596,6 +1681,7 @@ export default {
     opacity: 0;
     transform: scale(0.9) translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -1645,11 +1731,51 @@ export default {
   margin-bottom: 24px;
 }
 
-/* Botones de formato de exportación */
 .format-buttons {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+}
+
+.format-btn.drive {
+  grid-column: 1 / -1;
+  background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+  border-color: #4285f4;
+  color: white;
+  position: relative;
+}
+
+.format-btn.drive .icon {
+  font-size: 28px;
+  color: white;
+}
+
+.format-btn.drive .label {
+  color: white;
+  font-weight: 700;
+}
+
+.format-btn.drive .sublabel {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  margin-top: 4px;
+}
+
+.format-btn.drive:hover {
+  background: linear-gradient(135deg, #3b78e7 0%, #2d9348 100%);
+  border-color: #3b78e7;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(66, 133, 244, 0.4);
+}
+
+.format-btn.drive::before {
+  content: '☁️';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 20px;
+  opacity: 0.3;
 }
 
 .format-btn {
@@ -2028,7 +2154,9 @@ export default {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .progress-bar {

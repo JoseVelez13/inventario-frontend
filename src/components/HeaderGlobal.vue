@@ -107,6 +107,10 @@
           </div>
 
           <div class="nav-section">
+            <div class="nav-section-title">Reportes</div>
+            <router-link to="/archivos-drive" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-brands fa-google-drive"></i>
+              <span>Archivos en Drive</span>
             <div class="nav-section-title">Producción</div>
             <router-link to="/lotes-produccion" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-industry"></i>
@@ -134,6 +138,7 @@
     </div>
   </transition>
 </template>
+
 <script>
 import '../assets/styles/HeaderGlobal.css'
 import logo from '../assets/img/logo.png'
@@ -161,7 +166,7 @@ export default {
         localStorage.removeItem('access_token')
         localStorage.removeItem('refresh_token')
         localStorage.removeItem('user')
-      } catch (e) {}
+      } catch (e) { }
       this.closeSidebar()
       this.$router.push('/login')
     }
