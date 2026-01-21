@@ -16,31 +16,33 @@ import LoteProduccionListView from '../views/LoteProduccionListView.vue'
 import LoteProduccionDetailView from '../views/LoteProduccionDetailView.vue'
 import ArchivosGDriveView from '../views/ArchivosGDriveView.vue'
 import authService from '../services/auth'
+import OrdenesClienteListView from '../views/OrdenesClienteListView.vue'
+import CategoriasListView from '../views/CategoriasListView.vue'
 
 const routes = [
-  { 
-    path: '/', 
+  {
+    path: '/',
     name: 'Inicio',
     component: DashboardView,
     meta: { title: 'Dashboard - Sistema Innoquim', requiresAuth: true }
   },
-  { 
-    path: '/login', 
+  {
+    path: '/login',
     name: 'Login',
     component: LoginView,
-    meta: { 
+    meta: {
       title: 'Iniciar Sesión - Sistema Innoquim',
       hideForAuth: true
     }
   },
-  { 
-    path: '/dashboard', 
+  {
+    path: '/dashboard',
     name: 'Dashboard',
-    component: DashboardView, 
-    meta: { 
+    component: DashboardView,
+    meta: {
       requiresAuth: true,
       title: 'Dashboard - Sistema Innoquim'
-    } 
+    }
   },
   {
     path: '/clientes',
@@ -118,9 +120,27 @@ const routes = [
     path: '/archivos-drive',
     name: 'ArchivosGDrive',
     component: ArchivosGDriveView,
-    meta: { 
+    meta: {
       title: 'Archivos en Google Drive - Sistema Innoquim',
-      requiresAuth: true 
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/ordenes-cliente',
+    name: 'OrdenesCliente',
+    component: OrdenesClienteListView,
+    meta: {
+      title: 'Órdenes de Cliente - Sistema Innoquim',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/categorias',
+    name: 'Categorias',
+    component: CategoriasListView,
+    meta: {
+      title: 'Categorías - Sistema Innoquim',
+      requiresAuth: true
     }
   },
   // ruta fallback para errores
@@ -135,27 +155,27 @@ const router = createRouter({
 // Guard global para proteger rutas que requieren autenticación
 router.beforeEach((to, from, next) => {
   const isAuthenticated = authService.isAuthenticated()
-  
+
   // Actualizar título de la página
   if (to.meta.title) {
     document.title = to.meta.title
   }
-  
+
   // Si la ruta requiere autenticación y no está autenticado
   if (to.meta.requiresAuth && !isAuthenticated) {
-    next({ 
-      path: '/login', 
-      query: { redirect: to.fullPath } 
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
     })
     return
   }
-  
+
   // Si está autenticado e intenta ir a login/registro, redirigir a dashboard
   if (to.meta.hideForAuth && isAuthenticated) {
     next({ path: '/dashboard' })
     return
   }
-  
+
   next()
 })
 
