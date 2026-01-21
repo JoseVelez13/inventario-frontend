@@ -93,6 +93,17 @@
                 </div>
               </th>
 
+              <th class="sortable-header" @click="toggleSort('nombre_categoria')">
+                <div class="header-content">
+                  <span>Categoría</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'nombre_categoria' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'nombre_categoria' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
               <th>Descripción</th>
               <th>Unidad</th>
 
@@ -137,8 +148,9 @@
               <td class="h">{{ mp.materia_prima_id }}</td>
               <td class="h"><strong>{{ mp.codigo }}</strong></td>
               <td class="h">{{ mp.nombre }}</td>
+              <td class="h">{{ mp.nombre_categoria || '-' }}</td>
               <td class="h">{{ mp.descripcion || '-' }}</td>
-              <td class="h">{{ mp.unidad || '-' }}</td>
+              <td class="h">{{ mp.nombre_unidad || '-' }}</td>
               <td class="h">{{ mp.densidad ? mp.densidad + ' g/cm³' : '-' }}</td>
               <td class="h">
                 <span :class="{'badge-warning': isStockBajo(mp)}">
@@ -248,6 +260,7 @@ import MateriaPrimaFormModal from '../components/MateriaPrimaFormModal.vue'
 import '../assets/styles/MateriasPrimas.css'
 import materiasPrimasService from '../services/materiasPrimasService'
 import unidadesService from '../services/unidadesService'
+import categoriasService from '../services/categoriasService'
 
 function debounce(fn, delay) {
   let timeout
@@ -582,28 +595,92 @@ export default {
         }
       }
 
-      // TERCERO: Procesar cada registro
+      // TERCERO: Cargar categorías
+      let categorias = []
+      try {
+        const response = await categoriasService.getCategoriasByTipo('RAW_MATERIAL')
+        categorias = Array.isArray(response) ? response : response.results || []
+      } catch (e) {
+        console.error('Error al cargar categorías:', e)
+      }
+
+      // CUARTO: Procesar cada registro
       for (const materiaPrima of importedData) {
         try {
+          // El item ya viene normalizado desde ImportExportDialog.parseExcel()
+          // pero lo normalizamos de nuevo por seguridad
+          const normalizedItem = {}
+          for (const [key, value] of Object.entries(materiaPrima)) {
+            const lowerKey = key.toLowerCase().trim()
+            normalizedItem[lowerKey] = value
+          }
+          
+          console.log('📋 Item normalizado (Materia Prima):', normalizedItem)
+          console.log('🔑 Claves disponibles:', Object.keys(normalizedItem))
+          
           // Convertir texto de unidad a ID
-          const unidadId = unidadesService.mapTextToId(materiaPrima.unidad_text, this.unidades)
+          const unidadId = unidadesService.mapTextToId(
+            normalizedItem.unidad || normalizedItem.unidad_text, 
+            this.unidades
+          )
+          
+          // Buscar categoría - las claves ya están normalizadas a minúsculas
+          let categoriaId = null
+          let categoriaNombre = (
+            normalizedItem.categoría ||      // Por si tiene tilde
+            normalizedItem.categoria ||      // Sin tilde (probablemente esto)
+            normalizedItem.category ||       // Inglés
+            ''
+          )
+          categoriaNombre = String(categoriaNombre || '').trim()
+          
+          console.log('🔍 Buscando categoría (Materia Prima):', {
+            categoriaNombre,
+            categoriasDisponibles: categorias.map(c => c.nombre),
+            todasLasClaves: normalizedItem
+          })
+
+          if (categoriaNombre) {
+            const categoria = categorias.find(c => 
+              c.nombre.toLowerCase() === categoriaNombre.toLowerCase()
+            )
+            categoriaId = categoria ? categoria.id : null
+            
+            if (!categoriaId) {
+              console.warn(`⚠️ Categoría "${categoriaNombre}" no encontrada en:`, categorias)
+            }
+          }
+
+          if (!categoriaId) {
+            throw new Error(`Categoría no encontrada: "${categoriaNombre}". Categorías disponibles: ${categorias.map(c => c.nombre).join(', ')}`)
+          }
           
           const cleanData = {
-            codigo: String(materiaPrima.codigo || '').trim(),
-            nombre: String(materiaPrima.nombre || '').trim(),
-            descripcion: String(materiaPrima.descripcion || '').trim(),
+            codigo: String(normalizedItem.código || normalizedItem.codigo || '').trim(),
+            nombre: String(normalizedItem.nombre || '').trim(),
+            descripcion: String(normalizedItem.descripción || normalizedItem.descripcion || '').trim(),
+            categoria_id: categoriaId,
             unidad_id: unidadId,
-            stock_minimo: parseInt(materiaPrima.stock_minimo) || 0
+            stock_minimo: parseInt(normalizedItem['stock mínimo'] || normalizedItem.stock_minimo) || 0
           }
           
           // Campos opcionales - solo agregar si tienen valor
-          if (materiaPrima.densidad && !isNaN(parseFloat(materiaPrima.densidad))) {
-            cleanData.densidad = parseFloat(materiaPrima.densidad)
+          if (normalizedItem.densidad && !isNaN(parseFloat(normalizedItem.densidad))) {
+            cleanData.densidad = parseFloat(normalizedItem.densidad)
           }
           
-          if (materiaPrima.stock_maximo && !isNaN(parseInt(materiaPrima.stock_maximo))) {
-            cleanData.stock_maximo = parseInt(materiaPrima.stock_maximo)
+          if (normalizedItem['stock máximo'] || normalizedItem.stock_maximo) {
+            const stockMax = parseInt(normalizedItem['stock máximo'] || normalizedItem.stock_maximo)
+            if (!isNaN(stockMax)) {
+              cleanData.stock_maximo = stockMax
+            }
           }
+          
+          console.log('✅ Importando materia prima:', {
+            categoriaNombre: categoriaNombre,
+            categoriaId: categoriaId,
+            cleanData: cleanData
+          })
           
           // Verificar si ya existe por código
           const existente = this.materiasPrimas.find(mp => mp.codigo === cleanData.codigo)

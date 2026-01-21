@@ -20,9 +20,15 @@
                 <input id="nombre" v-model="form.nombre" required maxlength="100" placeholder="Ej: Polietileno" />
               </div>
 
-              <div class="form-field full">
-                <label for="descripcion">Descripción</label>
-                <textarea id="descripcion" v-model="form.descripcion" rows="2" placeholder="Descripción opcional"></textarea>
+              <div class="form-field">
+                <label for="categoria_id">Categoría *</label>
+                <select id="categoria_id" v-model="form.categoria_id" required @change="form.categoria_id = parseInt(form.categoria_id)">
+                  <option value="">-- Selecciona una categoría --</option>
+                  <option v-if="categorias.length === 0" disabled>Cargando categorías...</option>
+                  <option v-for="cat in categorias" :key="cat.id" :value="String(cat.id)">
+                    {{ cat.nombre }}
+                  </option>
+                </select>
               </div>
 
               <div class="form-field">
@@ -71,6 +77,11 @@
                   placeholder="Opcional"
                 />
               </div>
+
+              <div class="form-field full">
+                <label for="descripcion">Descripción</label>
+                <textarea id="descripcion" v-model="form.descripcion" rows="2" placeholder="Descripción opcional"></textarea>
+              </div>
             </div>
 
             <div class="form-actions">
@@ -86,6 +97,7 @@
 <script setup>
 import { ref, watch, reactive, onMounted } from 'vue'
 import materiasPrimasService from '../services/materiasPrimasService'
+import categoriasService from '../services/categoriasService'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -97,11 +109,13 @@ const visible = ref(props.show)
 const isEdit = ref(false)
 const loading = ref(false)
 const unidades = ref([])
+const categorias = ref([])
 
 const form = reactive({
   codigo: '',
   nombre: '',
   descripcion: '',
+  categoria_id: null,
   unidad_id: '',
   densidad: null,
   stock_minimo: 0,
@@ -126,6 +140,7 @@ watch(() => props.editId, (id) => {
 
 onMounted(() => {
   fetchUnidades()
+  fetchCategorias()
 })
 
 async function fetchUnidades() {
@@ -144,10 +159,29 @@ async function fetchUnidades() {
   }
 }
 
+async function fetchCategorias() {
+  try {
+    const data = await categoriasService.getCategoriasByTipo('RAW_MATERIAL')
+    console.log('Categorías cargadas (Materia Prima):', data)
+    if (Array.isArray(data)) {
+      categorias.value = data
+    } else if (data && data.results && Array.isArray(data.results)) {
+      categorias.value = data.results
+    } else {
+      console.warn('Formato de categorías inesperado:', data)
+      categorias.value = []
+    }
+  } catch (e) {
+    console.error('Error al cargar categorías', e)
+    categorias.value = []
+  }
+}
+
 function resetForm() {
   form.codigo = ''
   form.nombre = ''
   form.descripcion = ''
+  form.categoria_id = null
   form.unidad_id = ''
   form.densidad = null
   form.stock_minimo = 0
@@ -162,6 +196,7 @@ async function loadMateriaPrima(id) {
     form.codigo = data.codigo
     form.nombre = data.nombre
     form.descripcion = data.descripcion || ''
+    form.categoria_id = data.categoria_id || null
     form.unidad_id = data.unidad_id || data.unidad
     form.densidad = data.densidad || null
     form.stock_minimo = data.stock_minimo || 0
@@ -178,10 +213,18 @@ async function submit() {
   try {
     loading.value = true
 
+    // Validar que categoria_id esté seleccionada
+    if (!form.categoria_id || form.categoria_id === '') {
+      alert('Por favor selecciona una categoría')
+      loading.value = false
+      return
+    }
+
     const payload = {
       codigo: form.codigo,
       nombre: form.nombre,
       descripcion: form.descripcion || '',
+      categoria_id: parseInt(form.categoria_id),
       unidad_id: parseInt(form.unidad_id),
       stock_minimo: parseInt(form.stock_minimo) || 0
     }
@@ -208,7 +251,7 @@ async function submit() {
     }, 100)
   } catch (e) {
     console.error('Error guardando materia prima', e)
-    alert('Error al guardar la materia prima')
+    alert(`Error al guardar: ${e.response?.data?.detail || e.message}`)
   } finally {
     loading.value = false
   }
