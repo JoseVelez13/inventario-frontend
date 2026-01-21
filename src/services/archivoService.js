@@ -1,5 +1,6 @@
 // archivoService.js - Servicio para gestión de archivos en Google Drive
 import api from './api'
+import fileManagerService from './fileManagerService'
 
 const archivoService = {
     /**
@@ -24,17 +25,44 @@ const archivoService = {
      */
     async subirArchivo(archivo, tipoReporte, descripcion = '') {
         try {
-            const formData = new FormData()
-            formData.append('archivo', archivo)
-            formData.append('tipo_reporte', tipoReporte)
-            formData.append('descripcion', descripcion)
+            // Verificar autenticación con file-manager
+            if (!fileManagerService.isAuthenticated()) {
+                // Obtener URL de autenticación
+                const authUrl = await fileManagerService.getAuthUrl()
+                
+                // Redirigir a autenticación o lanzar error para que el componente maneje la redirección
+                const authError = new Error('Autenticación requerida')
+                authError.authUrl = authUrl
+                authError.needsAuth = true
+                throw authError
+            }
 
-            const response = await api.post('/archivos/', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            })
+            // Subir archivo usando file-manager
+            const metadata = {
+                tipo_reporte: tipoReporte,
+                descripcion: descripcion
+            }
+            
+            const response = await fileManagerService.uploadFile(archivo, metadata)
             return response.data
         } catch (error) {
             console.error('Error al subir archivo:', error)
+            
+            // Si es error de autenticación, propagar el error especial
+            if (error.needsAuth) {
+                throw error
+            }
+            
+            // Si es error 401 de file-manager, intentar reautenticar
+            if (error.response?.status === 401) {
+                fileManagerService.logout()
+                const authUrl = await fileManagerService.getAuthUrl()
+                const authError = new Error('Autenticación requerida')
+                authError.authUrl = authUrl
+                authError.needsAuth = true
+                throw authError
+            }
+            
             throw error
         }
     },

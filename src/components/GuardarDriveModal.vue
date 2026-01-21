@@ -70,6 +70,7 @@
 
 <script>
 import archivoService from '@/services/archivoService';
+import fileManagerService from '@/services/fileManagerService';
 
 export default {
     name: 'GuardarDriveModal',
@@ -171,8 +172,59 @@ export default {
 
             } catch (error) {
                 console.error('Error al guardar archivo:', error);
-                this.error = error.response?.data?.error ||
-                    'Error al guardar el archivo. Intente nuevamente.';
+                
+                // Si es error de autenticación, redirigir a autenticación
+                if (error.needsAuth && error.authUrl) {
+                    this.error = 'Se requiere autenticación con Google Drive. Serás redirigido...';
+                    
+                    // Abrir ventana de autenticación
+                    const authWindow = window.open(
+                        error.authUrl,
+                        'google-auth',
+                        'width=500,height=600,scrollbars=yes,resizable=yes'
+                    );
+                    
+                    // Esperar respuesta de autenticación
+                    const checkAuth = setInterval(() => {
+                        try {
+                            // Verificar si la ventana se cerró o si tenemos token
+                            if (authWindow.closed) {
+                                clearInterval(checkAuth);
+                                this.error = 'Autenticación cancelada. Intente nuevamente.';
+                                return;
+                            }
+                            
+                            // Intentar obtener el código de la URL
+                            const urlParams = new URLSearchParams(authWindow.location.search);
+                            const code = urlParams.get('code');
+                            const state = urlParams.get('state');
+                            
+                            if (code && state) {
+                                clearInterval(checkAuth);
+                                authWindow.close();
+                                
+                                // Procesar el callback
+                                this.procesarCallback(code, state);
+                            }
+                        } catch (e) {
+                            // Error de Same-origin si está en dominio de Google
+                            // Continuar esperando
+                        }
+                    }, 1000);
+                    
+                    // Timeout después de 5 minutos
+                    setTimeout(() => {
+                        clearInterval(checkAuth);
+                        if (authWindow && !authWindow.closed) {
+                            authWindow.close();
+                        }
+                        this.error = 'Tiempo de autenticación agotado. Intente nuevamente.';
+                    }, 300000);
+                    
+                } else {
+                    this.error = error.response?.data?.error ||
+                        'Error al guardar el archivo. Intente nuevamente.';
+                }
             } finally {
                 this.guardando = false;
             }
@@ -192,6 +244,24 @@ export default {
             };
             this.error = null;
             this.exitoMensaje = null;
+        },
+
+        async procesarCallback(code, state) {
+            try {
+                this.error = 'Procesando autenticación...';
+                
+                await fileManagerService.handleAuthCallback(code, state);
+                this.error = null;
+                
+                // Reintentar guardar el archivo automáticamente
+                setTimeout(() => {
+                    this.guardar();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error al procesar callback:', error);
+                this.error = `Error en autenticación: ${error.message}`;
+            }
         },
 
         formatearTamaño(bytes) {
