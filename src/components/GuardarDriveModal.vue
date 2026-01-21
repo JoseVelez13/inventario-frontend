@@ -227,6 +227,8 @@ export default {
     max-width: 500px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
     animation: slideUp 0.3s ease-out;
+    box-sizing: border-box; /* Evita que los bordes internos rompan el layout */
+    overflow: hidden; /* Previene que elementos se salgan del contenedor */
 }
 
 @keyframes slideUp {
@@ -331,6 +333,8 @@ export default {
 .form-group select,
 .form-group textarea {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box; /* Incluye padding/border dentro del ancho */
     padding: 10px 12px;
     border: 1px solid #d1d5db;
     border-radius: 6px;
@@ -354,6 +358,7 @@ export default {
 .form-group textarea {
     resize: vertical;
     font-family: inherit;
+    display: block;
 }
 
 .error-message {
