@@ -94,20 +94,20 @@
               </div>
 
               <div class="form-field">
-                <label for="fecha_recepcion">Fecha de Recepción *</label>
+                <label for="fecha_de_recepcion">Fecha de Recepción *</label>
                 <input 
-                  id="fecha_recepcion" 
-                  v-model="form.fecha_recepcion" 
+                  id="fecha_de_recepcion" 
+                  v-model="form.fecha_de_recepcion" 
                   type="date"
                   required
                 />
               </div>
 
               <div class="form-field">
-                <label for="numero_factura">Número de Factura</label>
+                <label for="numero_de_factura">Número de Factura</label>
                 <input 
-                  id="numero_factura" 
-                  v-model="form.numero_factura" 
+                  id="numero_de_factura" 
+                  v-model="form.numero_de_factura" 
                   type="text"
                   maxlength="50"
                   placeholder="Ej: FAC-001-2026"
@@ -163,8 +163,8 @@ const form = ref({
   costo_unitario: '',
   almacen: '',
   proveedor: '',
-  fecha_recepcion: new Date().toISOString().split('T')[0],
-  numero_factura: '',
+  fecha_de_recepcion: new Date().toISOString().split('T')[0],
+  numero_de_factura: '',
   observaciones: ''
 })
 
@@ -237,8 +237,8 @@ const loadRecepcion = async () => {
       costo_unitario: data.costo_unitario,
       almacen: data.almacen,
       proveedor: data.proveedor,
-      fecha_recepcion: data.fecha_recepcion,
-      numero_factura: data.numero_factura || '',
+      fecha_de_recepcion: data.fecha_de_recepcion,
+      numero_de_factura: data.numero_de_factura || '',
       observaciones: data.observaciones || ''
     }
   } catch (err) {
@@ -254,8 +254,8 @@ const resetForm = () => {
     costo_unitario: '',
     almacen: '',
     proveedor: '',
-    fecha_recepcion: new Date().toISOString().split('T')[0],
-    numero_factura: '',
+    fecha_de_recepcion: new Date().toISOString().split('T')[0],
+    numero_de_factura: '',
     observaciones: ''
   }
 }
@@ -264,9 +264,12 @@ const submit = async () => {
   try {
     submitting.value = true
     
-    // Clonar el form y renombrar almacen a id_almacen
-    const payload = { ...form.value, id_almacen: form.value.almacen }
-    delete payload.almacen
+    // Enviar el form sin modificar el nombre del campo almacen
+    const payload = { ...form.value }
+    console.log('Payload being sent:', payload)
+    console.log('Almacen value:', form.value.almacen)
+    console.log('Almacenes available:', almacenes.value)
+    
     if (isEdit.value) {
       await recepcionesService.updateRecepcionMaterial(props.recepcionId, payload)
     } else {

@@ -51,12 +51,22 @@ class ProductosService {
     
     console.log('productosService.createProducto - Datos limpios:', cleanData)
     
-    const response = await api.post('/productos/', cleanData, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    })
-    return response.data
+    try {
+      const response = await api.post('/productos/', cleanData, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error detallado del backend:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers
+      })
+      throw error
+    }
   }
 
   /**

@@ -111,6 +111,7 @@
             <router-link to="/archivos-drive" class="sidebar-item" @click="closeSidebar">
               <i class="fa-brands fa-google-drive"></i>
               <span>Archivos en Drive</span>
+            </router-link>
             <div class="nav-section-title">Producción</div>
             <router-link to="/lotes-produccion" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-industry"></i>
