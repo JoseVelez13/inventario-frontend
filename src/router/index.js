@@ -18,6 +18,7 @@ import ArchivosGDriveView from '../views/ArchivosGDriveView.vue'
 import authService from '../services/auth'
 import OrdenesClienteListView from '../views/OrdenesClienteListView.vue'
 import CategoriasListView from '../views/CategoriasListView.vue'
+import InventarioMaterialesListView from '../views/InventarioMaterialesListView.vue'
 
 const routes = [
   {
@@ -140,6 +141,15 @@ const routes = [
     component: CategoriasListView,
     meta: {
       title: 'Categorías - Sistema Innoquim',
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/inventario-materiales',
+    name: 'InventarioMateriales',
+    component: InventarioMaterialesListView,
+    meta: {
+      title: 'Inventario de Materiales - Sistema Innoquim',
       requiresAuth: true
     }
   },

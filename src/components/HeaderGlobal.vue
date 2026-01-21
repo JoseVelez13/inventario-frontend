@@ -94,6 +94,10 @@
 
           <div class="nav-section">
             <div class="nav-section-title">Inventario</div>
+            <router-link to="/inventario-materiales" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-boxes-packing"></i>
+              <span>Inventario de Materiales</span>
+            </router-link>
             <router-link to="/kardex" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-chart-simple"></i>
               <span>Kardex</span>
