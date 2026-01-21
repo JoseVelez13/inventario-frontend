@@ -19,6 +19,10 @@
             <span class="feature-icon">✓</span>
             <span>Reportes y análisis detallados</span>
           </div>
+          <div class="brand-feature">
+            <span class="feature-icon">✓</span>
+            <span>Gestión de Proveedores</span>
+          </div>
         </div>
       </div>
     </div>
