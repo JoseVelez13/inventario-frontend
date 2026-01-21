@@ -2,7 +2,6 @@
   <div class="page-container">
     <HeaderGlobal />
     <Breadcrumbs />
-
     <div class="topbar">
       <div class="topbar-title">
         Almacenes
@@ -29,20 +28,24 @@
         </Tooltip>
       </div>
     </div>
-
     <div class="content-box">
       <div class="content-body">
         <div class="search-bar">
           <input 
-            v-model="search" 
-            @input="onSearch" 
+            v-model="searchInput" 
+            @input="debouncedSearch" 
             type="text" 
-            placeholder="Buscar por nombre o dirección..." 
+            placeholder="Buscar por nombre o ubicación..." 
             class="search-input"
           />
           <button class="btn-secondary" @click="clearSearch">Limpiar</button>
         </div>
-
+        <div class="filter-chips" v-if="activeChips.length">
+          <span v-for="chip in activeChips" :key="chip.key" class="chip chip-filter">
+            {{ chip.label }}
+            <button class="chip-remove" @click="removeChip(chip.key)">×</button>
+          </span>
+        </div>
         <div v-if="loading" class="loading-state">Cargando almacenes...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
         <div v-else-if="almacenes.length === 0" class="empty-state">
@@ -50,7 +53,6 @@
           <h3>No hay almacenes registrados</h3>
           <p>Comienza agregando tu primer almacén</p>
         </div>
-
         <table v-else class="table">
           <thead>
             <tr>
@@ -100,7 +102,6 @@
             </tr>
           </tbody>
         </table>
-
         <!-- Paginación -->
         <div v-if="totalPages > 1" class="pagination">
           <button class="btn-pagination" @click="goToPage(1)" :disabled="currentPage === 1">
@@ -123,7 +124,6 @@
         </div>
       </div>
     </div>
-
     <!-- Modales -->
     <AlmacenFormModal 
       v-if="showFormModal" 
@@ -132,7 +132,6 @@
       @close="showFormModal = false" 
       @saved="handleSaved" 
     />
-
     <ConfirmDialog 
       v-if="confirmDialog.show" 
       :title="confirmDialog.title" 
@@ -140,7 +139,6 @@
       @confirm="confirmDelete" 
       @cancel="confirmDialog.show = false" 
     />
-
     <ImportExportDialog 
       v-if="importExportDialog.show" 
       :show="importExportDialog.show" 
@@ -151,7 +149,6 @@
       @close="importExportDialog.show = false" 
       @import-complete="handleImportComplete" 
     />
-
     <Notification 
       v-if="notification.show" 
       :type="notification.type" 
@@ -172,6 +169,14 @@ import Notification from '../components/Notification.vue'
 import AlmacenFormModal from '../components/AlmacenFormModal.vue'
 import almacenesService from '../services/almacenesService'
 
+function debounce(fn, delay) {
+  let timeout
+  return function(...args) {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
+
 export default {
   name: 'AlmacenesListView',
   components: { 
@@ -187,6 +192,7 @@ export default {
   data() {
     return {
       search: '',
+      searchInput: '',
       almacenes: [],
       loading: false,
       error: '',
@@ -256,6 +262,12 @@ export default {
     
     totalPages() {
       return Math.ceil(this.sortedAlmacenes.length / this.itemsPerPage)
+    },
+
+    activeChips() {
+      const chips = []
+      if (this.search) chips.push({ key: 'search', label: `Buscar: "${this.search}"` })
+      return chips
     }
   },
 
@@ -278,12 +290,19 @@ export default {
       this.fetchAlmacenes()
     },
 
-    onSearch() {
+    debouncedSearch: debounce(function() {
+      this.search = this.searchInput
       this.currentPage = 1
-    },
+    }, 300),
 
     clearSearch() {
       this.search = ''
+      this.searchInput = ''
+      this.currentPage = 1
+    },
+
+    removeChip(key) {
+      if (key === 'search') this.clearSearch()
       this.currentPage = 1
     },
 
@@ -387,4 +406,45 @@ export default {
 
 <style scoped>
 @import '../assets/styles/Clientes.css';
+
+.filter-chips {
+  margin: 8px 0 12px 0;
+}
+.chip-filter {
+  display: inline-flex;
+  align-items: center;
+  background: #e0e7ef;
+  color: #2a3b4d;
+  border-radius: 16px;
+  padding: 0 10px;
+  margin-right: 8px;
+  font-size: 0.95em;
+  height: 28px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: background 0.2s;
+}
+.chip-filter:hover {
+  background: #c7d2e5;
+}
+.chip-remove {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.1em;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.chip-remove:hover {
+  color: #d32f2f;
+}
+.filter-select {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd8dc;
+  background: #f8fafc;
+  color: #2a3b4d;
+  font-size: 1em;
+}
 </style>

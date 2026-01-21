@@ -96,7 +96,7 @@
               <i class="fa-solid fa-chart-simple"></i>
               <span>Kardex</span>
             </router-link>
-            <router-link to="/recepciones-material" class="sidebar-item" @click="closeSidebar">
+            <router-link to="/recepciones" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-dolly"></i>
               <span>Recepciones Material</span>
             </router-link>

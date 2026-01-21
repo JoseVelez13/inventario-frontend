@@ -2,7 +2,6 @@
   <div class="page-container">
     <HeaderGlobal />
     <Breadcrumbs />
-
     <div class="topbar">
       <div class="topbar-title">
         Materias Primas
@@ -29,20 +28,28 @@
         </Tooltip>
       </div>
     </div>
-
     <div class="content-box">
       <div class="content-body">
         <div class="search-bar">
           <input 
-            v-model="search" 
-            @input="onSearch" 
+            v-model="searchInput" 
+            @input="debouncedSearch" 
             type="text" 
-            placeholder="Buscar por código, nombre o descripción..." 
+            placeholder="Buscar por nombre, código o proveedor..." 
             class="search-input"
           />
           <button class="btn-secondary" @click="clearSearch">Limpiar</button>
+          <select v-model="filters.proveedor" class="filter-select">
+            <option value="">Todos los proveedores</option>
+            <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+          </select>
         </div>
-
+        <div class="filter-chips" v-if="activeChips.length">
+          <span v-for="chip in activeChips" :key="chip.key" class="chip chip-filter">
+            {{ chip.label }}
+            <button class="chip-remove" @click="removeChip(chip.key)">×</button>
+          </span>
+        </div>
         <div v-if="loading" class="loading-state">Cargando materias primas...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
         <div v-else-if="filtered.length === 0" class="empty-state">
@@ -242,6 +249,14 @@ import '../assets/styles/MateriasPrimas.css'
 import materiasPrimasService from '../services/materiasPrimasService'
 import unidadesService from '../services/unidadesService'
 
+function debounce(fn, delay) {
+  let timeout
+  return function(...args) {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
+
 export default {
   name: 'MateriasPrimasListView',
   components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification, MateriaPrimaFormModal },
@@ -249,6 +264,8 @@ export default {
   data() {
     return {
       search: '',
+      searchInput: '',
+      filters: { proveedor: '' },
       materiasPrimas: [],
       unidades: [],
       loading: false,
@@ -293,19 +310,18 @@ export default {
 
   computed: {
     filtered() {
+      let data = this.allMateriasPrimas || []
       const q = this.search.trim().toLowerCase()
-      let result = this.materiasPrimas
-      
       if (q) {
-        result = result.filter(mp =>
-          String(mp.materia_prima_id || mp.id).includes(q) ||
-          mp.codigo.toLowerCase().includes(q) ||
-          mp.nombre.toLowerCase().includes(q) ||
-          (mp.descripcion || '').toLowerCase().includes(q)
+        data = data.filter(mp =>
+          (mp.nombre || '').toLowerCase().includes(q) ||
+          (mp.codigo || '').toLowerCase().includes(q)
         )
       }
-
-      return this.sortData(result)
+      if (this.filters.proveedor) {
+        data = data.filter(mp => String(mp.proveedor_id) === String(this.filters.proveedor))
+      }
+      return data
     },
 
     totalMateriasPrimas() {
@@ -330,6 +346,16 @@ export default {
     endItem() {
       const end = this.currentPage * this.itemsPerPage
       return end > this.totalMateriasPrimas ? this.totalMateriasPrimas : end
+    },
+
+    activeChips() {
+      const chips = []
+      if (this.search) chips.push({ key: 'search', label: `Buscar: "${this.search}"` })
+      if (this.filters.proveedor) {
+        const proveedor = this.proveedores.find(p => String(p.id) === String(this.filters.proveedor))
+        chips.push({ key: 'proveedor', label: `Proveedor: ${proveedor ? proveedor.nombre : this.filters.proveedor}` })
+      }
+      return chips
     }
   },
 
@@ -342,24 +368,18 @@ export default {
         let allMateriasPrimas = []
         let page = 1
         let hasMore = true
-        
         while (hasMore) {
           const data = await materiasPrimasService.getMateriasPrimas({ page, page_size: 100 })
           const items = Array.isArray(data) ? data : data.results || []
           allMateriasPrimas = [...allMateriasPrimas, ...items]
-          
-          // Si hay paginación, verificar si hay más páginas
           if (data.next) {
             page++
           } else {
             hasMore = false
           }
         }
-        
         this.materiasPrimas = allMateriasPrimas
-        console.log(`Materias primas cargadas: ${this.materiasPrimas.length}`)
-        
-        // Resetear a página 1 después de cargar datos
+        this.allMateriasPrimas = allMateriasPrimas // <-- sincronizar para filtro
         this.currentPage = 1
       } catch (e) {
         console.error('Error al listar materias primas', e)
@@ -369,13 +389,19 @@ export default {
       }
     },
 
-onSearch() {
-  this.currentPage = 1 // Resetear a página 1 al buscar
-},
+    debouncedSearch: debounce(function() {
+      this.search = this.searchInput
+      this.currentPage = 1
+    }, 300),
 
-clearSearch() {
-  this.search = ''
-  this.currentPage = 1 // Resetear a página 1 al limpiar búsqueda
+    onSearch() {
+      this.currentPage = 1 // Resetear a página 1 al buscar
+    },
+
+    clearSearch() {
+      this.search = ''
+      this.searchInput = ''
+      this.currentPage = 1 // Resetear a página 1 al limpiar búsqueda
       this.$nextTick(() => {
         const searchInput = document.querySelector('.search-input')
         if (searchInput) {
@@ -618,7 +644,56 @@ clearSearch() {
 
     showNotification(type, title, message) {
       this.notification = { show: true, type, title, message }
-    }
+    },
+
+    removeChip(key) {
+      if (key === 'search') this.clearSearch()
+      if (key === 'proveedor') this.filters.proveedor = ''
+      this.currentPage = 1
+    },
   }
 }
 </script>
+
+<style scoped>
+.filter-chips {
+  margin: 8px 0 12px 0;
+}
+.chip-filter {
+  display: inline-flex;
+  align-items: center;
+  background: #e0e7ef;
+  color: #2a3b4d;
+  border-radius: 16px;
+  padding: 0 10px;
+  margin-right: 8px;
+  font-size: 0.95em;
+  height: 28px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: background 0.2s;
+}
+.chip-filter:hover {
+  background: #c7d2e5;
+}
+.chip-remove {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.1em;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.chip-remove:hover {
+  color: #d32f2f;
+}
+.filter-select {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd8dc;
+  background: #f8fafc;
+  color: #2a3b4d;
+  font-size: 1em;
+}
+</style>

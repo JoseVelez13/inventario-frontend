@@ -88,9 +88,9 @@ const crumbs = computed(() => {
   }
 
   // Recepciones de Material
-  if (path.includes('/recepciones-material')) {
+  if (path.includes('/recepciones')) {
     breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
-    breadcrumbs.push({ label: 'Recepciones de Material', path: '/recepciones-material' })
+    breadcrumbs.push({ label: 'Recepciones de Material', path: '/recepciones' })
   }
 
   // Recepciones de Productos

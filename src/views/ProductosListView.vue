@@ -2,7 +2,6 @@
   <div class="page-container">
     <HeaderGlobal />
     <Breadcrumbs />
-
     <div class="topbar">
       <div class="topbar-title">
         Productos
@@ -29,20 +28,35 @@
         </Tooltip>
       </div>
     </div>
-
     <div class="content-box">
       <div class="content-body">
         <div class="search-bar">
           <input 
-            v-model="search" 
-            @input="onSearch" 
+            v-model="searchInput" 
+            @input="debouncedSearch" 
             type="text" 
             placeholder="Buscar por código, nombre o descripción..." 
             class="search-input"
           />
           <button class="btn-secondary" @click="clearSearch">Limpiar</button>
+          <!-- Filtros avanzados -->
+          <select v-model="filters.unidad" class="filter-select">
+            <option value="">Todas las unidades</option>
+            <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }}</option>
+          </select>
+          <select v-model="filters.estado" class="filter-select">
+            <option value="">Todos los estados</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
         </div>
-
+        <!-- Chips de filtros activos -->
+        <div class="filter-chips" v-if="activeChips.length">
+          <span v-for="chip in activeChips" :key="chip.key" class="chip chip-filter">
+            {{ chip.label }}
+            <button class="chip-remove" @click="removeChip(chip.key)">×</button>
+          </span>
+        </div>
         <div v-if="loading" class="loading-state">Cargando productos...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
         <div v-else-if="filtered.length === 0" class="empty-state">
@@ -241,16 +255,24 @@ import '../assets/styles/Clientes.css'
 import productosService from '../services/productosService'
 import unidadesService from '../services/unidadesService'
 
+function debounce(fn, delay) {
+  let timeout
+  return function(...args) {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
+
 export default {
   name: 'ProductosListView',
   components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, Notification, ImportExportDialog, ProductoFormModal, StatusBadge },
-  
   data() {
     return {
       search: '',
+      searchInput: '',
       productos: [],
       allProductos: [],
-      unidades: [], // Lista de unidades para mapeo
+      unidades: [],
       loading: false,
       error: '',
       sortField: null,
@@ -273,102 +295,84 @@ export default {
       importExportDialog: {
         show: false,
         mode: 'export'
-      }
-      ,
-      // Modal/form state
+      },
       showFormModal: false,
-      formEditId: null
+      formEditId: null,
+      filters: {
+        unidad: '',
+        estado: ''
+      }
     }
   },
-
   created() {
     this.fetchProductos()
     this.fetchUnidades()
+    this.searchInput = ''
+    this.search = ''
   },
-
   computed: {
     filtered() {
+      let data = this.allProductos
       const q = this.search.trim().toLowerCase()
-      if (!q) return this.allProductos
-      return this.allProductos.filter(p =>
-        String(p.producto_id || p.id).toLowerCase().includes(q) ||
-        (p.product_code || '').toLowerCase().includes(q) ||
-        (p.name || '').toLowerCase().includes(q) ||
-        (p.description || '').toLowerCase().includes(q)
-      )
+      if (q) {
+        data = data.filter(p =>
+          String(p.producto_id || p.id).toLowerCase().includes(q) ||
+          (p.product_code || '').toLowerCase().includes(q) ||
+          (p.name || '').toLowerCase().includes(q) ||
+          (p.description || '').toLowerCase().includes(q)
+        )
+      }
+      if (this.filters.unidad) {
+        data = data.filter(p => String(p.unit) === String(this.filters.unidad))
+      }
+      if (this.filters.estado) {
+        data = data.filter(p => {
+          if (this.filters.estado === 'activo') return p.activo !== false
+          if (this.filters.estado === 'inactivo') return p.activo === false
+          return true
+        })
+      }
+      return data
     },
-
-    sortedAndFiltered() {
-      const data = [...this.filtered]
-      if (!this.sortField) return data
-      return data.sort((a, b) => {
-        let aVal = a[this.sortField]
-        let bVal = b[this.sortField]
-        if (aVal === null || aVal === undefined) aVal = ''
-        if (bVal === null || bVal === undefined) bVal = ''
-        if (['producto_id','weight'].includes(this.sortField)) {
-          aVal = Number(aVal) || 0
-          bVal = Number(bVal) || 0
-          return this.sortOrder === 'asc' ? aVal - bVal : bVal - aVal
-        }
-        const aStr = String(aVal).toLowerCase()
-        const bStr = String(bVal).toLowerCase()
-        if (this.sortOrder === 'asc') return aStr.localeCompare(bStr, 'es', { numeric: true })
-        return bStr.localeCompare(aStr, 'es', { numeric: true })
-      })
-    },
-
     paginatedData() {
       const start = (this.currentPage - 1) * this.pageSize
       const end = start + this.pageSize
-      return this.sortedAndFiltered.slice(start, end)
+      return this.filtered.slice(start, end)
     },
-
     totalFiltered() {
       return this.filtered.length
     },
-
     totalPages() {
-      return Math.ceil(this.totalFiltered / this.pageSize)
+      return Math.ceil(this.totalFiltered / this.pageSize) || 1
     },
-
     startItem() {
       return this.totalFiltered === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1
     },
-
     endItem() {
       return Math.min(this.currentPage * this.pageSize, this.totalFiltered)
     },
-
-    exportData() {
-      return this.productos.map(p => ({
-        id: p.producto_id || p.id,
-        product_code: p.product_code,
-        name: p.name,
-        description: p.description || '',
-        unit: p.unit,
-        weight: p.weight
-      }))
-    },
-
-    exportColumns() {
-      return [
-        { key: 'id', label: 'ID' },
-        { key: 'product_code', label: 'Código' },
-        { key: 'name', label: 'Nombre' },
-        { key: 'description', label: 'Descripción' },
-        { key: 'unit', label: 'Unidad' },
-        { key: 'weight', label: 'Peso (kg)' }
-      ]
+    activeChips() {
+      const chips = []
+      if (this.search) chips.push({ key: 'search', label: `Buscar: "${this.search}"` })
+      if (this.filters.unidad) {
+        const unidad = this.unidades.find(u => String(u.id) === String(this.filters.unidad))
+        chips.push({ key: 'unidad', label: `Unidad: ${unidad ? unidad.nombre : this.filters.unidad}` })
+      }
+      if (this.filters.estado) {
+        chips.push({ key: 'estado', label: `Estado: ${this.filters.estado === 'activo' ? 'Activo' : 'Inactivo'}` })
+      }
+      return chips
     }
   },
-
   methods: {
+    debouncedSearch: debounce(function() {
+      this.search = this.searchInput
+      this.currentPage = 1
+    }, 300),
     getUnidadNombre(unitId) {
       const unidad = this.unidades.find(u => u.id === unitId)
       return unidad ? `${unidad.nombre} (${unidad.simbolo})` : unitId
     },
-
     async fetchUnidades() {
       try {
         const token = localStorage.getItem('access_token')
@@ -385,7 +389,6 @@ export default {
         console.error('Error al cargar unidades', e)
       }
     },
-
     async fetchProductos() {
       this.loading = true
       this.error = ''
@@ -419,9 +422,7 @@ export default {
         this.loading = false
       }
     },
-
     onSearch() {},
-
     toggleSort(field) {
       if (this.sortField === field) {
         this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
@@ -430,58 +431,49 @@ export default {
         this.sortOrder = 'asc'
       }
     },
-
     previousPage() {
       if (this.currentPage > 1) this.currentPage--
     },
-
     nextPage() {
       if (this.currentPage < this.totalPages) this.currentPage++
     },
-
     goToPage() {
       if (this.currentPage < 1) this.currentPage = 1
       else if (this.currentPage > this.totalPages) this.currentPage = this.totalPages
     },
-
     changePageSize() {
       this.currentPage = 1
     },
-
     clearSearch() {
       this.search = ''
-      this.$nextTick(() => {
-        const searchInput = document.querySelector('.search-input')
-        if (searchInput) {
-          searchInput.focus()
-        }
-      })
+      this.searchInput = ''
+      this.currentPage = 1
     },
-
+    removeChip(key) {
+      if (key === 'search') this.clearSearch()
+      if (key === 'unidad') this.filters.unidad = ''
+      if (key === 'estado') this.filters.estado = ''
+      this.currentPage = 1
+    },
     getStockClass(stock) {
       if (stock === 0 || stock === null) return 'stock-danger'
       if (stock <= 10) return 'stock-warning'
       if (stock <= 20) return 'stock-info'
       return 'stock-success'
     },
-
     getStockStatusBadge(stock) {
       return getStockStatus(stock, 10)
     },
-
     reload() {
       this.currentPage = 1
       this.fetchProductos()
     },
-
     openImport() {
       this.importExportDialog = { show: true, mode: 'import' }
     },
-
     openExport() {
       this.importExportDialog = { show: true, mode: 'export' }
     },
-
     async handleImportComplete(importedData) {
       let successCount = 0
       let errorCount = 0
@@ -550,27 +542,22 @@ export default {
                            errorCount > 0 ? 'Importación parcial' : '¡Importación completada!', 
                            message)
     },
-
     deleteProducto(id) {
       this.confirmDialog.productId = id
       this.confirmDialog.show = true
     },
-
     openCreateModal() {
       this.formEditId = null
       this.showFormModal = true
     },
-
     openEditModal(id) {
       this.formEditId = id
       this.showFormModal = true
     },
-
     onModalClose() {
       this.showFormModal = false
       this.formEditId = null
     },
-
     onModalSaved(detail) {
       const isUpdate = detail && detail.action === 'updated'
       this.showNotification(
@@ -581,7 +568,6 @@ export default {
       this.currentPage = 1
       this.fetchProductos()
     },
-
     async onConfirmDelete() {
       const id = this.confirmDialog.productId
       this.confirmDialog.show = false
@@ -598,10 +584,52 @@ export default {
         this.showNotification('error', 'Error', errorMsg)
       }
     },
-
     showNotification(type, title, message) {
       this.notification = { show: true, type, title, message }
     }
   }
 }
 </script>
+
+<style scoped>
+.filter-chips {
+  margin: 8px 0 12px 0;
+}
+.chip-filter {
+  display: inline-flex;
+  align-items: center;
+  background: #e0e7ef;
+  color: #2a3b4d;
+  border-radius: 16px;
+  padding: 0 10px;
+  margin-right: 8px;
+  font-size: 0.95em;
+  height: 28px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: background 0.2s;
+}
+.chip-filter:hover {
+  background: #c7d2e5;
+}
+.chip-remove {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.1em;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.chip-remove:hover {
+  color: #d32f2f;
+}
+.filter-select {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd8dc;
+  background: #f8fafc;
+  color: #2a3b4d;
+  font-size: 1em;
+}
+</style>
