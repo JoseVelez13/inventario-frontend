@@ -11,34 +11,62 @@
           <form @submit.prevent="submit">
             <div class="form-grid">
               <div class="form-field">
-                <label for="codigo">Código *</label>
-                <input id="codigo" v-model="form.codigo" required maxlength="50" placeholder="Ej: MP-001" />
+                <label for="codigo">Código <span class="required">*</span></label>
+                <input 
+                  id="codigo" 
+                  v-model="form.codigo" 
+                  maxlength="50" 
+                  placeholder="Ej: MP-001"
+                  @blur="validateField('codigo')"
+                  :class="{ 'input-error': errors.codigo }"
+                />
+                <FormErrorMessage :error="errors.codigo" />
               </div>
 
               <div class="form-field">
-                <label for="nombre">Nombre *</label>
-                <input id="nombre" v-model="form.nombre" required maxlength="100" placeholder="Ej: Polietileno" />
+                <label for="nombre">Nombre <span class="required">*</span></label>
+                <input 
+                  id="nombre" 
+                  v-model="form.nombre" 
+                  maxlength="100" 
+                  placeholder="Ej: Polietileno"
+                  @blur="validateField('nombre')"
+                  :class="{ 'input-error': errors.nombre }"
+                />
+                <FormErrorMessage :error="errors.nombre" />
               </div>
 
               <div class="form-field">
-                <label for="categoria_id">Categoría *</label>
-                <select id="categoria_id" v-model="form.categoria_id" required @change="form.categoria_id = parseInt(form.categoria_id)">
+                <label for="categoria_id">Categoría <span class="required">*</span></label>
+                <select 
+                  id="categoria_id" 
+                  v-model="form.categoria_id" 
+                  @change="form.categoria_id = parseInt(form.categoria_id); validateField('categoria_id')"
+                  :class="{ 'input-error': errors.categoria_id }"
+                >
                   <option value="">-- Selecciona una categoría --</option>
                   <option v-if="categorias.length === 0" disabled>Cargando categorías...</option>
                   <option v-for="cat in categorias" :key="cat.id" :value="String(cat.id)">
                     {{ cat.nombre }}
                   </option>
                 </select>
+                <FormErrorMessage :error="errors.categoria_id" />
               </div>
 
               <div class="form-field">
-                <label for="unidad_id">Unidad de Medida *</label>
-                <select id="unidad_id" v-model.number="form.unidad_id" required>
-                  <option value="" disabled>Selecciona una unidad</option>
+                <label for="unidad_id">Unidad de Medida <span class="required">*</span></label>
+                <select 
+                  id="unidad_id" 
+                  v-model.number="form.unidad_id"
+                  @change="validateField('unidad_id')"
+                  :class="{ 'input-error': errors.unidad_id }"
+                >
+                  <option value="">Selecciona una unidad</option>
                   <option v-for="u in unidades" :key="u.id" :value="u.id">
                     {{ u.nombre }} ({{ u.simbolo }})
                   </option>
                 </select>
+                <FormErrorMessage :error="errors.unidad_id" />
               </div>
 
               <div class="form-field">
@@ -50,20 +78,25 @@
                   step="0.01" 
                   min="0" 
                   placeholder="Ej: 0.95"
+                  @blur="validateField('densidad')"
+                  :class="{ 'input-error': errors.densidad }"
                 />
+                <FormErrorMessage :error="errors.densidad" />
               </div>
 
               <div class="form-field">
-                <label for="stock_minimo">Stock Mínimo *</label>
+                <label for="stock_minimo">Stock Mínimo <span class="required">*</span></label>
                 <input 
                   id="stock_minimo" 
                   v-model.number="form.stock_minimo" 
                   type="number" 
                   step="1" 
-                  min="0" 
-                  required
+                  min="0"
                   placeholder="0"
+                  @blur="validateField('stock_minimo')"
+                  :class="{ 'input-error': errors.stock_minimo }"
                 />
+                <FormErrorMessage :error="errors.stock_minimo" />
               </div>
 
               <div class="form-field">
@@ -75,17 +108,30 @@
                   step="1" 
                   min="0" 
                   placeholder="Opcional"
+                  @blur="validateField('stock_maximo')"
+                  :class="{ 'input-error': errors.stock_maximo }"
                 />
+                <FormErrorMessage :error="errors.stock_maximo" />
               </div>
 
               <div class="form-field full">
                 <label for="descripcion">Descripción</label>
-                <textarea id="descripcion" v-model="form.descripcion" rows="2" placeholder="Descripción opcional"></textarea>
+                <textarea 
+                  id="descripcion" 
+                  v-model="form.descripcion" 
+                  rows="2" 
+                  placeholder="Descripción opcional"
+                  @blur="validateField('descripcion')"
+                  :class="{ 'input-error': errors.descripcion }"
+                ></textarea>
+                <FormErrorMessage :error="errors.descripcion" />
               </div>
             </div>
 
             <div class="form-actions">
-              <button type="submit" class="btn-primary">{{ isEdit ? 'Actualizar' : 'Crear' }}</button>
+              <button type="submit" class="btn-primary" :disabled="loading">
+                {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }}
+              </button>
             </div>
           </form>
         </div>
@@ -98,6 +144,8 @@
 import { ref, watch, reactive, onMounted } from 'vue'
 import materiasPrimasService from '../services/materiasPrimasService'
 import categoriasService from '../services/categoriasService'
+import FormErrorMessage from './FormErrorMessage.vue'
+import { useFormValidation } from '../composables/useFormValidation'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -110,6 +158,7 @@ const isEdit = ref(false)
 const loading = ref(false)
 const unidades = ref([])
 const categorias = ref([])
+const { errors, validators, validateField: validateFieldUtil, validateForm: validateFormUtil } = useFormValidation()
 
 const form = reactive({
   codigo: '',
@@ -209,16 +258,80 @@ async function loadMateriaPrima(id) {
   }
 }
 
+function validateField(fieldName) {
+  const validationRules = {
+    codigo: [
+      (value) => validators.required(value, 'Código'),
+      (value) => validators.minLength(value, 2, 'Código')
+    ],
+    nombre: [
+      (value) => validators.required(value, 'Nombre'),
+      (value) => validators.minLength(value, 3, 'Nombre')
+    ],
+    categoria_id: [
+      (value) => validators.required(value, 'Categoría')
+    ],
+    unidad_id: [
+      (value) => validators.required(value, 'Unidad de medida')
+    ],
+    densidad: [
+      (value) => validators.minValue(value, 0.01, 'Densidad')
+    ],
+    stock_minimo: [
+      (value) => validators.required(value, 'Stock mínimo'),
+      (value) => validators.minValue(value, 0, 'Stock mínimo')
+    ],
+    stock_maximo: [
+      (value) => {
+        if (value && form.stock_minimo && value < form.stock_minimo) {
+          return 'Stock máximo debe ser mayor al mínimo'
+        }
+        return null
+      }
+    ]
+  }
+
+  if (validationRules[fieldName]) {
+    validateFieldUtil(fieldName, form[fieldName], validationRules[fieldName])
+  }
+}
+
 async function submit() {
+  const validationRules = {
+    codigo: [
+      (value) => validators.required(value, 'Código'),
+      (value) => validators.minLength(value, 2, 'Código')
+    ],
+    nombre: [
+      (value) => validators.required(value, 'Nombre'),
+      (value) => validators.minLength(value, 3, 'Nombre')
+    ],
+    categoria_id: [
+      (value) => validators.required(value, 'Categoría')
+    ],
+    unidad_id: [
+      (value) => validators.required(value, 'Unidad de medida')
+    ],
+    stock_minimo: [
+      (value) => validators.required(value, 'Stock mínimo'),
+      (value) => validators.minValue(value, 0, 'Stock mínimo')
+    ],
+    stock_maximo: [
+      (value) => {
+        if (value && form.stock_minimo && value < form.stock_minimo) {
+          return 'Stock máximo debe ser mayor al mínimo'
+        }
+        return null
+      }
+    ]
+  }
+
+  if (!validateFormUtil(form, validationRules)) {
+    return
+  }
+
   try {
     loading.value = true
-
-    // Validar que categoria_id esté seleccionada
-    if (!form.categoria_id || form.categoria_id === '') {
-      alert('Por favor selecciona una categoría')
-      loading.value = false
-      return
-    }
 
     const payload = {
       codigo: form.codigo,
@@ -361,12 +474,31 @@ function close() {
   transition: all 0.2s;
 }
 
+.form-field input.input-error,
+.form-field select.input-error,
+.form-field textarea.input-error {
+  border-color: #f87171;
+  background-color: #fef2f2;
+}
+
 .form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
   outline: none;
   border-color: #4f6f8f;
   box-shadow: 0 0 0 3px rgba(79, 111, 143, 0.1);
+}
+
+.form-field input.input-error:focus,
+.form-field select.input-error:focus,
+.form-field textarea.input-error:focus {
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1);
+}
+
+.required {
+  color: #f87171;
+  font-weight: bold;
 }
 
 .form-field textarea {

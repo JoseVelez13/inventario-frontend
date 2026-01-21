@@ -14,6 +14,7 @@ import RecepcionesMaterialListView from '../views/RecepcionesMaterialListView.vu
 import RecepcionesItemListView from '../views/RecepcionesItemListView.vue'
 import LoteProduccionListView from '../views/LoteProduccionListView.vue'
 import LoteProduccionDetailView from '../views/LoteProduccionDetailView.vue'
+import ArchivosGDriveView from '../views/ArchivosGDriveView.vue'
 import OrdenClienteListView from '../views/ordenes-cliente/OrdenClienteListView.vue'
 import OrdenClienteDetailView from '../views/ordenes-cliente/OrdenClienteDetailView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
@@ -33,7 +34,7 @@ const routes = [
     component: LoginView,
     meta: { 
       title: 'Iniciar Sesión - Sistema Innoquim',
-      hideForAuth: true // Ocultar si ya está autenticado
+      hideForAuth: true
     }
   },
   { 
@@ -58,74 +59,85 @@ const routes = [
     path: '/clientes',
     name: 'Clientes',
     component: ClientesListView,
-    meta: { title: 'Clientes - Sistema Innoquim' }
+    meta: { title: 'Clientes - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/productos',
     name: 'Productos',
     component: ProductosListView,
-    meta: { title: 'Productos - Sistema Innoquim' }
+    meta: { title: 'Productos - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/materias-primas',
     name: 'MateriasPrimas',
     component: MateriasPrimasListView,
-    meta: { title: 'Materias Primas - Sistema Innoquim' }
+    meta: { title: 'Materias Primas - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/materias-primas/nuevo',
     name: 'MateriaPrimaNuevo',
     component: MateriaPrimaCreateView,
-    meta: { title: 'Nueva Materia Prima - Sistema Innoquim' }
+    meta: { title: 'Nueva Materia Prima - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/proveedores',
     name: 'Proveedores',
     component: ProveedoresListView,
-    meta: { title: 'Proveedores - Sistema Innoquim' }
+    meta: { title: 'Proveedores - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/almacenes',
     name: 'Almacenes',
     component: AlmacenesListView,
-    meta: { title: 'Almacenes - Sistema Innoquim' }
+    meta: { title: 'Almacenes - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/unidades',
     name: 'Unidades',
     component: UnidadesListView,
-    meta: { title: 'Unidades de Medida - Sistema Innoquim' }
+    meta: { title: 'Unidades de Medida - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/kardex',
     name: 'Kardex',
     component: KardexListView,
-    meta: { title: 'Kardex de Inventario - Sistema Innoquim' }
+    meta: { title: 'Kardex de Inventario - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/recepciones',
     name: 'RecepcionesMaterial',
     component: RecepcionesMaterialListView,
-    meta: { title: 'Recepciones de Material - Sistema Innoquim' }
+    meta: { title: 'Recepciones de Material - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/recepciones-productos',
     name: 'RecepcionesProductos',
     component: RecepcionesItemListView,
-    meta: { title: 'Recepciones de Productos - Sistema Innoquim' }
+    meta: { title: 'Recepciones de Productos - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/lotes-produccion',
     name: 'LotesProduccion',
     component: LoteProduccionListView,
-    meta: { title: 'Lotes de Producción - Sistema Innoquim' }
+    meta: { title: 'Lotes de Producción - Sistema Innoquim', requiresAuth: true }
   },
   {
     path: '/lotes-produccion/:id',
     name: 'LoteProduccionDetail',
     component: LoteProduccionDetailView,
-    meta: { title: 'Detalle de Lote - Sistema Innoquim' }
+    meta: { title: 'Detalle de Lote - Sistema Innoquim', requiresAuth: true }
   },
+  {
+    path: '/archivos-drive',
+    name: 'ArchivosGDrive',
+    component: ArchivosGDriveView,
+    meta: { 
+      title: 'Archivos en Google Drive - Sistema Innoquim',
+      requiresAuth: true 
+    }
+  },
+  // ruta fallback para errores
+  { path: '/:pathMatch(.*)*', redirect: '/' },
   {
     path: '/ordenes-cliente',
     name: 'OrdenesCliente',
