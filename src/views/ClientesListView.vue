@@ -2,8 +2,6 @@
   <div class="page-container">
     <HeaderGlobal />
     <Breadcrumbs />
-    <div class="bg-fondo-clientes"></div>
-
     <div class="topbar">
       <div class="topbar-title">
         Clientes
@@ -30,18 +28,28 @@
         </Tooltip>
       </div>
     </div>
-
     <div class="content-box">
       <div class="content-body">
         <div class="search-bar">
           <input 
-            v-model="search" 
-            @input="onSearch" 
+            v-model="searchInput" 
+            @input="debouncedSearch" 
             type="text" 
-            placeholder="Buscar por RUC, Empresa, Contacto..." 
+            placeholder="Buscar por nombre, RUC o correo..." 
             class="search-input"
           />
           <button class="btn-secondary" @click="clearSearch">Limpiar</button>
+          <select v-model="filters.estado" class="filter-select">
+            <option value="">Todos los estados</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div class="filter-chips" v-if="activeChips.length">
+          <span v-for="chip in activeChips" :key="chip.key" class="chip chip-filter">
+            {{ chip.label }}
+            <button class="chip-remove" @click="removeChip(chip.key)">×</button>
+          </span>
         </div>
         <div v-if="loading" class="loading-state">Cargando clientes...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
@@ -241,12 +249,22 @@ import ClienteFormModal from '../components/ClienteFormModal.vue'
 import '../assets/styles/Clientes.css'
 import clientesService from '../services/clientesService'
 
+function debounce(fn, delay) {
+  let timeout
+  return function(...args) {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
+
 export default {
   name: 'ClientesListView',
   components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification, ClienteFormModal },
   data() {
     return {
       search: '',
+      searchInput: '',
+      filters: { estado: '' },
       clientes: [],
       allClientes: [], // Almacena TODOS los clientes
       loading: false,
@@ -291,20 +309,23 @@ export default {
   computed: {
     // Obtener clientes filtrados por búsqueda (de TODOS los clientes)
     filtered() {
-      if (!this.search) {
-        return this.allClientes
-      }
-      const term = this.search.toLowerCase()
-      return this.allClientes.filter(c => {
-        return (
-          (c.ruc && c.ruc.toLowerCase().includes(term)) ||
-          (c.nombre_empresa && c.nombre_empresa.toLowerCase().includes(term)) ||
-          (c.nombre_contacto && c.nombre_contacto.toLowerCase().includes(term)) ||
-          (c.telefono && c.telefono.toLowerCase().includes(term)) ||
-          (c.email && c.email.toLowerCase().includes(term)) ||
-          (c.direccion && c.direccion.toLowerCase().includes(term))
+      let data = this.allClientes || []
+      const q = this.search.trim().toLowerCase()
+      if (q) {
+        data = data.filter(c =>
+          (c.nombre || '').toLowerCase().includes(q) ||
+          (c.ruc || '').toLowerCase().includes(q) ||
+          (c.email || '').toLowerCase().includes(q)
         )
-      })
+      }
+      if (this.filters.estado) {
+        data = data.filter(c => {
+          if (this.filters.estado === 'activo') return c.activo !== false
+          if (this.filters.estado === 'inactivo') return c.activo === false
+          return true
+        })
+      }
+      return data
     },
     
     // Ordenar los datos filtrados
@@ -359,10 +380,23 @@ export default {
     },
     endItem() {
       return Math.min(this.currentPage * this.pageSize, this.totalFiltered)
+    },
+    activeChips() {
+      const chips = []
+      if (this.search) chips.push({ key: 'search', label: `Buscar: "${this.search}"` })
+      if (this.filters.estado) {
+        chips.push({ key: 'estado', label: `Estado: ${this.filters.estado === 'activo' ? 'Activo' : 'Inactivo'}` })
+      }
+      return chips
     }
   },
 
   methods: {
+    debouncedSearch: debounce(function() {
+      this.search = this.searchInput
+      this.currentPage = 1
+    }, 300),
+
     toggleSort(field) {
       if (this.sortField === field) {
         this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
@@ -416,6 +450,8 @@ export default {
 
     clearSearch() {
       this.search = ''
+      this.searchInput = ''
+      this.currentPage = 1
       this.$nextTick(() => {
         const searchInput = document.querySelector('.search-input')
         if (searchInput) {
@@ -547,7 +583,56 @@ export default {
       }
       this.currentPage = 1
       this.fetchClientes()
-    }
+    },
+
+    removeChip(key) {
+      if (key === 'search') this.clearSearch()
+      if (key === 'estado') this.filters.estado = ''
+      this.currentPage = 1
+    },
   }
 }
 </script>
+
+<style scoped>
+.filter-chips {
+  margin: 8px 0 12px 0;
+}
+.chip-filter {
+  display: inline-flex;
+  align-items: center;
+  background: #e0e7ef;
+  color: #2a3b4d;
+  border-radius: 16px;
+  padding: 0 10px;
+  margin-right: 8px;
+  font-size: 0.95em;
+  height: 28px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: background 0.2s;
+}
+.chip-filter:hover {
+  background: #c7d2e5;
+}
+.chip-remove {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.1em;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.chip-remove:hover {
+  color: #d32f2f;
+}
+.filter-select {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd8dc;
+  background: #f8fafc;
+  color: #2a3b4d;
+  font-size: 1em;
+}
+</style>

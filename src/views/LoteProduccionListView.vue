@@ -2,7 +2,6 @@
   <div class="page-container">
     <HeaderGlobal />
     <Breadcrumbs />
-
     <div class="topbar">
       <div class="topbar-title">Gestión de Lotes de Producción</div>
       <div class="topbar-actions">
@@ -17,41 +16,24 @@
         </Tooltip>
       </div>
     </div>
-
     <div class="content-box">
       <div class="content-body">
-        <!-- Filtros por estado -->
-        <div class="filters-section">
-          <button 
-            class="filter-chip"
-            :class="{ active: statusFilter === null }"
-            @click="statusFilter = null"
-          >
-            Todos ({{ lotes.length }})
-          </button>
-          <button 
-            v-for="status in estatuses"
-            :key="status.value"
-            class="filter-chip"
-            :class="{ active: statusFilter === status.value }"
-            @click="statusFilter = status.value"
-          >
-            {{ status.label }} ({{ countByStatus(status.value) }})
-          </button>
-        </div>
-
-        <!-- Barra de búsqueda -->
         <div class="search-bar">
           <input 
-            v-model="search" 
-            @input="onSearch" 
+            v-model="searchInput" 
+            @input="debouncedSearch" 
             type="text" 
-            placeholder="Buscar por código, producto, gestor..." 
+            placeholder="Buscar por código, producto o estado..." 
             class="search-input"
           />
           <button class="btn-secondary" @click="clearSearch">Limpiar</button>
         </div>
-
+        <div class="filter-chips" v-if="activeChips.length">
+          <span v-for="chip in activeChips" :key="chip.key" class="chip chip-filter">
+            {{ chip.label }}
+            <button class="chip-remove" @click="removeChip(chip.key)">×</button>
+          </span>
+        </div>
         <!-- Estados de carga -->
         <div v-if="loading" class="loading-state">Cargando lotes de producción...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
@@ -191,6 +173,7 @@ import '../assets/styles/LotesProduccion.css'
 const loading = ref(false)
 const error = ref('')
 const search = ref('')
+const searchInput = ref('')
 const statusFilter = ref(null)
 const currentPage = ref(1)
 const itemsPerPage = ref(10)
@@ -231,6 +214,12 @@ const filtered = computed(() => {
   }
 
   return result
+})
+
+const activeChips = computed(() => {
+  const chips = []
+  if (search.value) chips.push({ key: 'search', label: `Buscar: "${search.value}"` })
+  return chips
 })
 
 // Paginación
@@ -376,12 +365,28 @@ const deleteLote = (id) => {
 }
 
 // Utilidades de búsqueda y paginación
+const debouncedSearch = (() => {
+  let timeout
+  return (callback) => {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => {
+      callback()
+    }, 300)
+  }
+})()
+
 const onSearch = () => {
   currentPage.value = 1
 }
 
 const clearSearch = () => {
   search.value = ''
+  searchInput.value = ''
+  currentPage.value = 1
+}
+
+const removeChip = (key) => {
+  if (key === 'search') clearSearch()
   currentPage.value = 1
 }
 
@@ -417,5 +422,45 @@ onMounted(() => {
 <style scoped>
 .text-right {
   text-align: right;
+}
+.filter-chips {
+  margin: 8px 0 12px 0;
+}
+.chip-filter {
+  display: inline-flex;
+  align-items: center;
+  background: #e0e7ef;
+  color: #2a3b4d;
+  border-radius: 16px;
+  padding: 0 10px;
+  margin-right: 8px;
+  font-size: 0.95em;
+  height: 28px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: background 0.2s;
+}
+.chip-filter:hover {
+  background: #c7d2e5;
+}
+.chip-remove {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.1em;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.chip-remove:hover {
+  color: #d32f2f;
+}
+.filter-select {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd8dc;
+  background: #f8fafc;
+  color: #2a3b4d;
+  font-size: 1em;
 }
 </style>

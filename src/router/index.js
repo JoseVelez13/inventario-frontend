@@ -103,7 +103,7 @@ const routes = [
     meta: { title: 'Kardex de Inventario - Sistema Innoquim' }
   },
   {
-    path: '/recepciones-material',
+    path: '/recepciones',
     name: 'RecepcionesMaterial',
     component: RecepcionesMaterialListView,
     meta: { title: 'Recepciones de Material - Sistema Innoquim' }

@@ -1,5 +1,5 @@
 <template>
-  <transition name="dialog-fade">
+  <transition name="fade-in-up" appear>
     <div v-if="visible" class="dialog-overlay" @click="close">
       <div class="dialog-card form-modal" @click.stop>
         <div class="modal-header">
@@ -264,10 +264,13 @@ const submit = async () => {
   try {
     submitting.value = true
     
+    // Clonar el form y renombrar almacen a id_almacen
+    const payload = { ...form.value, id_almacen: form.value.almacen }
+    delete payload.almacen
     if (isEdit.value) {
-      await recepcionesService.updateRecepcionMaterial(props.recepcionId, form.value)
+      await recepcionesService.updateRecepcionMaterial(props.recepcionId, payload)
     } else {
-      await recepcionesService.createRecepcionMaterial(form.value)
+      await recepcionesService.createRecepcionMaterial(payload)
     }
     
     emit('saved')
@@ -277,7 +280,7 @@ const submit = async () => {
     
     let errorMsg = ''
     if (err.response?.status === 404) {
-      errorMsg = 'El servidor no tiene configurado el endpoint para registrar recepciones de material. Por favor, verifica que el backend tenga la ruta /api/recepciones-material/ habilitada.'
+      errorMsg = 'El servidor no tiene configurado el endpoint para registrar recepciones de material. Por favor, verifica que el backend tenga la ruta /api/recepciones/ habilitada.'
     } else if (err.response?.data) {
       const errors = err.response.data
       if (typeof errors === 'string') {
@@ -491,5 +494,19 @@ onMounted(() => {
 .dialog-fade-enter-from,
 .dialog-fade-leave-to {
   opacity: 0;
+}
+
+.fade-in-up-enter-active, .fade-in-up-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.fade-in-up-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-in-up-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

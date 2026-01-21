@@ -42,7 +42,7 @@
 
         <div v-if="loading" class="loading-state">Cargando recepciones...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
-        <div v-else-if="filtered.length === 0" class="empty-state">
+        <div v-else-if="!Array.isArray(filtered.value) || filtered.value.length === 0" class="empty-state">
           <div class="empty-icon">📦</div>
           <h3>No hay recepciones registradas</h3>
           <p>Comienza registrando tu primera recepción de material</p>
@@ -101,7 +101,7 @@
         </table>
 
         <!-- Paginación -->
-        <div v-if="filtered.length > 0" class="pagination">
+        <div v-if="Array.isArray(filtered.value) && filtered.value.length > 0" class="pagination">
           <button 
             class="pagination-button" 
             :disabled="currentPage === 1" 
@@ -219,7 +219,8 @@ const loadRecepciones = async () => {
   try {
     loading.value = true
     error.value = null
-    recepciones.value = await recepcionesService.getRecepcionesMaterial()
+    const result = await recepcionesService.getRecepciones()
+    recepciones.value = Array.isArray(result) ? result : (result?.results || [])
   } catch (err) {
     console.error('Error cargando recepciones:', err)
     error.value = 'No se pudo cargar las recepciones de material.'
@@ -247,6 +248,8 @@ const closeModal = () => {
 }
 
 const handleSaved = () => {
+  search.value = ''
+  currentPage.value = 1
   loadRecepciones()
   showNotification('Recepción guardada correctamente', 'success')
 }
