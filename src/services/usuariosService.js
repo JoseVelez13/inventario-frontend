@@ -49,7 +49,7 @@ class UsuariosService {
    * @returns {Promise} Usuario actualizado
    */
   async updateUsuario(id, userData) {
-    const response = await api.put(`/usuarios/${id}/`, userData)
+    const response = await api.patch(`/usuarios/${id}/`, userData)
     return response.data
   }
 

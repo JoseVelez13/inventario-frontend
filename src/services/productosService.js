@@ -15,6 +15,14 @@ class ProductosService {
   }
 
   /**
+   * Alias para obtener todos los productos (compatibilidad con Dashboard)
+   * @returns {Promise} Lista de todos los productos
+   */
+  async getAll() {
+    return this.getProductos({ page_size: 1000 })
+  }
+
+  /**
    * Obtener un producto por ID
    * @param {number} id - ID del producto
    * @returns {Promise} Datos del producto
@@ -35,8 +43,10 @@ class ProductosService {
       product_code: String(productoData.product_code),
       name: String(productoData.name),
       description: String(productoData.description),
+      categoria_id: Number(productoData.categoria_id), // ID de la categoría (ForeignKey - OBLIGATORIO)
       unit: Number(productoData.unit), // ID de la unidad (ForeignKey)
-      weight: Number(productoData.weight)
+      weight: Number(productoData.weight),
+      stock: Number(productoData.stock || 0)
     }
     
     console.log('productosService.createProducto - Datos limpios:', cleanData)

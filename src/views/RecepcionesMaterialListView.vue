@@ -42,7 +42,7 @@
 
         <div v-if="loading" class="loading-state">Cargando recepciones...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
-        <div v-else-if="filtered.length === 0" class="empty-state">
+        <div v-else-if="!Array.isArray(filtered.value) || filtered.value.length === 0" class="empty-state">
           <div class="empty-icon">📦</div>
           <h3>No hay recepciones registradas</h3>
           <p>Comienza registrando tu primera recepción de material</p>
@@ -101,7 +101,7 @@
         </table>
 
         <!-- Paginación -->
-        <div v-if="filtered.length > 0" class="pagination">
+        <div v-if="Array.isArray(filtered.value) && filtered.value.length > 0" class="pagination">
           <button 
             class="pagination-button" 
             :disabled="currentPage === 1" 
@@ -129,6 +129,7 @@
       :recepcion-id="selectedRecepcionId"
       @close="closeModal"
       @saved="handleSaved"
+      @error="handleError"
     />
 
     <!-- Modal de Confirmación -->
@@ -142,7 +143,8 @@
 
     <!-- Notification -->
     <Notification 
-      v-if="notification.show" 
+      :show="notification.show" 
+      :title="notification.title"
       :message="notification.message" 
       :type="notification.type" 
       @close="notification.show = false"
@@ -180,6 +182,7 @@ const confirmDialog = ref({
 
 const notification = ref({
   show: false,
+  title: '',
   message: '',
   type: 'success'
 })
@@ -216,7 +219,8 @@ const loadRecepciones = async () => {
   try {
     loading.value = true
     error.value = null
-    recepciones.value = await recepcionesService.getRecepcionesMaterial()
+    const result = await recepcionesService.getRecepciones()
+    recepciones.value = Array.isArray(result) ? result : (result?.results || [])
   } catch (err) {
     console.error('Error cargando recepciones:', err)
     error.value = 'No se pudo cargar las recepciones de material.'
@@ -227,8 +231,10 @@ const loadRecepciones = async () => {
 }
 
 const openCreateModal = () => {
+  console.log('🔵 Abriendo modal de nueva recepción')
   selectedRecepcionId.value = null
   showModal.value = true
+  console.log('🔵 showModal.value:', showModal.value)
 }
 
 const openEditModal = (id) => {
@@ -242,8 +248,21 @@ const closeModal = () => {
 }
 
 const handleSaved = () => {
+  search.value = ''
+  currentPage.value = 1
   loadRecepciones()
   showNotification('Recepción guardada correctamente', 'success')
+}
+
+const handleError = (errorMsg) => {
+  console.log('❌ Error recibido desde modal:', errorMsg)
+  notification.value = {
+    show: true,
+    type: 'error',
+    title: 'Error al guardar',
+    message: errorMsg
+  }
+  console.log('Mostrando notificación de error:', notification.value)
 }
 
 const viewRecepcion = (recepcion) => {
@@ -302,11 +321,16 @@ const goToPage = (page) => {
 }
 
 const openExport = () => {
-  showNotification('Funcionalidad de exportación en desarrollo', 'info')
+  showNotification('Funcionalidad de exportación en desarrollo', 'info', 'Información')
 }
 
-const showNotification = (message, type = 'success') => {
-  notification.value = { show: true, message, type }
+const showNotification = (message, type = 'success', title = '') => {
+  if (!title) {
+    title = type === 'success' ? 'Éxito' : 
+            type === 'error' ? 'Error' : 
+            type === 'warning' ? 'Advertencia' : 'Información'
+  }
+  notification.value = { show: true, message, type, title }
 }
 
 const formatDate = (dateString) => {

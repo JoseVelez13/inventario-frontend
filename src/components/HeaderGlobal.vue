@@ -18,9 +18,15 @@
     <!-- MENÚ SUPERIOR -->
     <nav class="nav-menu">
       <NotificationBell />
-
+      
+      <DarkModeToggle />
+      
       <button class="nav-item" @click="$router.push('/')">
         <i class="fa-solid fa-house"></i> Inicio
+      </button>
+
+      <button class="nav-item" @click="$router.push('/perfil')">
+        <i class="fa-solid fa-user-circle"></i> Perfil
       </button>
 
       <button class="nav-item" @click="logout">
@@ -90,7 +96,7 @@
               <i class="fa-solid fa-chart-simple"></i>
               <span>Kardex</span>
             </router-link>
-            <router-link to="/recepciones-material" class="sidebar-item" @click="closeSidebar">
+            <router-link to="/recepciones" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-dolly"></i>
               <span>Recepciones Material</span>
             </router-link>
@@ -105,6 +111,18 @@
             <router-link to="/archivos-drive" class="sidebar-item" @click="closeSidebar">
               <i class="fa-brands fa-google-drive"></i>
               <span>Archivos en Drive</span>
+            <div class="nav-section-title">Producción</div>
+            <router-link to="/lotes-produccion" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-industry"></i>
+              <span>Lotes de Producción</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">Ventas</div>
+            <router-link to="/ordenes-cliente" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-shopping-cart"></i>
+              <span>Órdenes de Cliente</span>
             </router-link>
           </div>
 
@@ -125,10 +143,11 @@
 import '../assets/styles/HeaderGlobal.css'
 import logo from '../assets/img/logo.png'
 import NotificationBell from './NotificationBell.vue'
+import DarkModeToggle from './DarkModeToggle.vue'
 
 export default {
   name: 'HeaderComponent',
-  components: { NotificationBell },
+  components: { NotificationBell, DarkModeToggle },
   data() {
     return {
       logo,

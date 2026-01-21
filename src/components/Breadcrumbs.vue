@@ -77,16 +77,36 @@ const crumbs = computed(() => {
     breadcrumbs.push({ label: 'Kardex', path: '/kardex' })
   }
 
-  // Recepciones de Material
-  if (path.includes('/recepciones-material')) {
+  // Lotes de Producción
+  if (path.includes('/lotes-produccion')) {
     breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
-    breadcrumbs.push({ label: 'Recepciones de Material', path: '/recepciones-material' })
+    breadcrumbs.push({ label: 'Lotes de Producción', path: '/lotes-produccion' })
+    
+    if (path.match(/\/lotes-produccion\/[^/]+$/)) {
+      breadcrumbs.push({ label: 'Detalle del Lote', path: path })
+    }
+  }
+
+  // Recepciones de Material
+  if (path.includes('/recepciones')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Recepciones de Material', path: '/recepciones' })
   }
 
   // Recepciones de Productos
   if (path.includes('/recepciones-productos')) {
     breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
     breadcrumbs.push({ label: 'Recepciones de Productos', path: '/recepciones-productos' })
+  }
+
+  // Órdenes de Cliente
+  if (path.includes('/ordenes-cliente')) {
+    breadcrumbs.push({ label: 'Aplicaciones', path: '/dashboard' })
+    breadcrumbs.push({ label: 'Órdenes de Cliente', path: '/ordenes-cliente' })
+    
+    if (path.match(/\/ordenes-cliente\/[^/]+$/)) {
+      breadcrumbs.push({ label: 'Detalle de Orden', path: path })
+    }
   }
 
   return breadcrumbs

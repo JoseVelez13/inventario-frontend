@@ -7,6 +7,8 @@
 <script setup>
 </script>
 <style>
+@import './assets/styles/animate.css';
+
 body {
   font-family: 'Segoe UI', sans-serif;
   margin: 0;
