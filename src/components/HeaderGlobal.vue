@@ -68,6 +68,10 @@
               <i class="fa-solid fa-users"></i>
               <span>Clientes</span>
             </router-link>
+            <router-link to="/ordenes-cliente" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-file-invoice"></i>
+              <span>Órdenes de Cliente</span>
+            </router-link>
             <router-link to="/materias-primas" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-flask"></i>
               <span>Materias Primas</span>
@@ -84,6 +88,10 @@
               <i class="fa-solid fa-warehouse"></i>
               <span>Almacenes</span>
             </router-link>
+            <router-link to="/categorias" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-folder"></i>
+              <span>Categorías</span>
+            </router-link>
             <router-link to="/unidades" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-ruler"></i>
               <span>Unidades</span>
@@ -92,6 +100,10 @@
 
           <div class="nav-section">
             <div class="nav-section-title">Inventario</div>
+            <router-link to="/inventario-materiales" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-boxes-packing"></i>
+              <span>Inventario de Materiales</span>
+            </router-link>
             <router-link to="/kardex" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-chart-simple"></i>
               <span>Kardex</span>

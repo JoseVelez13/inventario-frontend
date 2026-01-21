@@ -13,23 +13,11 @@
           <p class="description">Selecciona el formato para exportar {{ itemCount }} {{ entityName }}(s):</p>
 
           <div class="format-buttons">
-            <button class="format-btn excel" @click="exportExcel">
-              <span class="icon">📊</span>
-              <span class="label">Excel (.xlsx)</span>
-            </button>
-            <button class="format-btn csv" @click="exportCSV">
-              <span class="icon">📄</span>
-              <span class="label">CSV (.csv)</span>
-            </button>
-            <button class="format-btn json" @click="exportJSON">
-              <span class="icon">{ }</span>
-              <span class="label">JSON (.json)</span>
-            </button>
             <button class="format-btn pdf" @click="exportPDF">
               <span class="icon">📑</span>
               <span class="label">PDF (.pdf)</span>
             </button>
-            <button class="format-btn drive" @click="exportarADrive('excel')">
+            <button class="format-btn drive" @click="exportarADrive('pdf')">
               <span class="icon">
                 <i class="fa-brands fa-google-drive"></i>
               </span>
@@ -559,56 +547,48 @@ export default {
         let blob = null
         let fileName = `${this.entityName}_${this.getTimestamp()}`
 
-        if (formato === 'excel') {
-          // Generar Excel
-          const workbook = new ExcelJS.Workbook()
-          workbook.creator = 'Sistema Innoquim'
-          const worksheet = workbook.addWorksheet(this.entityName.substring(0, 31))
+        if (formato === 'pdf') {
+          // Generar PDF en memoria (mismo estilo que exportPDF)
+          const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+          const pageWidth = doc.internal.pageSize.getWidth()
 
-          // Agregar datos (simplificado, usa tu lógica existente)
-          const headerRow = worksheet.getRow(1)
-          this.columns.forEach((col, index) => {
-            const cell = headerRow.getCell(index + 1)
-            cell.value = col.label
-          })
+          // Encabezado
+          doc.setFillColor(79, 111, 143)
+          doc.rect(0, 0, pageWidth, 12, 'F')
+          doc.setTextColor(255, 255, 255)
+          doc.setFontSize(16)
+          doc.setFont('helvetica', 'bold')
+          doc.text('SISTEMA INNOQUIM', pageWidth / 2, 8, { align: 'center' })
 
-          this.data.forEach((item, rowIndex) => {
-            const row = worksheet.getRow(2 + rowIndex)
-            this.columns.forEach((col, colIndex) => {
-              row.getCell(colIndex + 1).value = item[col.key]
-            })
-          })
+          doc.setFillColor(232, 243, 248)
+          doc.rect(0, 12, pageWidth, 10, 'F')
+          doc.setTextColor(44, 95, 127)
+          doc.setFontSize(13)
+          doc.setFont('helvetica', 'bold')
+          doc.text('Reporte de ' + this.entityName, pageWidth / 2, 18.5, { align: 'center' })
 
-          const buffer = await workbook.xlsx.writeBuffer()
-          blob = new Blob([buffer], {
-            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-          })
-          fileName += '.xlsx'
-        }
-        else if (formato === 'csv') {
-          const csv = Papa.unparse(this.data, {
-            quotes: true,
-            delimiter: ",",
-            header: true
-          })
-          const BOM = '\uFEFF'
-          blob = new Blob([BOM + csv], { type: 'text/csv;charset=utf-8' })
-          fileName += '.csv'
-        }
-        else if (formato === 'json') {
-          const json = JSON.stringify(this.data, null, 2)
-          blob = new Blob([json], { type: 'application/json' })
-          fileName += '.json'
-        }
-        else if (formato === 'pdf') {
-          // Para PDF necesitarías convertir el jsPDF a Blob
-          // Por ahora lo dejamos como Excel por defecto
-          console.warn('PDF a Drive aún no implementado, usando Excel')
-          return this.exportarADrive('excel')
+          if (this.logoBase64) {
+            try { doc.addImage(this.logoBase64, 'PNG', pageWidth - 30, 13, 26, 13) } catch {}
+          }
+
+          const headers = this.columns.map(col => col.label)
+          const tableData = this.data.map(item => this.columns.map(col => {
+            const value = item[col.key]
+            if (value === null || value === undefined) return '-'
+            if (typeof value === 'number') return String(value)
+            return String(value)
+          }))
+          autoTable(doc, { head: [headers], body: tableData, startY: 48, theme: 'striped', styles: { fontSize: 8, cellPadding: 3 }, headStyles: { fillColor: [79,111,143], textColor: [255,255,255] }, alternateRowStyles: { fillColor: [245,247,250] } })
+
+          const pdfArrayBuffer = doc.output('arraybuffer')
+          blob = new Blob([pdfArrayBuffer], { type: 'application/pdf' })
+          fileName += '.pdf'
+        } else {
+          alert('Solo se permite exportar a PDF para guardar en Drive')
+          return
         }
 
         if (blob) {
-          // Convertir Blob a File
           this.archivoParaDrive = new File([blob], fileName, { type: blob.type })
           this.nombreArchivoParaDrive = fileName
           this.mostrarModalDrive = true
@@ -1735,10 +1715,11 @@ export default {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  align-items: stretch;
 }
 
 .format-btn.drive {
-  grid-column: 1 / -1;
+  /* Ya no ocupa toda la fila: mismo tamaño que PDF */
   background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
   border-color: #4285f4;
   color: white;
@@ -1790,6 +1771,7 @@ export default {
   cursor: pointer;
   transition: all 0.2s;
   font-family: 'Inter', sans-serif;
+  height: 100%; /* Alinea alturas entre tarjetas */
 }
 
 .format-btn:hover {
@@ -1907,6 +1889,9 @@ export default {
 @media (max-width: 600px) {
   .template-buttons {
     grid-template-columns: 1fr;
+  }
+  .format-buttons {
+    grid-template-columns: 1fr; /* Pila vertical en móvil */
   }
 }
 
