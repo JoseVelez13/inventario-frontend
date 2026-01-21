@@ -86,6 +86,17 @@
                 </div>
               </th>
 
+              <th class="sortable-header" @click="toggleSort('nombre_categoria')">
+                <div class="header-content">
+                  <span>Categoría</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'nombre_categoria' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'nombre_categoria' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
               <th class="sortable-header" @click="toggleSort('description')">
                 <div class="header-content">
                   <span>Descripción</span>
@@ -139,6 +150,7 @@
               <td>{{ p.producto_id || p.id }}</td>
               <td><strong>{{ p.product_code }}</strong></td>
               <td>{{ p.name }}</td>
+              <td>{{ p.nombre_categoria || '-' }}</td>
               <td>{{ p.description || '-' }}</td>
               <td>{{ getUnidadNombre(p.unit) }}</td>
               <td>{{ p.weight }} kg</td>
@@ -240,6 +252,7 @@ import { getStockStatus } from '../utils/statusUtils'
 import '../assets/styles/Clientes.css'
 import productosService from '../services/productosService'
 import unidadesService from '../services/unidadesService'
+import categoriasService from '../services/categoriasService'
 
 export default {
   name: 'ProductosListView',
@@ -504,37 +517,86 @@ export default {
         }
       }
 
+      // Cargar categorías
+      let categorias = []
+      try {
+        const response = await categoriasService.getCategoriasByTipo('PRODUCT')
+        categorias = Array.isArray(response) ? response : response.results || []
+      } catch (e) {
+        console.error('Error al cargar categorías:', e)
+      }
+
       for (const item of importedData) {
         try {
-          // Convertir texto de unidad a ID
-          const unitId = unidadesService.mapTextToId(item.unit, this.unidades)
-          
-          const cleanData = {
-            product_code: String(item.product_code || '').trim(),
-            name: String(item.name || '').trim(),
-            description: String(item.description || '').trim(),
-            unit: unitId,
-            weight: parseFloat(item.weight) || 0.1
+          // El item ya viene normalizado desde ImportExportDialog.parseExcel()
+          // pero lo normalizamos de nuevo por seguridad
+          const normalizedItem = {}
+          for (const [key, value] of Object.entries(item)) {
+            const lowerKey = key.toLowerCase().trim()
+            normalizedItem[lowerKey] = value
           }
           
-          console.log('Importando producto:', {
-            original: item,
-            unitText: item.unit,
-            unitId: unitId,
+          console.log('📋 Item normalizado:', normalizedItem)
+          console.log('🔑 Claves disponibles:', Object.keys(normalizedItem))
+          
+          // Convertir texto de unidad a ID
+          const unitId = unidadesService.mapTextToId(
+            normalizedItem.unidad || normalizedItem.unit || normalizedItem.peso, 
+            this.unidades
+          )
+          
+          // Buscar categoría - las claves ya están normalizadas a minúsculas
+          let categoriaId = null
+          let categoriaNombre = (
+            normalizedItem.categoría ||      // Por si tiene tilde
+            normalizedItem.categoria ||      // Sin tilde (probablemente esto)
+            normalizedItem.category ||       // Inglés
+            ''
+          )
+          categoriaNombre = String(categoriaNombre || '').trim()
+          
+          console.log('🔍 Buscando categoría:', {
+            categoriaNombre,
+            categoriasDisponibles: categorias.map(c => c.nombre),
+            todasLasClaves: normalizedItem
+          })
+
+          if (categoriaNombre) {
+            const categoria = categorias.find(c => 
+              c.nombre.toLowerCase() === categoriaNombre.toLowerCase()
+            )
+            categoriaId = categoria ? categoria.id : null
+            
+            if (!categoriaId) {
+              console.warn(`⚠️ Categoría "${categoriaNombre}" no encontrada en:`, categorias)
+            }
+          }
+
+          if (!categoriaId) {
+            throw new Error(`Categoría no encontrada: "${categoriaNombre}". Categorías disponibles: ${categorias.map(c => c.nombre).join(', ')}`)
+          }
+          
+          const cleanData = {
+            product_code: String(normalizedItem.código || normalizedItem.product_code || '').trim(),
+            name: String(normalizedItem.nombre || normalizedItem.name || '').trim(),
+            description: String(normalizedItem.descripción || normalizedItem.description || '').trim(),
+            categoria_id: categoriaId,
+            unit: unitId,
+            weight: parseFloat(normalizedItem.peso || normalizedItem.weight) || 0.1,
+            stock: parseFloat(normalizedItem.stock) || 0
+          }
+          
+          console.log('✅ Importando producto:', {
+            categoriaNombre: categoriaNombre,
+            categoriaId: categoriaId,
             cleanData: cleanData
           })
           
           await productosService.createProducto(cleanData)
           successCount++
         } catch (e) {
-          console.error('Error al importar producto:', {
+          console.error('❌ Error al importar producto:', {
             item: item,
-            cleanData: {
-              product_code: item.product_code,
-              name: item.name,
-              unit: item.unit,
-              unitId: unidadesService.mapTextToId(item.unit, this.unidades)
-            },
             error: e.message,
             response: e.response?.data
           })

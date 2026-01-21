@@ -271,14 +271,16 @@ export default {
         
         // Generar plantilla según el tipo de entidad
         if (this.entityName === 'Productos' || this.entityName === 'producto') {
-          columnHeaders = ['Código', 'Nombre', 'Descripción', 'Unidad', 'Peso']
+          columnHeaders = ['Código', 'Nombre', 'Categoría', 'Descripción', 'Unidad', 'Peso', 'Stock']
           templateData = [
             {
               'Código': 'P001',
               'Nombre': 'Jabón Líquido Antibacterial',
+              'Categoría': 'Productos de Limpieza',
               'Descripción': 'Jabón líquido para limpieza de manos',
               'Unidad': 'kg',
-              'Peso': '1.5'
+              'Peso': '1.5',
+              'Stock': '100'
             }
           ]
         } else if (this.entityName === 'Clientes' || this.entityName === 'cliente') {
@@ -307,11 +309,12 @@ export default {
             }
           ]
         } else if (this.entityName === 'Materias Primas' || this.entityName === 'materia_prima') {
-          columnHeaders = ['Código', 'Nombre', 'Descripción', 'Unidad', 'Densidad', 'Stock Mínimo', 'Stock Máximo']
+          columnHeaders = ['Código', 'Nombre', 'Categoría', 'Descripción', 'Unidad', 'Densidad', 'Stock Mínimo', 'Stock Máximo']
           templateData = [
             {
               'Código': 'MP001',
               'Nombre': 'Lauril Sulfato de Sodio',
+              'Categoría': 'Surfactantes',
               'Descripción': 'Surfactante aniónico para limpieza',
               'Unidad': 'kg',
               'Densidad': '1.2',
@@ -1014,8 +1017,29 @@ export default {
               })
             } else {
               // Plantilla simple o archivo externo: primera fila son headers
-              this.parsedData = XLSX.utils.sheet_to_json(firstSheet)
+              this.parsedData = XLSX.utils.sheet_to_json(firstSheet, { defval: '' })
             }
+            
+            // IMPORTANTE: Normalizar y mapear columnas para mantener consistencia
+            // Esto asegura que "Categoría", "categoria", "category" todas se encuentren como "categoria"
+            this.parsedData = this.parsedData.map(row => {
+              const normalizedRow = {}
+              
+              // Crear un mapa de claves normalizadas para referencia rápida
+              const keyMap = {}
+              for (const key of Object.keys(row)) {
+                const normalizedKey = key.toLowerCase().trim()
+                keyMap[normalizedKey] = key
+              }
+              
+              // Re-mapear todas las claves a su forma normalizada (minúsculas, sin espacios extra)
+              for (const key of Object.keys(row)) {
+                const normalizedKey = key.toLowerCase().trim()
+                normalizedRow[normalizedKey] = row[key]
+              }
+              
+              return normalizedRow
+            })
             
             // Guardar las columnas originales del archivo
             if (this.parsedData.length > 0) {
@@ -1023,8 +1047,8 @@ export default {
             }
             
             console.log('Excel parseado:', this.parsedData.length, 'filas')
-            console.log('Primera fila:', this.parsedData[0])
-            console.log('Columnas originales:', this.originalColumns)
+            console.log('Primera fila (normalizada):', this.parsedData[0])
+            console.log('Columnas originales (normalizadas):', this.originalColumns)
             resolve()
           } catch (error) {
             reject(error)
@@ -1042,7 +1066,22 @@ export default {
           try {
             const result = Papa.parse(e.target.result, { header: true, skipEmptyLines: true })
             this.parsedData = result.data
+            
+            // IMPORTANTE: Normalizar y mapear columnas igual que en parseExcel()
+            this.parsedData = this.parsedData.map(row => {
+              const normalizedRow = {}
+              
+              // Re-mapear todas las claves a su forma normalizada (minúsculas, sin espacios extra)
+              for (const key of Object.keys(row)) {
+                const normalizedKey = key.toLowerCase().trim()
+                normalizedRow[normalizedKey] = row[key]
+              }
+              
+              return normalizedRow
+            })
+            
             console.log('CSV parseado:', this.parsedData.length, 'filas')
+            console.log('Primera fila (normalizada):', this.parsedData[0])
             resolve()
           } catch (error) {
             reject(error)
@@ -1059,7 +1098,22 @@ export default {
         reader.onload = (e) => {
           try {
             this.parsedData = JSON.parse(e.target.result)
+            
+            // IMPORTANTE: Normalizar y mapear columnas igual que en parseExcel()
+            this.parsedData = this.parsedData.map(row => {
+              const normalizedRow = {}
+              
+              // Re-mapear todas las claves a su forma normalizada (minúsculas, sin espacios extra)
+              for (const key of Object.keys(row)) {
+                const normalizedKey = key.toLowerCase().trim()
+                normalizedRow[normalizedKey] = row[key]
+              }
+              
+              return normalizedRow
+            })
+            
             console.log('JSON parseado:', this.parsedData.length, 'filas')
+            console.log('Primera fila (normalizada):', this.parsedData[0])
             resolve()
           } catch (error) {
             reject(error)
@@ -1098,6 +1152,7 @@ export default {
           const codigoValue = findValue(['Código', 'codigo', 'code', 'product_code', 'productcode'])
           const nombreValue = findValue(['Nombre', 'nombre', 'name', 'producto'])
           const descripcionValue = findValue(['Descripción', 'Descripcion', 'descripcion', 'description'])
+          const categoriaValue = findValue(['Categoría', 'categoria', 'Category', 'category'])
           const unidadValue = findValue(['Unidad', 'unidad', 'unit', 'UnidaddeMedida', 'unidad_medida'])
           const pesoValue = findValue(['Peso', 'peso', 'weight', 'Peso(kg)'])
           
@@ -1106,6 +1161,7 @@ export default {
             product_code: codigoValue || '',
             name: nombreValue || '',
             description: descripcionValue || '',
+            category: categoriaValue || '',
             unit: (unidadValue || 'kg').toString().trim(),
             weight: parseFloat(pesoValue) || 0.1
           }
@@ -1316,6 +1372,7 @@ export default {
           const codigoValue = findValue(['Código', 'codigo', 'code'])
           const nombreValue = findValue(['Nombre', 'nombre', 'name'])
           const descripcionValue = findValue(['Descripción', 'Descripcion', 'descripcion', 'description'])
+          const categoriaValue = findValue(['Categoría', 'categoria', 'Category', 'category'])
           const unidadValue = findValue(['Unidad', 'unidad', 'unit'])
           const densidadValue = findValue(['Densidad', 'densidad', 'density', 'Densidad(g/cm³)'])
           const stockMinValue = findValue(['StockMínimo', 'StockMinimo', 'stock_minimo', 'min_stock'])
@@ -1326,6 +1383,7 @@ export default {
             codigo: codigoValue || '',
             nombre: nombreValue || '',
             descripcion: descripcionValue || '',
+            categoria: categoriaValue || '',
             unidad_text: (unidadValue || 'kg').toString().trim(),
             densidad: parseFloat(densidadValue) || 0,
             stock_minimo: parseInt(stockMinValue) || 0,
@@ -1374,6 +1432,7 @@ export default {
             product_code: String(normalized.product_code || '').trim(),
             name: String(normalized.name || '').trim(),
             description: String(normalized.description || '').trim(),
+            category: String(normalized.category || '').trim(),
             unit: String(normalized.unit || 'kg').trim(),
             weight: parseFloat(normalized.weight) || 0.1
           }
@@ -1427,6 +1486,7 @@ export default {
             codigo: String(normalized.codigo || '').trim(),
             nombre: String(normalized.nombre || '').trim(),
             descripcion: String(normalized.descripcion || '').trim(),
+            categoria: String(normalized.categoria || '').trim(),
             unidad_text: String(normalized.unidad_text || 'kg').trim(),
             densidad: parseFloat(normalized.densidad) || 0,
             stock_minimo: parseInt(normalized.stock_minimo) || 0,

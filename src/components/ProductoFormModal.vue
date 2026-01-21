@@ -11,23 +11,30 @@
           <form @submit.prevent="submit">
             <div class="form-grid">
               <div class="form-field">
-                <label for="product_code">Código</label>
-                <input id="product_code" v-model="form.product_code" maxlength="50" />
+                <label for="product_code">Código *</label>
+                <input id="product_code" v-model="form.product_code" maxlength="50" required />
               </div>
 
               <div class="form-field">
-                <label for="name">Nombre</label>
-                <input id="name" v-model="form.name" maxlength="150" />
-              </div>
-
-              <div class="form-field full">
-                <label for="description">Descripción</label>
-                <textarea id="description" v-model="form.description"></textarea>
+                <label for="name">Nombre *</label>
+                <input id="name" v-model="form.name" maxlength="150" required />
               </div>
 
               <div class="form-field">
-                <label for="unit">Unidad</label>
-                <select id="unit" v-model.number="form.unit">
+                <label for="categoria_id">Categoría *</label>
+                <select id="categoria_id" v-model="form.categoria_id" required @change="form.categoria_id = parseInt(form.categoria_id)">
+                  <option value="">-- Selecciona una categoría --</option>
+                  <option v-if="categorias.length === 0" disabled>Cargando categorías...</option>
+                  <option v-for="cat in categorias" :key="cat.id" :value="String(cat.id)">
+                    {{ cat.nombre }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="form-field">
+                <label for="unit">Unidad *</label>
+                <select id="unit" v-model.number="form.unit" required>
+                  <option value="" disabled>-- Selecciona una unidad --</option>
                   <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }} ({{ u.simbolo }})</option>
                 </select>
               </div>
@@ -35,6 +42,16 @@
               <div class="form-field">
                 <label for="weight">Peso (kg)</label>
                 <input id="weight" v-model.number="form.weight" type="number" step="0.001" min="0" />
+              </div>
+
+              <div class="form-field">
+                <label for="stock">Stock</label>
+                <input id="stock" v-model.number="form.stock" type="number" step="1" min="0" />
+              </div>
+
+              <div class="form-field full">
+                <label for="description">Descripción</label>
+                <textarea id="description" v-model="form.description"></textarea>
               </div>
             </div>
 
@@ -49,8 +66,9 @@
 </template>
 
 <script setup>
-import { ref, watch, reactive } from 'vue'
+import { ref, watch, reactive, onMounted } from 'vue'
 import productosService from '../services/productosService'
+import categoriasService from '../services/categoriasService'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -62,24 +80,34 @@ const visible = ref(props.show)
 const isEdit = ref(false)
 const loading = ref(false)
 const unidades = ref([])
+const categorias = ref([])
 
 const form = reactive({
   product_code: '',
   name: '',
   description: '',
+  categoria_id: null,
   unit: null,
-  weight: 0.0
+  weight: 0.0,
+  stock: 0
 })
 
 watch(() => props.show, (v) => { visible.value = v })
 watch(() => props.editId, (id) => { if (id) loadProducto(id) })
 
+onMounted(() => {
+  loadUnidades()
+  loadCategorias()
+})
+
 function resetForm() {
   form.product_code = ''
   form.name = ''
   form.description = ''
+  form.categoria_id = null
   form.unit = null
   form.weight = 0.0
+  form.stock = 0
   isEdit.value = false
 }
 
@@ -96,6 +124,24 @@ async function loadUnidades() {
   }
 }
 
+async function loadCategorias() {
+  try {
+    const data = await categoriasService.getCategoriasByTipo('PRODUCT')
+    console.log('Categorías cargadas:', data)
+    if (Array.isArray(data)) {
+      categorias.value = data
+    } else if (data && data.results && Array.isArray(data.results)) {
+      categorias.value = data.results
+    } else {
+      console.warn('Formato de categorías inesperado:', data)
+      categorias.value = []
+    }
+  } catch (e) {
+    console.error('Error cargando categorías', e)
+    categorias.value = []
+  }
+}
+
 async function loadProducto(id) {
   if (!id) return
   loading.value = true
@@ -104,8 +150,10 @@ async function loadProducto(id) {
     form.product_code = data.product_code || ''
     form.name = data.name || ''
     form.description = data.description || ''
+    form.categoria_id = data.categoria_id || null
     form.unit = data.unit || null
     form.weight = data.weight || 0.0
+    form.stock = data.stock || 0
     isEdit.value = true
   } catch (e) {
     console.error('Error cargando producto', e)
@@ -122,12 +170,20 @@ function close() {
 
 async function submit() {
   try {
+    // Validar que categoria_id esté seleccionada
+    if (!form.categoria_id || form.categoria_id === '') {
+      alert('Por favor selecciona una categoría')
+      return
+    }
+
     const payload = {
       product_code: form.product_code,
       name: form.name,
       description: form.description || null,
+      categoria_id: parseInt(form.categoria_id),
       unit: form.unit || 1,
-      weight: form.weight || 0
+      weight: form.weight || 0,
+      stock: form.stock || 0
     }
 
     if (props.editId) {
@@ -144,10 +200,12 @@ async function submit() {
     }, 100)
   } catch (e) {
     console.error('Error guardando producto', e)
+    alert(`Error al guardar: ${e.response?.data?.detail || e.message}`)
   }
 }
 
 loadUnidades()
+loadCategorias()
 </script>
 
 <style scoped>
