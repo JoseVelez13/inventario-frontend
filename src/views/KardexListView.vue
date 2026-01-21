@@ -225,11 +225,23 @@ const loadMovimientos = async () => {
     if (filters.value.fecha_desde) params.fecha_desde = filters.value.fecha_desde
     if (filters.value.fecha_hasta) params.fecha_hasta = filters.value.fecha_hasta
     
-    movimientos.value = await kardexService.getMovimientos(params)
+    console.log('Cargando kardex con params:', params)
+    
+    const data = await kardexService.getMovimientos(params)
+    console.log('Respuesta del backend:', data)
+    
+    // El backend puede devolver un array o un objeto paginado con results
+    movimientos.value = Array.isArray(data) ? data : (data.results || [])
+    
+    console.log('Movimientos cargados:', movimientos.value.length)
+    console.log('Primeros 3 movimientos:', movimientos.value.slice(0, 3))
   } catch (err) {
-    console.error('Error cargando movimientos:', err)
-    error.value = 'No se pudo cargar los movimientos del kardex.'
-    showNotification('Error al cargar los movimientos', 'error')
+    console.error('Error completo cargando movimientos:', err)
+    console.error('Detalle del error:', err.response?.data)
+    error.value = err.response?.status === 404 
+      ? 'Endpoint de kardex no encontrado. Verifica que el backend esté corriendo.'
+      : 'No se pudo cargar los movimientos del kardex.'
+    showNotification(error.value, 'error')
   } finally {
     loading.value = false
   }
@@ -237,7 +249,8 @@ const loadMovimientos = async () => {
 
 const loadAlmacenes = async () => {
   try {
-    almacenes.value = await almacenesService.getAlmacenes()
+    const data = await almacenesService.getAlmacenes()
+    almacenes.value = Array.isArray(data) ? data : (data.results || [])
   } catch (err) {
     console.error('Error cargando almacenes:', err)
   }
