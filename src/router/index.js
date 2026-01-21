@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import InicioView from '../views/InicioView.vue'
-import LoginView from '../views/LoginView.vue'
 import DashboardView from '../views/DashboardView.vue'
+import LoginView from '../views/LoginView.vue'
 import ClientesListView from '../views/ClientesListView.vue'
 import ProductosListView from '../views/ProductosListView.vue'
 import MateriasPrimasListView from '../views/MateriasPrimasListView.vue'
@@ -10,14 +9,23 @@ import MateriaPrimaCreateView from '../views/MateriaPrimaCreateView.vue'
 import ProveedoresListView from '../views/ProveedoresListView.vue'
 import AlmacenesListView from '../views/AlmacenesListView.vue'
 import UnidadesListView from '../views/UnidadesListView.vue'
+import KardexListView from '../views/KardexListView.vue'
+import RecepcionesMaterialListView from '../views/RecepcionesMaterialListView.vue'
+import RecepcionesItemListView from '../views/RecepcionesItemListView.vue'
+import LoteProduccionListView from '../views/LoteProduccionListView.vue'
+import LoteProduccionDetailView from '../views/LoteProduccionDetailView.vue'
+import OrdenClienteListView from '../views/ordenes-cliente/OrdenClienteListView.vue'
+import OrdenClienteDetailView from '../views/ordenes-cliente/OrdenClienteDetailView.vue'
+import NotFoundView from '../views/NotFoundView.vue'
 import authService from '../services/auth'
+import ProfileView from '../views/ProfileView.vue'
 
 const routes = [
   { 
     path: '/', 
     name: 'Inicio',
-    component: InicioView,
-    meta: { title: 'Inicio - Sistema Innoquim' }
+    component: DashboardView,
+    meta: { title: 'Dashboard - Sistema Innoquim', requiresAuth: true }
   },
   { 
     path: '/login', 
@@ -35,6 +43,15 @@ const routes = [
     meta: { 
       requiresAuth: true,
       title: 'Dashboard - Sistema Innoquim'
+    } 
+  },
+  { 
+    path: '/perfil', 
+    name: 'Profile',
+    component: ProfileView, 
+    meta: { 
+      requiresAuth: true,
+      title: 'Mi Perfil - Sistema Innoquim'
     } 
   },
   {
@@ -79,8 +96,61 @@ const routes = [
     component: UnidadesListView,
     meta: { title: 'Unidades de Medida - Sistema Innoquim' }
   },
-  // ruta fallback para errores (si alguien entra a /xd123)
-  { path: '/:pathMatch(.*)*', redirect: '/' }
+  {
+    path: '/kardex',
+    name: 'Kardex',
+    component: KardexListView,
+    meta: { title: 'Kardex de Inventario - Sistema Innoquim' }
+  },
+  {
+    path: '/recepciones',
+    name: 'RecepcionesMaterial',
+    component: RecepcionesMaterialListView,
+    meta: { title: 'Recepciones de Material - Sistema Innoquim' }
+  },
+  {
+    path: '/recepciones-productos',
+    name: 'RecepcionesProductos',
+    component: RecepcionesItemListView,
+    meta: { title: 'Recepciones de Productos - Sistema Innoquim' }
+  },
+  {
+    path: '/lotes-produccion',
+    name: 'LotesProduccion',
+    component: LoteProduccionListView,
+    meta: { title: 'Lotes de Producción - Sistema Innoquim' }
+  },
+  {
+    path: '/lotes-produccion/:id',
+    name: 'LoteProduccionDetail',
+    component: LoteProduccionDetailView,
+    meta: { title: 'Detalle de Lote - Sistema Innoquim' }
+  },
+  {
+    path: '/ordenes-cliente',
+    name: 'OrdenesCliente',
+    component: OrdenClienteListView,
+    meta: { 
+      title: 'Órdenes de Cliente - Sistema Innoquim',
+      breadcrumb: 'Órdenes de Cliente'
+    }
+  },
+  {
+    path: '/ordenes-cliente/:id',
+    name: 'OrdenClienteDetail',
+    component: OrdenClienteDetailView,
+    meta: { 
+      title: 'Detalle de Orden - Sistema Innoquim',
+      breadcrumb: 'Detalle de Orden'
+    }
+  },
+  // Página 404 personalizada
+  { 
+    path: '/:pathMatch(.*)*', 
+    name: 'NotFound',
+    component: NotFoundView,
+    meta: { title: 'Página no encontrada - Sistema Innoquim' }
+  }
 ]
 
 const router = createRouter({

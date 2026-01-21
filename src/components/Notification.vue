@@ -1,5 +1,5 @@
 <template>
-  <transition name="notification-fade">
+  <transition name="fade-in-up" appear>
     <div v-if="visible" class="notification-overlay" @click="close">
       <div class="notification-card" :class="type" @click.stop>
         <!-- Ícono central grande con efecto -->
@@ -337,5 +337,24 @@ const close = () => {
     opacity: 0;
     transform: scale(0.8) rotate(10deg);
   }
+}
+
+/* Nueva animación fade-in-up */
+.fade-in-up-enter-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-in-up-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-in-up-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-in-up-leave-to {
+  opacity: 0;
+  transform: translateY(10px);
 }
 </style>

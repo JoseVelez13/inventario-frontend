@@ -17,12 +17,16 @@
 
     <!-- MENÚ SUPERIOR -->
     <nav class="nav-menu">
+      <NotificationBell />
+      
+      <DarkModeToggle />
+      
       <button class="nav-item" @click="$router.push('/')">
         <i class="fa-solid fa-house"></i> Inicio
       </button>
 
-      <button class="nav-item" @click="$router.push('/dashboard')">
-        <i class="fa-solid fa-table"></i> Dashboard
+      <button class="nav-item" @click="$router.push('/perfil')">
+        <i class="fa-solid fa-user-circle"></i> Perfil
       </button>
 
       <button class="nav-item" @click="logout">
@@ -51,10 +55,6 @@
             <router-link to="/" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-house"></i>
               <span>Inicio</span>
-            </router-link>
-            <router-link to="/dashboard" class="sidebar-item" @click="closeSidebar">
-              <i class="fa-solid fa-chart-line"></i>
-              <span>Dashboard</span>
             </router-link>
           </div>
 
@@ -91,6 +91,38 @@
           </div>
 
           <div class="nav-section">
+            <div class="nav-section-title">Inventario</div>
+            <router-link to="/kardex" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-chart-simple"></i>
+              <span>Kardex</span>
+            </router-link>
+            <router-link to="/recepciones" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-dolly"></i>
+              <span>Recepciones Material</span>
+            </router-link>
+            <router-link to="/recepciones-productos" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-boxes-stacked"></i>
+              <span>Recepciones Productos</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">Producción</div>
+            <router-link to="/lotes-produccion" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-industry"></i>
+              <span>Lotes de Producción</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
+            <div class="nav-section-title">Ventas</div>
+            <router-link to="/ordenes-cliente" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-shopping-cart"></i>
+              <span>Órdenes de Cliente</span>
+            </router-link>
+          </div>
+
+          <div class="nav-section">
             <div class="nav-section-title">Sistema</div>
             <button class="sidebar-item" @click="logout">
               <i class="fa-solid fa-right-from-bracket"></i>
@@ -105,9 +137,12 @@
 <script>
 import '../assets/styles/HeaderGlobal.css'
 import logo from '../assets/img/logo.png'
+import NotificationBell from './NotificationBell.vue'
+import DarkModeToggle from './DarkModeToggle.vue'
 
 export default {
   name: 'HeaderComponent',
+  components: { NotificationBell, DarkModeToggle },
   data() {
     return {
       logo,
