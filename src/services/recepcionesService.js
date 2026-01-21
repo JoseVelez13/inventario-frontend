@@ -4,6 +4,14 @@ import api from './api'
  * Servicio para gestión de recepciones de material y productos
  */
 class RecepcionesService {
+    /**
+     * Obtener lista de recepciones (alias para getRecepcionesMaterial)
+     * @param {Object} params - Parámetros de búsqueda y paginación
+     * @returns {Promise} Lista de recepciones
+     */
+    async getRecepciones(params = {}) {
+      return this.getRecepcionesMaterial(params)
+    }
   // ============================================
   // RECEPCIONES DE MATERIAL (Materias Primas)
   // ============================================
@@ -14,7 +22,7 @@ class RecepcionesService {
    * @returns {Promise} Lista de recepciones
    */
   async getRecepcionesMaterial(params = {}) {
-    const response = await api.get('/recepciones-material/', { params })
+    const response = await api.get('/recepciones/', { params })
     return response.data
   }
 
@@ -24,7 +32,7 @@ class RecepcionesService {
    * @returns {Promise} Datos de la recepción
    */
   async getRecepcionMaterial(id) {
-    const response = await api.get(`/recepciones-material/${id}/`)
+    const response = await api.get(`/recepciones/${id}/`)
     return response.data
   }
 
@@ -34,7 +42,7 @@ class RecepcionesService {
    * @returns {Promise} Recepción creada
    */
   async createRecepcionMaterial(data) {
-    const response = await api.post('/recepciones-material/', data)
+    const response = await api.post('/recepciones/', data)
     return response.data
   }
 
@@ -45,7 +53,7 @@ class RecepcionesService {
    * @returns {Promise} Recepción actualizada
    */
   async updateRecepcionMaterial(id, data) {
-    const response = await api.put(`/recepciones-material/${id}/`, data)
+    const response = await api.put(`/recepciones/${id}/`, data)
     return response.data
   }
 
@@ -55,7 +63,7 @@ class RecepcionesService {
    * @returns {Promise}
    */
   async deleteRecepcionMaterial(id) {
-    const response = await api.delete(`/recepciones-material/${id}/`)
+    const response = await api.delete(`/recepciones/${id}/`)
     return response.data
   }
 

@@ -2,9 +2,14 @@
   <div class="page-container">
     <HeaderGlobal />
     <Breadcrumbs />
-
     <div class="topbar">
-      <div class="topbar-title">Materias Primas</div>
+      <div class="topbar-title">
+        Materias Primas
+        <span class="chip" aria-live="polite" title="Total de materias primas">
+          <template v-if="!loading">{{ totalMateriasPrimas }}</template>
+          <template v-else>...</template>
+        </span>
+      </div>
       <div class="topbar-actions">
         <Tooltip text="Volver a la página anterior">
           <button class="btn-secondary" @click="$router.back()">Atrás</button>
@@ -23,20 +28,28 @@
         </Tooltip>
       </div>
     </div>
-
     <div class="content-box">
       <div class="content-body">
         <div class="search-bar">
           <input 
-            v-model="search" 
-            @input="onSearch" 
+            v-model="searchInput" 
+            @input="debouncedSearch" 
             type="text" 
-            placeholder="Buscar por código, nombre o descripción..." 
+            placeholder="Buscar por nombre, código o proveedor..." 
             class="search-input"
           />
           <button class="btn-secondary" @click="clearSearch">Limpiar</button>
+          <select v-model="filters.proveedor" class="filter-select">
+            <option value="">Todos los proveedores</option>
+            <option v-for="p in proveedores" :key="p.id" :value="p.id">{{ p.nombre }}</option>
+          </select>
         </div>
-
+        <div class="filter-chips" v-if="activeChips.length">
+          <span v-for="chip in activeChips" :key="chip.key" class="chip chip-filter">
+            {{ chip.label }}
+            <button class="chip-remove" @click="removeChip(chip.key)">×</button>
+          </span>
+        </div>
         <div v-if="loading" class="loading-state">Cargando materias primas...</div>
         <div v-else-if="error" class="alert-error">{{ error }}</div>
         <div v-else-if="filtered.length === 0" class="empty-state">
@@ -75,6 +88,17 @@
                   <div class="sort-indicator">
                     <i v-if="sortField === 'nombre' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
                     <i v-else-if="sortField === 'nombre' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                    <i v-else class="fa-solid fa-sort"></i>
+                  </div>
+                </div>
+              </th>
+
+              <th class="sortable-header" @click="toggleSort('nombre_categoria')">
+                <div class="header-content">
+                  <span>Categoría</span>
+                  <div class="sort-indicator">
+                    <i v-if="sortField === 'nombre_categoria' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                    <i v-else-if="sortField === 'nombre_categoria' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
                     <i v-else class="fa-solid fa-sort"></i>
                   </div>
                 </div>
@@ -124,8 +148,9 @@
               <td class="h">{{ mp.materia_prima_id }}</td>
               <td class="h"><strong>{{ mp.codigo }}</strong></td>
               <td class="h">{{ mp.nombre }}</td>
+              <td class="h">{{ mp.nombre_categoria || '-' }}</td>
               <td class="h">{{ mp.descripcion || '-' }}</td>
-              <td class="h">{{ mp.unidad || '-' }}</td>
+              <td class="h">{{ mp.nombre_unidad || '-' }}</td>
               <td class="h">{{ mp.densidad ? mp.densidad + ' g/cm³' : '-' }}</td>
               <td class="h">
                 <span :class="{'badge-warning': isStockBajo(mp)}">
@@ -235,6 +260,15 @@ import MateriaPrimaFormModal from '../components/MateriaPrimaFormModal.vue'
 import '../assets/styles/MateriasPrimas.css'
 import materiasPrimasService from '../services/materiasPrimasService'
 import unidadesService from '../services/unidadesService'
+import categoriasService from '../services/categoriasService'
+
+function debounce(fn, delay) {
+  let timeout
+  return function(...args) {
+    clearTimeout(timeout)
+    timeout = setTimeout(() => fn.apply(this, args), delay)
+  }
+}
 
 export default {
   name: 'MateriasPrimasListView',
@@ -243,6 +277,8 @@ export default {
   data() {
     return {
       search: '',
+      searchInput: '',
+      filters: { proveedor: '' },
       materiasPrimas: [],
       unidades: [],
       loading: false,
@@ -287,19 +323,18 @@ export default {
 
   computed: {
     filtered() {
+      let data = this.allMateriasPrimas || []
       const q = this.search.trim().toLowerCase()
-      let result = this.materiasPrimas
-      
       if (q) {
-        result = result.filter(mp =>
-          String(mp.materia_prima_id || mp.id).includes(q) ||
-          mp.codigo.toLowerCase().includes(q) ||
-          mp.nombre.toLowerCase().includes(q) ||
-          (mp.descripcion || '').toLowerCase().includes(q)
+        data = data.filter(mp =>
+          (mp.nombre || '').toLowerCase().includes(q) ||
+          (mp.codigo || '').toLowerCase().includes(q)
         )
       }
-
-      return this.sortData(result)
+      if (this.filters.proveedor) {
+        data = data.filter(mp => String(mp.proveedor_id) === String(this.filters.proveedor))
+      }
+      return data
     },
 
     totalMateriasPrimas() {
@@ -307,7 +342,8 @@ export default {
     },
 
     totalPages() {
-      return Math.ceil(this.totalMateriasPrimas / this.itemsPerPage)
+      const pages = Math.ceil(this.totalMateriasPrimas / this.itemsPerPage)
+      return pages > 0 ? pages : 1
     },
 
     paginatedData() {
@@ -323,6 +359,16 @@ export default {
     endItem() {
       const end = this.currentPage * this.itemsPerPage
       return end > this.totalMateriasPrimas ? this.totalMateriasPrimas : end
+    },
+
+    activeChips() {
+      const chips = []
+      if (this.search) chips.push({ key: 'search', label: `Buscar: "${this.search}"` })
+      if (this.filters.proveedor) {
+        const proveedor = this.proveedores.find(p => String(p.id) === String(this.filters.proveedor))
+        chips.push({ key: 'proveedor', label: `Proveedor: ${proveedor ? proveedor.nombre : this.filters.proveedor}` })
+      }
+      return chips
     }
   },
 
@@ -331,8 +377,23 @@ export default {
       this.loading = true
       this.error = ''
       try {
-        const data = await materiasPrimasService.getMateriasPrimas()
-        this.materiasPrimas = Array.isArray(data) ? data : data.results || []
+        // Cargar TODAS las páginas de materias primas
+        let allMateriasPrimas = []
+        let page = 1
+        let hasMore = true
+        while (hasMore) {
+          const data = await materiasPrimasService.getMateriasPrimas({ page, page_size: 100 })
+          const items = Array.isArray(data) ? data : data.results || []
+          allMateriasPrimas = [...allMateriasPrimas, ...items]
+          if (data.next) {
+            page++
+          } else {
+            hasMore = false
+          }
+        }
+        this.materiasPrimas = allMateriasPrimas
+        this.allMateriasPrimas = allMateriasPrimas // <-- sincronizar para filtro
+        this.currentPage = 1
       } catch (e) {
         console.error('Error al listar materias primas', e)
         this.error = 'No se pudo cargar la lista de materias primas.'
@@ -341,10 +402,19 @@ export default {
       }
     },
 
-    onSearch() {},
+    debouncedSearch: debounce(function() {
+      this.search = this.searchInput
+      this.currentPage = 1
+    }, 300),
+
+    onSearch() {
+      this.currentPage = 1 // Resetear a página 1 al buscar
+    },
 
     clearSearch() {
       this.search = ''
+      this.searchInput = ''
+      this.currentPage = 1 // Resetear a página 1 al limpiar búsqueda
       this.$nextTick(() => {
         const searchInput = document.querySelector('.search-input')
         if (searchInput) {
@@ -477,11 +547,39 @@ export default {
     },
 
     async handleImportComplete(importedData) {
-      console.log('Datos importados:', importedData)
+      console.log('📥 Iniciando importación de', importedData.length, 'registros')
       let successCount = 0
       let errorCount = 0
 
-      // Cargar unidades si no están cargadas
+      // PRIMERO: Cargar TODAS las materias primas del backend (todas las páginas)
+      try {
+        let allMateriasPrimas = []
+        let page = 1
+        let hasMore = true
+        
+        while (hasMore) {
+          const data = await materiasPrimasService.getMateriasPrimas({ page, page_size: 100 })
+          const items = Array.isArray(data) ? data : data.results || []
+          allMateriasPrimas = [...allMateriasPrimas, ...items]
+          
+          console.log(`📄 Página ${page}: ${items.length} registros cargados`)
+          
+          // Si hay paginación, verificar si hay más páginas
+          if (data.next) {
+            page++
+          } else {
+            hasMore = false
+          }
+        }
+        
+        this.materiasPrimas = allMateriasPrimas
+        console.log(`✅ Total materias primas cargadas: ${this.materiasPrimas.length}`)
+        console.log('📋 Códigos existentes:', this.materiasPrimas.map(mp => mp.codigo).join(', '))
+      } catch (e) {
+        console.error('❌ Error al cargar materias primas:', e)
+      }
+
+      // SEGUNDO: Cargar unidades si no están cargadas
       if (this.unidades.length === 0) {
         try {
           const response = await unidadesService.getUnidades()
@@ -497,35 +595,116 @@ export default {
         }
       }
 
+      // TERCERO: Cargar categorías
+      let categorias = []
+      try {
+        const response = await categoriasService.getCategoriasByTipo('RAW_MATERIAL')
+        categorias = Array.isArray(response) ? response : response.results || []
+      } catch (e) {
+        console.error('Error al cargar categorías:', e)
+      }
+
+      // CUARTO: Procesar cada registro
       for (const materiaPrima of importedData) {
         try {
-          // Convertir texto de unidad a ID
-          const unidadId = unidadesService.mapTextToId(materiaPrima.unidad_text, this.unidades)
-          
-          const cleanData = {
-            codigo: String(materiaPrima.codigo || '').trim(),
-            nombre: String(materiaPrima.nombre || '').trim(),
-            descripcion: String(materiaPrima.descripcion || '').trim(),
-            unidad_id: unidadId,
-            densidad: parseFloat(materiaPrima.densidad) || 0,
-            stock_minimo: parseInt(materiaPrima.stock_minimo) || 0,
-            stock_maximo: parseInt(materiaPrima.stock_maximo) || 0
+          // El item ya viene normalizado desde ImportExportDialog.parseExcel()
+          // pero lo normalizamos de nuevo por seguridad
+          const normalizedItem = {}
+          for (const [key, value] of Object.entries(materiaPrima)) {
+            const lowerKey = key.toLowerCase().trim()
+            normalizedItem[lowerKey] = value
           }
           
-          console.log('Importando materia prima:', {
-            original: materiaPrima,
-            unidadText: materiaPrima.unidad_text,
-            unidadId: unidadId,
+          console.log('📋 Item normalizado (Materia Prima):', normalizedItem)
+          console.log('🔑 Claves disponibles:', Object.keys(normalizedItem))
+          
+          // Convertir texto de unidad a ID
+          const unidadId = unidadesService.mapTextToId(
+            normalizedItem.unidad || normalizedItem.unidad_text, 
+            this.unidades
+          )
+          
+          // Buscar categoría - las claves ya están normalizadas a minúsculas
+          let categoriaId = null
+          let categoriaNombre = (
+            normalizedItem.categoría ||      // Por si tiene tilde
+            normalizedItem.categoria ||      // Sin tilde (probablemente esto)
+            normalizedItem.category ||       // Inglés
+            ''
+          )
+          categoriaNombre = String(categoriaNombre || '').trim()
+          
+          console.log('🔍 Buscando categoría (Materia Prima):', {
+            categoriaNombre,
+            categoriasDisponibles: categorias.map(c => c.nombre),
+            todasLasClaves: normalizedItem
+          })
+
+          if (categoriaNombre) {
+            const categoria = categorias.find(c => 
+              c.nombre.toLowerCase() === categoriaNombre.toLowerCase()
+            )
+            categoriaId = categoria ? categoria.id : null
+            
+            if (!categoriaId) {
+              console.warn(`⚠️ Categoría "${categoriaNombre}" no encontrada en:`, categorias)
+            }
+          }
+
+          if (!categoriaId) {
+            throw new Error(`Categoría no encontrada: "${categoriaNombre}". Categorías disponibles: ${categorias.map(c => c.nombre).join(', ')}`)
+          }
+          
+          const cleanData = {
+            codigo: String(normalizedItem.código || normalizedItem.codigo || '').trim(),
+            nombre: String(normalizedItem.nombre || '').trim(),
+            descripcion: String(normalizedItem.descripción || normalizedItem.descripcion || '').trim(),
+            categoria_id: categoriaId,
+            unidad_id: unidadId,
+            stock_minimo: parseInt(normalizedItem['stock mínimo'] || normalizedItem.stock_minimo) || 0
+          }
+          
+          // Campos opcionales - solo agregar si tienen valor
+          if (normalizedItem.densidad && !isNaN(parseFloat(normalizedItem.densidad))) {
+            cleanData.densidad = parseFloat(normalizedItem.densidad)
+          }
+          
+          if (normalizedItem['stock máximo'] || normalizedItem.stock_maximo) {
+            const stockMax = parseInt(normalizedItem['stock máximo'] || normalizedItem.stock_maximo)
+            if (!isNaN(stockMax)) {
+              cleanData.stock_maximo = stockMax
+            }
+          }
+          
+          console.log('✅ Importando materia prima:', {
+            categoriaNombre: categoriaNombre,
+            categoriaId: categoriaId,
             cleanData: cleanData
           })
           
-          await materiasPrimasService.createMateriaPrima(cleanData)
-          successCount++
+          // Verificar si ya existe por código
+          const existente = this.materiasPrimas.find(mp => mp.codigo === cleanData.codigo)
+          
+          if (existente) {
+            // Actualizar la materia prima existente
+            const materiaPrimaId = existente.materia_prima_id || existente.id
+            console.log(`🔄 Actualizando materia prima existente: ${cleanData.codigo} (ID: ${materiaPrimaId})`)
+            await materiasPrimasService.updateMateriaPrima(materiaPrimaId, cleanData)
+            console.log(`✅ Materia prima actualizada: ${cleanData.codigo}`)
+            successCount++
+          } else {
+            // Crear nueva materia prima
+            console.log(`➕ Creando nueva materia prima: ${cleanData.codigo}`)
+            await materiasPrimasService.createMateriaPrima(cleanData)
+            console.log(`✅ Materia prima creada: ${cleanData.codigo}`)
+            successCount++
+          }
+          
         } catch (e) {
-          console.error('Error al importar materia prima:', {
-            item: materiaPrima,
+          console.error('❌ Error al importar materia prima:', {
+            codigo: materiaPrima.codigo,
             error: e.message,
-            response: e.response?.data
+            detail: e.response?.data
           })
           errorCount++
         }
@@ -542,7 +721,56 @@ export default {
 
     showNotification(type, title, message) {
       this.notification = { show: true, type, title, message }
-    }
+    },
+
+    removeChip(key) {
+      if (key === 'search') this.clearSearch()
+      if (key === 'proveedor') this.filters.proveedor = ''
+      this.currentPage = 1
+    },
   }
 }
 </script>
+
+<style scoped>
+.filter-chips {
+  margin: 8px 0 12px 0;
+}
+.chip-filter {
+  display: inline-flex;
+  align-items: center;
+  background: #e0e7ef;
+  color: #2a3b4d;
+  border-radius: 16px;
+  padding: 0 10px;
+  margin-right: 8px;
+  font-size: 0.95em;
+  height: 28px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition: background 0.2s;
+}
+.chip-filter:hover {
+  background: #c7d2e5;
+}
+.chip-remove {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.1em;
+  margin-left: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.chip-remove:hover {
+  color: #d32f2f;
+}
+.filter-select {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #cfd8dc;
+  background: #f8fafc;
+  color: #2a3b4d;
+  font-size: 1em;
+}
+</style>

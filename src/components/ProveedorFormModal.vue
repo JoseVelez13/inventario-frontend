@@ -11,30 +11,31 @@
           <form @submit.prevent="submit">
             <div class="form-grid">
               <div class="form-field">
-                <label for="ruc">RUC *</label>
+                <label for="ruc">RUC <span class="required">*</span></label>
                 <input 
                   id="ruc" 
                   v-model="form.ruc" 
-                  required
                   maxlength="13" 
                   minlength="13" 
                   inputmode="numeric" 
-                  pattern="[0-9]{13}"
                   placeholder="Ej: 1234567890001"
-                  title="El RUC debe tener exactamente 13 dígitos numéricos"
+                  @blur="validateField('ruc')"
+                  :class="{ 'input-error': errors.ruc }"
                 />
-                <small style="color: #666; font-size: 0.85em; display: block; margin-top: 4px;">Debe tener 13 dígitos numéricos</small>
+                <FormErrorMessage :error="errors.ruc" />
               </div>
 
               <div class="form-field">
-                <label for="nombre_empresa">Nombre de la Empresa *</label>
+                <label for="nombre_empresa">Nombre de la Empresa <span class="required">*</span></label>
                 <input 
                   id="nombre_empresa" 
                   v-model="form.nombre_empresa" 
-                  required
                   maxlength="100" 
                   placeholder="Ej: Distribuidora ABC"
+                  @blur="validateField('nombre_empresa')"
+                  :class="{ 'input-error': errors.nombre_empresa }"
                 />
+                <FormErrorMessage :error="errors.nombre_empresa" />
               </div>
 
               <div class="form-field">
@@ -44,7 +45,10 @@
                   v-model="form.nombre_contacto" 
                   maxlength="100" 
                   placeholder="Ej: Juan Pérez"
+                  @blur="validateField('nombre_contacto')"
+                  :class="{ 'input-error': errors.nombre_contacto }"
                 />
+                <FormErrorMessage :error="errors.nombre_contacto" />
               </div>
 
               <div class="form-field">
@@ -54,8 +58,11 @@
                   v-model="form.telefono" 
                   maxlength="24" 
                   inputmode="tel" 
-                  placeholder="Ej: 0987654321"
+                  placeholder="Ej: +51 999 999 999"
+                  @blur="validateField('telefono')"
+                  :class="{ 'input-error': errors.telefono }"
                 />
+                <FormErrorMessage :error="errors.telefono" />
               </div>
 
               <div class="form-field full">
@@ -66,7 +73,10 @@
                   v-model="form.email" 
                   maxlength="100" 
                   placeholder="contacto@empresa.com"
+                  @blur="validateField('email')"
+                  :class="{ 'input-error': errors.email }"
                 />
+                <FormErrorMessage :error="errors.email" />
               </div>
 
               <div class="form-field full">
@@ -76,7 +86,10 @@
                   v-model="form.direccion" 
                   rows="2"
                   placeholder="Av. Principal 123, Ciudad"
+                  @blur="validateField('direccion')"
+                  :class="{ 'input-error': errors.direccion }"
                 ></textarea>
+                <FormErrorMessage :error="errors.direccion" />
               </div>
 
               <div class="form-field full">
@@ -86,14 +99,17 @@
                   v-model="form.tipo_producto" 
                   maxlength="100" 
                   placeholder="Ej: Químicos, Materias Primas, Envases"
+                  @blur="validateField('tipo_producto')"
+                  :class="{ 'input-error': errors.tipo_producto }"
                 />
+                <FormErrorMessage :error="errors.tipo_producto" />
               </div>
             </div>
 
             <div class="form-actions">
               <button type="button" class="btn-secondary" @click="close">Cancelar</button>
-              <button type="submit" class="btn-primary">
-                {{ isEdit ? 'Actualizar' : 'Crear' }}
+              <button type="submit" class="btn-primary" :disabled="loading">
+                {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }}
               </button>
             </div>
           </form>
@@ -106,15 +122,18 @@
 <script setup>
 import { ref, watch, reactive } from 'vue'
 import proveedoresService from '../services/proveedoresService'
+import FormErrorMessage from './FormErrorMessage.vue'
+import { useFormValidation } from '../composables/useFormValidation'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
   editId: { type: [String, Number], default: null }
 })
-const emit = defineEmits(['close', 'saved'])
+const emit = defineEmits(['close', 'saved', 'error'])
 
 const isEdit = ref(false)
 const loading = ref(false)
+const { errors, validators, validateField: validateFieldUtil, validateForm: validateFormUtil } = useFormValidation()
 
 const form = reactive({
   ruc: '',
@@ -165,13 +184,55 @@ async function loadProveedor(id) {
   }
 }
 
+function validateField(fieldName) {
+  const validationRules = {
+    ruc: [
+      (value) => validators.required(value, 'RUC'),
+      (value) => validators.ruc(value, 'RUC')
+    ],
+    nombre_empresa: [
+      (value) => validators.required(value, 'Nombre de empresa'),
+      (value) => validators.minLength(value, 3, 'Nombre de empresa')
+    ],
+    nombre_contacto: [
+      (value) => validators.minLength(value, 3, 'Nombre del contacto')
+    ],
+    telefono: [
+      (value) => validators.phone(value, 'Teléfono')
+    ],
+    email: [
+      (value) => validators.email(value, 'Correo electrónico')
+    ]
+  }
+
+  if (validationRules[fieldName]) {
+    validateFieldUtil(fieldName, form[fieldName], validationRules[fieldName])
+  }
+}
+
 function close() {
   resetForm()
   emit('close')
 }
 
 async function submit() {
+  const validationRules = {
+    ruc: [
+      (value) => validators.required(value, 'RUC'),
+      (value) => validators.ruc(value, 'RUC')
+    ],
+    nombre_empresa: [
+      (value) => validators.required(value, 'Nombre de empresa'),
+      (value) => validators.minLength(value, 3, 'Nombre de empresa')
+    ]
+  }
+
+  if (!validateFormUtil(form, validationRules)) {
+    return
+  }
+
   try {
+    loading.value = true
     const payload = {
       ruc: form.ruc,
       nombre_empresa: form.nombre_empresa,
@@ -203,20 +264,45 @@ async function submit() {
     // Procesar errores de validación del backend
     if (e.response?.data) {
       const errors = e.response.data
-      let errorMsg = 'Error de validación:\n\n'
+      let errorMsg = ''
       
       for (const [field, messages] of Object.entries(errors)) {
+        const fieldName = field === 'ruc' ? 'RUC' : 
+                         field === 'email' ? 'Correo Electrónico' : 
+                         field === 'nombre_empresa' ? 'Nombre de Empresa' : 
+                         field === 'telefono' ? 'Teléfono' :
+                         field === 'nombre_contacto' ? 'Nombre de Contacto' : field
+        
         if (Array.isArray(messages)) {
-          errorMsg += `${field}: ${messages.join(', ')}\n`
+          messages.forEach(msg => {
+            // Traducir mensajes comunes del backend
+            let translatedMsg = msg
+            if (msg.includes('already exists')) translatedMsg = 'ya está registrado'
+            else if (msg.includes('Enter a valid email')) translatedMsg = 'Ingrese un correo electrónico válido'
+            else if (msg.includes('This field may not be blank')) translatedMsg = 'Este campo es obligatorio'
+            else if (msg.includes('This field is required')) translatedMsg = 'Este campo es requerido'
+            else if (msg.includes('Ensure this field has no more than')) translatedMsg = 'Máximo de caracteres excedido'
+            
+            errorMsg += `${fieldName}: ${translatedMsg}. `
+          })
         } else {
-          errorMsg += `${field}: ${messages}\n`
+          let translatedMsg = messages
+          if (messages.includes('already exists')) translatedMsg = 'ya está registrado'
+          else if (messages.includes('Enter a valid email')) translatedMsg = 'Ingrese un correo electrónico válido'
+          
+          errorMsg += `${fieldName}: ${translatedMsg}. `
         }
       }
       
-      alert(errorMsg)
+      console.log('🔴 Emitiendo evento error:', errorMsg || 'Error de validación')
+      emit('error', errorMsg || 'Error de validación')
     } else {
-      alert('Error al guardar: ' + (e.message || 'Error desconocido'))
+      const msg = 'Error al guardar el proveedor. Por favor, verifique los datos e intente nuevamente.'
+      console.log('🔴 Emitiendo evento error:', msg)
+      emit('error', msg)
     }
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -294,11 +380,28 @@ async function submit() {
   transition: border-color 0.2s;
 }
 
+.form-field input.input-error,
+.form-field textarea.input-error {
+  border-color: #f87171;
+  background-color: #fef2f2;
+}
+
 .form-field input:focus,
 .form-field textarea:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-field input.input-error:focus,
+.form-field textarea.input-error:focus {
+  border-color: #f87171;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1);
+}
+
+.required {
+  color: #f87171;
+  font-weight: bold;
 }
 
 .form-actions {

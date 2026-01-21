@@ -15,6 +15,14 @@ class MateriasPrimasService {
   }
 
   /**
+   * Alias para obtener todas las materias primas (compatibilidad con Dashboard)
+   * @returns {Promise} Lista de todas las materias primas
+   */
+  async getAll() {
+    return this.getMateriasPrimas({ page_size: 1000 })
+  }
+
+  /**
    * Obtener una materia prima por ID
    * @param {number} id - ID de la materia prima
    * @returns {Promise} Datos de la materia prima

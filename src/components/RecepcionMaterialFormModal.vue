@@ -1,5 +1,5 @@
 <template>
-  <transition name="dialog-fade">
+  <transition name="fade-in-up" appear>
     <div v-if="visible" class="dialog-overlay" @click="close">
       <div class="dialog-card form-modal" @click.stop>
         <div class="modal-header">
@@ -19,8 +19,12 @@
                   :disabled="isEdit"
                 >
                   <option value="">Seleccionar...</option>
-                  <option v-for="mp in materiasPrimas" :key="mp.materia_prima_id" :value="mp.materia_prima_id">
-                    {{ mp.materia_prima_id }} - {{ mp.nombre }}
+                  <option 
+                    v-for="mp in materiasPrimasFiltered" 
+                    :key="mp.materia_prima_id" 
+                    :value="mp.materia_prima_id"
+                  >
+                    {{ mp.codigo }} - {{ mp.nombre }}
                   </option>
                 </select>
               </div>
@@ -69,7 +73,7 @@
                   required
                 >
                   <option value="">Seleccionar...</option>
-                  <option v-for="prov in proveedores" :key="prov.proveedor_id" :value="prov.proveedor_id">
+                  <option v-for="prov in proveedoresFiltered" :key="prov.proveedor_id" :value="prov.proveedor_id">
                     {{ prov.nombre_empresa }}
                   </option>
                 </select>
@@ -83,7 +87,7 @@
                   required
                 >
                   <option value="">Seleccionar...</option>
-                  <option v-for="alm in almacenes" :key="alm.id" :value="alm.id">
+                  <option v-for="alm in almacenesFiltered" :key="alm.id" :value="alm.id">
                     {{ alm.nombre }}
                   </option>
                 </select>
@@ -151,7 +155,7 @@ const props = defineProps({
   recepcionId: [Number, String]
 })
 
-const emit = defineEmits(['close', 'saved'])
+const emit = defineEmits(['close', 'saved', 'error'])
 
 const form = ref({
   materia_prima: '',
@@ -169,6 +173,19 @@ const proveedores = ref([])
 const almacenes = ref([])
 const submitting = ref(false)
 
+// Computed para filtrar elementos null o inválidos
+const materiasPrimasFiltered = computed(() => {
+  return (materiasPrimas.value || []).filter(mp => mp && mp.materia_prima_id && mp.nombre)
+})
+
+const proveedoresFiltered = computed(() => {
+  return (proveedores.value || []).filter(p => p && p.proveedor_id && p.nombre_empresa)
+})
+
+const almacenesFiltered = computed(() => {
+  return (almacenes.value || []).filter(a => a && a.id && a.nombre)
+})
+
 const isEdit = computed(() => !!props.recepcionId)
 
 const formatTotal = computed(() => {
@@ -176,24 +193,42 @@ const formatTotal = computed(() => {
   return `$${total.toFixed(2)}`
 })
 
-const loadCatalogs = async () => {
+// Watchers
+watch(() => props.visible, (newVal) => {
+  if (newVal) {
+    loadData()
+    if (props.recepcionId) {
+      loadRecepcion()
+    } else {
+      resetForm()
+    }
+  }
+})
+
+// Métodos
+const loadData = async () => {
   try {
-    const [mp, prov, alm] = await Promise.all([
-      materiasPrimasService.getMateriasPrimas(),
-      proveedoresService.getProveedores(),
+    const [mpData, provData, almData] = await Promise.all([
+      materiasPrimasService.getMateriasPrimas({ page_size: 1000 }),
+      proveedoresService.getProveedores({ page_size: 1000 }),
       almacenesService.getAlmacenes()
     ])
-    materiasPrimas.value = mp
-    proveedores.value = prov
-    almacenes.value = alm
+    
+    materiasPrimas.value = Array.isArray(mpData) ? mpData : (mpData.results || [])
+    proveedores.value = Array.isArray(provData) ? provData : (provData.results || [])
+    almacenes.value = Array.isArray(almData) ? almData : (almData.results || [])
+    
+    console.log('Datos cargados:', {
+      materiasPrimas: materiasPrimas.value.length,
+      proveedores: proveedores.value.length,
+      almacenes: almacenes.value.length
+    })
   } catch (err) {
-    console.error('Error cargando catálogos:', err)
+    console.error('Error cargando datos:', err)
   }
 }
 
 const loadRecepcion = async () => {
-  if (!props.recepcionId) return
-  
   try {
     const data = await recepcionesService.getRecepcionMaterial(props.recepcionId)
     form.value = {
@@ -208,32 +243,8 @@ const loadRecepcion = async () => {
     }
   } catch (err) {
     console.error('Error cargando recepción:', err)
+    emit('close')
   }
-}
-
-const submit = async () => {
-  try {
-    submitting.value = true
-    
-    if (isEdit.value) {
-      await recepcionesService.updateRecepcionMaterial(props.recepcionId, form.value)
-    } else {
-      await recepcionesService.createRecepcionMaterial(form.value)
-    }
-    
-    emit('saved')
-    close()
-  } catch (err) {
-    console.error('Error guardando recepción:', err)
-    alert('Error al guardar la recepción. Verifica los datos e intenta nuevamente.')
-  } finally {
-    submitting.value = false
-  }
-}
-
-const close = () => {
-  emit('close')
-  resetForm()
 }
 
 const resetForm = () => {
@@ -249,18 +260,65 @@ const resetForm = () => {
   }
 }
 
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
+const submit = async () => {
+  try {
+    submitting.value = true
+    
+    // Clonar el form y renombrar almacen a id_almacen
+    const payload = { ...form.value, id_almacen: form.value.almacen }
+    delete payload.almacen
     if (isEdit.value) {
-      loadRecepcion()
+      await recepcionesService.updateRecepcionMaterial(props.recepcionId, payload)
     } else {
-      resetForm()
+      await recepcionesService.createRecepcionMaterial(payload)
     }
+    
+    emit('saved')
+    close()
+  } catch (err) {
+    console.error('Error guardando recepción:', err)
+    
+    let errorMsg = ''
+    if (err.response?.status === 404) {
+      errorMsg = 'El servidor no tiene configurado el endpoint para registrar recepciones de material. Por favor, verifica que el backend tenga la ruta /api/recepciones/ habilitada.'
+    } else if (err.response?.data) {
+      const errors = err.response.data
+      if (typeof errors === 'string') {
+        errorMsg = errors
+      } else if (errors.detail) {
+        errorMsg = errors.detail
+      } else {
+        for (const [field, messages] of Object.entries(errors)) {
+          const fieldName = field === 'materia_prima' ? 'Materia Prima' :
+                           field === 'proveedor' ? 'Proveedor' :
+                           field === 'almacen' ? 'Almacén' :
+                           field === 'cantidad' ? 'Cantidad' :
+                           field === 'costo_unitario' ? 'Costo Unitario' :
+                           field === 'fecha_recepcion' ? 'Fecha de Recepción' : field
+          
+          if (Array.isArray(messages)) {
+            errorMsg += `${fieldName}: ${messages.join(', ')}. `
+          } else {
+            errorMsg += `${fieldName}: ${messages}. `
+          }
+        }
+      }
+    } else {
+      errorMsg = 'Error al guardar la recepción. Por favor, intente nuevamente.'
+    }
+    
+    emit('error', errorMsg || 'Error desconocido al guardar')
+  } finally {
+    submitting.value = false
   }
-})
+}
+
+const close = () => {
+  emit('close')
+}
 
 onMounted(() => {
-  loadCatalogs()
+  loadData()
 })
 </script>
 
@@ -275,8 +333,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
   padding: 20px;
+  backdrop-filter: blur(8px);
 }
 
 .dialog-card {
@@ -285,9 +344,10 @@ onMounted(() => {
   width: 100%;
   max-width: 700px;
   max-height: 90vh;
-  overflow: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
 .modal-header {
@@ -328,7 +388,7 @@ onMounted(() => {
 
 .form-field label {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   color: #374151;
 }
 
@@ -339,6 +399,7 @@ onMounted(() => {
   border: 1px solid #D1D5DB;
   border-radius: 6px;
   font-size: 14px;
+  transition: all 0.2s;
 }
 
 .form-field input:focus,
@@ -346,24 +407,30 @@ onMounted(() => {
 .form-field textarea:focus {
   outline: none;
   border-color: #4F6F8F;
+  box-shadow: 0 0 0 3px rgba(79, 111, 143, 0.1);
 }
 
 .input-readonly {
   background: #F3F4F6;
+  cursor: not-allowed;
+}
+
+.help-text {
+  font-size: 12px;
   color: #6B7280;
-  font-weight: 600;
 }
 
 .alert-info {
-  background: #DBEAFE;
-  color: #1E40AF;
+  background: #EFF6FF;
+  border-left: 4px solid #3B82F6;
   padding: 12px 16px;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
+  margin-bottom: 20px;
   font-size: 14px;
+  color: #1E40AF;
 }
 
 .form-actions {
@@ -427,5 +494,19 @@ onMounted(() => {
 .dialog-fade-enter-from,
 .dialog-fade-leave-to {
   opacity: 0;
+}
+
+.fade-in-up-enter-active, .fade-in-up-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+.fade-in-up-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-in-up-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 </style>

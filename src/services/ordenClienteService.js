@@ -1,80 +1,61 @@
-import api from "./api"
+import api from './api';
 
-export default {
-    /**
-     * Obtener lista de órdenes con paginación
-     */
-    async getOrdenes(page = 1, pageSize = 20) {
-        const res = await api.get("/ordenes-clientes/", {
-            params: {
-                page,
-                page_size: pageSize
-            }
-        })
-        return res.data
-    },
+/**
+ * Servicio de Órdenes de Cliente
+ * Conecta con endpoints: /ordenes-clientes/
+ * (NO agregar /api, ya viene en baseURL)
+ */
 
-    /**
-     * Obtener una orden específica por ID
-     */
-    async getOrden(id) {
-        const res = await api.get(`/ordenes-clientes/${id}/`)
-        return res.data
-    },
+export const getOrdenesCliente = async (params = {}) => {
+  try {
+    const response = await api.get('/ordenes-clientes/', { params });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Error al cargar órdenes' };
+  }
+};
 
-    /**
-     * Crear nueva orden con items
-     */
-    async createOrden(data) {
-        const res = await api.post("/ordenes-clientes/", data)
-        return res.data
-    },
+export const getOrdenCliente = async (id) => {
+  try {
+    const response = await api.get(`/ordenes-clientes/${id}/`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Error al cargar orden' };
+  }
+};
 
-    /**
-     * Actualizar orden existente
-     */
-    async updateOrden(id, data) {
-        const res = await api.put(`/ordenes-clientes/${id}/`, data)
-        return res.data
-    },
+export const createOrdenCliente = async (data) => {
+  try {
+    const response = await api.post('/ordenes-clientes/', data);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Error al crear orden' };
+  }
+};
 
-    /**
-     * Eliminar orden
-     */
-    async deleteOrden(id) {
-        const res = await api.delete(`/ordenes-clientes/${id}/`)
-        return res.data
-    },
+export const updateOrdenCliente = async (id, data) => {
+  try {
+    const response = await api.put(`/ordenes-clientes/${id}/`, data);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Error al actualizar orden' };
+  }
+};
 
-    /**
-     * Obtener items de una orden
-     */
-    async getOrdenItems(ordenId) {
-        const res = await api.get(`/ordenes-items/?order=${ordenId}`)
-        return res.data
-    },
+export const patchOrdenCliente = async (id, data) => {
+  try {
+    const response = await api.patch(`/ordenes-clientes/${id}/`, data);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Error al actualizar orden' };
+  }
+};
 
-    /**
-     * Crear item en una orden
-     */
-    async createItem(data) {
-        const res = await api.post("/ordenes-items/", data)
-        return res.data
-    },
-
-    /**
-     * Actualizar item
-     */
-    async updateItem(id, data) {
-        const res = await api.put(`/ordenes-items/${id}/`, data)
-        return res.data
-    },
-
-    /**
-     * Eliminar item
-     */
-    async deleteItem(id) {
-        const res = await api.delete(`/ordenes-items/${id}/`)
-        return res.data
-    }
-}
+export const deleteOrdenCliente = async (id) => {
+  try {
+    const response = await api.delete(`/ordenes-clientes/${id}/`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { error: 'Error al eliminar orden' };
+  }
+};
