@@ -21,6 +21,7 @@ import OrdenesClienteListView from '../views/OrdenesClienteListView.vue'
 import NotFoundView from '../views/NotFoundView.vue'
 import authService from '../services/auth'
 import ProfileView from '../views/ProfileView.vue'
+import AuthCallbackView from '../views/AuthCallbackView.vue'
 
 const routes = [
   {
@@ -162,6 +163,14 @@ const routes = [
     meta: {
       title: 'Órdenes de Cliente - Sistema Innoquim',
       requiresAuth: true
+    }
+  },
+  {
+    path: '/auth/callback',
+    name: 'AuthCallback',
+    component: AuthCallbackView,
+    meta: {
+      title: 'Autenticación - Sistema Innoquim'
     }
   },
   // Página 404 personalizada

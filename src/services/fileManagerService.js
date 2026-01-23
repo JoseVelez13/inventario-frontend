@@ -2,7 +2,10 @@ import api from './api'
 import axios from 'axios'
 
 // Configuración base del File Manager
-const FILE_MANAGER_BASE_URL = import.meta.env.VITE_FILE_MANAGER_URL || 'http://localhost:8001'
+const FILE_MANAGER_BASE_URL = import.meta.env.VITE_FILE_MANAGER_URL || 'http://localhost:8002'
+
+// 🔥 Variable global para evitar múltiples solicitudes de autenticación
+let pendingAuthUrl = null
 
 const fileManagerApi = axios.create({
   baseURL: FILE_MANAGER_BASE_URL,
@@ -31,8 +34,21 @@ fileManagerApi.interceptors.request.use(
 const fileManagerService = {
   // Obtener URL de autenticación (directo del file-manager)
   async getAuthUrl() {
+    // 🔥 Si ya hay una URL pendiente, reutilizarla
+    if (pendingAuthUrl) {
+      console.log('🔥 Reutilizando URL de autenticación pendiente')
+      return pendingAuthUrl
+    }
+
     try {
       const response = await fileManagerApi.get('/api/auth/url')
+      pendingAuthUrl = response.data.auth_url
+      
+      // 🔥 Limpiar después de 2 minutos para evitar stale URLs
+      setTimeout(() => {
+        pendingAuthUrl = null
+      }, 120000)
+      
       return response.data.auth_url
     } catch (error) {
       console.error('Error al obtener URL de autenticación:', error)
@@ -118,6 +134,7 @@ const fileManagerService = {
   // Cerrar sesión
   logout() {
     localStorage.removeItem('file_manager_token')
+    pendingAuthUrl = null // 🔥 Limpiar URL pendiente al hacer logout
   }
 }
 

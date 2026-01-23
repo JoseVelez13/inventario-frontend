@@ -100,6 +100,7 @@ export default {
             },
             tiposReporte: [],
             guardando: false,
+            autenticando: false, // 🔥 Nueva bandera para evitar múltiples intentos
             error: null,
             exitoMensaje: null
         };
@@ -149,6 +150,11 @@ export default {
                 return;
             }
 
+            // 🔥 Evitar múltiples intentos de autenticación
+            if (this.autenticando) {
+                return;
+            }
+
             this.guardando = true;
             this.error = null;
             this.exitoMensaje = null;
@@ -175,6 +181,7 @@ export default {
                 
                 // Si es error de autenticación, redirigir a autenticación
                 if (error.needsAuth && error.authUrl) {
+                    this.autenticando = true; // 🔥 Marcar que estamos autenticando
                     this.error = 'Se requiere autenticación con Google Drive. Serás redirigido...';
                     
                     // Abrir ventana de autenticación
@@ -184,31 +191,29 @@ export default {
                         'width=500,height=600,scrollbars=yes,resizable=yes'
                     );
                     
+                    // Escuchar mensajes de la ventana de autenticación
+                    const messageHandler = async (event) => {
+                        if (event.data.type === 'auth_success') {
+                            clearInterval(checkAuth);
+                            window.removeEventListener('message', messageHandler);
+                            
+                            if (authWindow && !authWindow.closed) {
+                                authWindow.close();
+                            }
+                            
+                            // Procesar el callback
+                            this.procesarCallback(event.data.code, event.data.state);
+                        }
+                    };
+                    
+                    window.addEventListener('message', messageHandler);
+                    
                     // Esperar respuesta de autenticación
                     const checkAuth = setInterval(() => {
-                        try {
-                            // Verificar si la ventana se cerró o si tenemos token
-                            if (authWindow.closed) {
-                                clearInterval(checkAuth);
-                                this.error = 'Autenticación cancelada. Intente nuevamente.';
-                                return;
-                            }
-                            
-                            // Intentar obtener el código de la URL
-                            const urlParams = new URLSearchParams(authWindow.location.search);
-                            const code = urlParams.get('code');
-                            const state = urlParams.get('state');
-                            
-                            if (code && state) {
-                                clearInterval(checkAuth);
-                                authWindow.close();
-                                
-                                // Procesar el callback
-                                this.procesarCallback(code, state);
-                            }
-                        } catch (e) {
-                            // Error de Same-origin si está en dominio de Google
-                            // Continuar esperando
+                        if (authWindow.closed) {
+                            clearInterval(checkAuth);
+                            window.removeEventListener('message', messageHandler);
+                            this.error = 'Autenticación cancelada. Intente nuevamente.';
                         }
                     }, 1000);
                     
@@ -244,6 +249,7 @@ export default {
             };
             this.error = null;
             this.exitoMensaje = null;
+            this.autenticando = false; // 🔥 Resetear bandera de autenticación
         },
 
         async procesarCallback(code, state) {
@@ -252,8 +258,9 @@ export default {
                 
                 await fileManagerService.handleAuthCallback(code, state);
                 this.error = null;
+                this.autenticando = false; // 🔥 Resetear bandera al completar
                 
-                // Reintentar guardar el archivo automáticamente
+                // Reintentar guardar automáticamente
                 setTimeout(() => {
                     this.guardar();
                 }, 1000);
@@ -261,6 +268,7 @@ export default {
             } catch (error) {
                 console.error('Error al procesar callback:', error);
                 this.error = `Error en autenticación: ${error.message}`;
+                this.autenticando = false; // 🔥 Resetear bandera en caso de error
             }
         },
 
