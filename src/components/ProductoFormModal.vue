@@ -12,41 +12,27 @@
             <div class="form-grid">
               <div class="form-field">
                 <label for="product_code">Código <span class="required">*</span></label>
-                <input 
-                  id="product_code" 
-                  v-model="form.product_code" 
-                  maxlength="50"
-                  placeholder="Ej: PROD-001"
-                  @blur="validateField('product_code')"
-                  :class="{ 'input-error': errors.product_code }"
-                />
+                <input id="product_code" v-model="form.product_code" maxlength="50" placeholder="Ej: PROD-001"
+                  @blur="validateField('product_code')" :class="{ 'input-error': errors.product_code }" />
                 <FormErrorMessage :error="errors.product_code" />
               </div>
 
               <div class="form-field">
                 <label for="name">Nombre <span class="required">*</span></label>
-                <input 
-                  id="name" 
-                  v-model="form.name" 
-                  maxlength="150"
-                  placeholder="Nombre del producto"
-                  @blur="validateField('name')"
-                  :class="{ 'input-error': errors.name }"
-                />
+                <input id="name" v-model="form.name" maxlength="150" placeholder="Nombre del producto"
+                  @blur="validateField('name')" :class="{ 'input-error': errors.name }" />
                 <FormErrorMessage :error="errors.name" />
               </div>
 
               <div class="form-field">
                 <label for="categoria_id">Categoría <span class="required">*</span></label>
-                <select 
-                  id="categoria_id" 
-                  v-model="form.categoria_id" 
-                  @change="form.categoria_id = parseInt(form.categoria_id); validateField('categoria_id')"
-                  :class="{ 'input-error': errors.categoria_id }"
-                >
-                  <option value="">-- Selecciona una categoría --</option>
-                  <option v-if="categorias.length === 0" disabled>Cargando categorías...</option>
-                  <option v-for="cat in categorias" :key="cat.id" :value="String(cat.id)">
+                <select id="categoria_id" v-model.number="form.categoria_id" @change="validateField('categoria_id')"
+                  :class="{ 'input-error': errors.categoria_id }">
+                  <option :value="null">-- Selecciona una categoría --</option>
+                  <option v-if="categorias.length === 0" :value="null" disabled>
+                    Cargando categorías...
+                  </option>
+                  <option v-for="cat in categorias" :key="cat.categoria_id" :value="cat.categoria_id">
                     {{ cat.nombre }}
                   </option>
                 </select>
@@ -55,12 +41,8 @@
 
               <div class="form-field">
                 <label for="unit">Unidad <span class="required">*</span></label>
-                <select 
-                  id="unit" 
-                  v-model.number="form.unit"
-                  @change="validateField('unit')"
-                  :class="{ 'input-error': errors.unit }"
-                >
+                <select id="unit" v-model.number="form.unit" @change="validateField('unit')"
+                  :class="{ 'input-error': errors.unit }">
                   <option value="">-- Selecciona una unidad --</option>
                   <option v-for="u in unidades" :key="u.id" :value="u.id">{{ u.nombre }} ({{ u.simbolo }})</option>
                 </select>
@@ -69,43 +51,22 @@
 
               <div class="form-field">
                 <label for="weight">Peso (kg)</label>
-                <input 
-                  id="weight" 
-                  v-model.number="form.weight" 
-                  type="number" 
-                  step="0.001" 
-                  min="0"
-                  placeholder="0.000"
-                  @blur="validateField('weight')"
-                  :class="{ 'input-error': errors.weight }"
-                />
+                <input id="weight" v-model.number="form.weight" type="number" step="0.001" min="0" placeholder="0.000"
+                  @blur="validateField('weight')" :class="{ 'input-error': errors.weight }" />
                 <FormErrorMessage :error="errors.weight" />
               </div>
 
               <div class="form-field">
                 <label for="stock">Stock</label>
-                <input 
-                  id="stock" 
-                  v-model.number="form.stock" 
-                  type="number" 
-                  step="1" 
-                  min="0"
-                  placeholder="0"
-                  @blur="validateField('stock')"
-                  :class="{ 'input-error': errors.stock }"
-                />
+                <input id="stock" v-model.number="form.stock" type="number" step="1" min="0" placeholder="0"
+                  @blur="validateField('stock')" :class="{ 'input-error': errors.stock }" />
                 <FormErrorMessage :error="errors.stock" />
               </div>
 
               <div class="form-field full">
                 <label for="description">Descripción</label>
-                <textarea 
-                  id="description" 
-                  v-model="form.description"
-                  placeholder="Descripción del producto"
-                  @blur="validateField('description')"
-                  :class="{ 'input-error': errors.description }"
-                ></textarea>
+                <textarea id="description" v-model="form.description" placeholder="Descripción del producto"
+                  @blur="validateField('description')" :class="{ 'input-error': errors.description }"></textarea>
                 <FormErrorMessage :error="errors.description" />
               </div>
             </div>
@@ -500,7 +461,7 @@ loadCategorias()
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-field.full {
     grid-column: 1;
   }

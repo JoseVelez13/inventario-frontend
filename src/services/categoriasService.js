@@ -23,6 +23,28 @@ const categoriasService = {
     }
   },
 
+  // ========== NUEVO MÉTODO ==========
+  // Obtener categorías filtradas por tipo
+  async getCategoriasByTipo(tipo) {
+    try {
+      const response = await axios.get(API_URL, {
+        params: { tipo: tipo }, // Filtrar por tipo (PRODUCT o RAW_MATERIAL)
+        headers: getAuthHeader()
+      })
+      
+      // Si la respuesta tiene paginación, retornar solo los resultados
+      if (response.data.results) {
+        return response.data.results
+      }
+      
+      // Si es un array directo, retornarlo tal cual
+      return response.data
+    } catch (error) {
+      console.error(`Error al obtener categorías del tipo ${tipo}:`, error)
+      throw error
+    }
+  },
+
   // Obtener una categoría por ID
   async getCategoria(id) {
     try {
