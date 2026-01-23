@@ -18,9 +18,9 @@
     <!-- MENÚ SUPERIOR -->
     <nav class="nav-menu">
       <NotificationBell />
-      
+
       <DarkModeToggle />
-      
+
       <button class="nav-item" @click="$router.push('/')">
         <i class="fa-solid fa-house"></i> Inicio
       </button>
@@ -68,10 +68,6 @@
               <i class="fa-solid fa-users"></i>
               <span>Clientes</span>
             </router-link>
-            <router-link to="/ordenes-cliente" class="sidebar-item" @click="closeSidebar">
-              <i class="fa-solid fa-file-invoice"></i>
-              <span>Órdenes de Cliente</span>
-            </router-link>
             <router-link to="/materias-primas" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-flask"></i>
               <span>Materias Primas</span>
@@ -88,13 +84,13 @@
               <i class="fa-solid fa-warehouse"></i>
               <span>Almacenes</span>
             </router-link>
-            <router-link to="/categorias" class="sidebar-item" @click="closeSidebar">
-              <i class="fa-solid fa-folder"></i>
-              <span>Categorías</span>
-            </router-link>
             <router-link to="/unidades" class="sidebar-item" @click="closeSidebar">
               <i class="fa-solid fa-ruler"></i>
               <span>Unidades</span>
+            </router-link>
+            <router-link to="/categorias" class="sidebar-item" @click="closeSidebar">
+              <i class="fa-solid fa-folder"></i>
+              <span>Categorías</span>
             </router-link>
           </div>
 
@@ -153,36 +149,36 @@
 </template>
 
 <script>
-import '../assets/styles/HeaderGlobal.css'
-import logo from '../assets/img/logo.png'
-import NotificationBell from './NotificationBell.vue'
-import DarkModeToggle from './DarkModeToggle.vue'
+import "../assets/styles/HeaderGlobal.css";
+import logo from "../assets/img/logo.png";
+import NotificationBell from "./NotificationBell.vue";
+import DarkModeToggle from "./DarkModeToggle.vue";
 
 export default {
-  name: 'HeaderComponent',
+  name: "HeaderComponent",
   components: { NotificationBell, DarkModeToggle },
   data() {
     return {
       logo,
-      sidebarOpen: false
-    }
+      sidebarOpen: false,
+    };
   },
   methods: {
     toggleSidebar() {
-      this.sidebarOpen = !this.sidebarOpen
+      this.sidebarOpen = !this.sidebarOpen;
     },
     closeSidebar() {
-      this.sidebarOpen = false
+      this.sidebarOpen = false;
     },
     logout() {
       try {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        localStorage.removeItem('user')
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
       } catch (e) { }
-      this.closeSidebar()
-      this.$router.push('/login')
-    }
-  }
-}
+      this.closeSidebar();
+      this.$router.push("/login");
+    },
+  },
+};
 </script>

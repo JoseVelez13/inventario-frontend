@@ -1,91 +1,101 @@
-import api from './api'
+import axios from 'axios'
 
-/**
- * Servicio para gestión de categorías
- * Conecta con /api/categorias/
- */
-class CategoriasService {
-  /**
-   * Obtener lista de categorías
-   * @param {Object} params - Parámetros de búsqueda y paginación
-   * @returns {Promise} Lista de categorías
-   */
-  async getCategorias(params = {}) {
-    const response = await api.get('/categorias/', { params })
-    return response.data
-  }
+const API_URL = 'http://localhost:8000/api/categorias/'
 
-  /**
-   * Obtener todas las categorías sin paginación
-   * @returns {Promise} Lista de todas las categorías
-   */
-  async getAll() {
-    return this.getCategorias({ page_size: 1000 })
-  }
+// Función para obtener el token de autenticación
+const getAuthHeader = () => {
+  const token = localStorage.getItem('access_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
-  /**
-   * Obtener una categoría por ID
-   * @param {number} id - ID de la categoría
-   * @returns {Promise} Datos de la categoría
-   */
-  async getCategoria(id) {
-    const response = await api.get(`/categorias/${id}/`)
-    return response.data
-  }
+const categoriasService = {
+  // Obtener todas las categorías con paginación
+  async getCategorias(page = 1, pageSize = 20) {
+    try {
+      const response = await axios.get(API_URL, {
+        params: { page, page_size: pageSize },
+        headers: getAuthHeader()
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error al obtener categorías:', error)
+      throw error
+    }
+  },
 
-  /**
-   * Crear una nueva categoría
-   * @param {Object} data - Datos de la categoría
-   * @returns {Promise} Categoría creada
-   */
-  async createCategoria(data) {
-    const response = await api.post('/categorias/', data)
-    return response.data
-  }
-
-  /**
-   * Actualizar una categoría
-   * @param {number} id - ID de la categoría
-   * @param {Object} data - Datos actualizados
-   * @returns {Promise} Categoría actualizada
-   */
-  async updateCategoria(id, data) {
-    const response = await api.put(`/categorias/${id}/`, data)
-    return response.data
-  }
-
-  /**
-   * Eliminar una categoría
-   * @param {number} id - ID de la categoría
-   * @returns {Promise} Respuesta de eliminación
-   */
-  async deleteCategoria(id) {
-    const response = await api.delete(`/categorias/${id}/`)
-    return response.data
-  }
-
-  /**
-   * Obtener categorías por tipo
-   * @param {string} tipo - Tipo de categoría (PRODUCT, RAW_MATERIAL, etc.)
-   * @returns {Promise} Categorías filtradas por tipo
-   */
+  // ========== NUEVO MÉTODO ==========
+  // Obtener categorías filtradas por tipo
   async getCategoriasByTipo(tipo) {
     try {
-      const response = await api.get('/categorias/', { params: { tipo } })
-      const data = response.data
+      const response = await axios.get(API_URL, {
+        params: { tipo: tipo }, // Filtrar por tipo (PRODUCT o RAW_MATERIAL)
+        headers: getAuthHeader()
+      })
       
-      // Mapear categoria_id a id para compatibilidad con el frontend
-      const categorias = Array.isArray(data) ? data : data.results || []
+      // Si la respuesta tiene paginación, retornar solo los resultados
+      if (response.data.results) {
+        return response.data.results
+      }
       
-      return categorias.map(cat => ({
-        ...cat,
-        id: cat.categoria_id || cat.id // Usar categoria_id del backend o id si existe
-      }))
-    } catch (e) {
-      console.error('Error en getCategoriasByTipo:', e)
-      return []
+      // Si es un array directo, retornarlo tal cual
+      return response.data
+    } catch (error) {
+      console.error(`Error al obtener categorías del tipo ${tipo}:`, error)
+      throw error
+    }
+  },
+
+  // Obtener una categoría por ID
+  async getCategoria(id) {
+    try {
+      const response = await axios.get(`${API_URL}${id}/`, {
+        headers: getAuthHeader()
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error al obtener categoría:', error)
+      throw error
+    }
+  },
+
+  // Crear una nueva categoría
+  async createCategoria(data) {
+    try {
+      const response = await axios.post(API_URL, data, {
+        headers: getAuthHeader()
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error al crear categoría:', error)
+      throw error
+    }
+  },
+
+  // Actualizar una categoría existente
+  async updateCategoria(id, data) {
+    try {
+      const response = await axios.put(`${API_URL}${id}/`, data, {
+        headers: getAuthHeader()
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error al actualizar categoría:', error)
+      throw error
+    }
+  },
+
+  // Eliminar una categoría
+  async deleteCategoria(id) {
+    try {
+      const response = await axios.delete(`${API_URL}${id}/`, {
+        headers: getAuthHeader()
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error al eliminar categoría:', error)
+      throw error
     }
   }
 }
 
-export default new CategoriasService()
+export default categoriasService

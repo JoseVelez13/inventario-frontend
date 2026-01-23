@@ -12,41 +12,27 @@
             <div class="form-grid">
               <div class="form-field">
                 <label for="codigo">Código <span class="required">*</span></label>
-                <input 
-                  id="codigo" 
-                  v-model="form.codigo" 
-                  maxlength="50" 
-                  placeholder="Ej: MP-001"
-                  @blur="validateField('codigo')"
-                  :class="{ 'input-error': errors.codigo }"
-                />
+                <input id="codigo" v-model="form.codigo" maxlength="50" placeholder="Ej: MP-001"
+                  @blur="validateField('codigo')" :class="{ 'input-error': errors.codigo }" />
                 <FormErrorMessage :error="errors.codigo" />
               </div>
 
               <div class="form-field">
                 <label for="nombre">Nombre <span class="required">*</span></label>
-                <input 
-                  id="nombre" 
-                  v-model="form.nombre" 
-                  maxlength="100" 
-                  placeholder="Ej: Polietileno"
-                  @blur="validateField('nombre')"
-                  :class="{ 'input-error': errors.nombre }"
-                />
+                <input id="nombre" v-model="form.nombre" maxlength="100" placeholder="Ej: Polietileno"
+                  @blur="validateField('nombre')" :class="{ 'input-error': errors.nombre }" />
                 <FormErrorMessage :error="errors.nombre" />
               </div>
 
               <div class="form-field">
                 <label for="categoria_id">Categoría <span class="required">*</span></label>
-                <select 
-                  id="categoria_id" 
-                  v-model="form.categoria_id" 
-                  @change="form.categoria_id = parseInt(form.categoria_id); validateField('categoria_id')"
-                  :class="{ 'input-error': errors.categoria_id }"
-                >
-                  <option value="">-- Selecciona una categoría --</option>
-                  <option v-if="categorias.length === 0" disabled>Cargando categorías...</option>
-                  <option v-for="cat in categorias" :key="cat.id" :value="String(cat.id)">
+                <select id="categoria_id" v-model.number="form.categoria_id" @change="validateField('categoria_id')"
+                  :class="{ 'input-error': errors.categoria_id }">
+                  <option :value="null">-- Selecciona una categoría --</option>
+                  <option v-if="categorias.length === 0" :value="null" disabled>
+                    Cargando categorías...
+                  </option>
+                  <option v-for="cat in categorias" :key="cat.categoria_id" :value="cat.categoria_id">
                     {{ cat.nombre }}
                   </option>
                 </select>
@@ -55,12 +41,8 @@
 
               <div class="form-field">
                 <label for="unidad_id">Unidad de Medida <span class="required">*</span></label>
-                <select 
-                  id="unidad_id" 
-                  v-model.number="form.unidad_id"
-                  @change="validateField('unidad_id')"
-                  :class="{ 'input-error': errors.unidad_id }"
-                >
+                <select id="unidad_id" v-model.number="form.unidad_id" @change="validateField('unidad_id')"
+                  :class="{ 'input-error': errors.unidad_id }">
                   <option value="">Selecciona una unidad</option>
                   <option v-for="u in unidades" :key="u.id" :value="u.id">
                     {{ u.nombre }} ({{ u.simbolo }})
@@ -71,59 +53,32 @@
 
               <div class="form-field">
                 <label for="densidad">Densidad (g/cm³)</label>
-                <input 
-                  id="densidad" 
-                  v-model.number="form.densidad" 
-                  type="number" 
-                  step="0.01" 
-                  min="0" 
-                  placeholder="Ej: 0.95"
-                  @blur="validateField('densidad')"
-                  :class="{ 'input-error': errors.densidad }"
-                />
+                <input id="densidad" v-model.number="form.densidad" type="number" step="0.01" min="0"
+                  placeholder="Ej: 0.95" @blur="validateField('densidad')"
+                  :class="{ 'input-error': errors.densidad }" />
                 <FormErrorMessage :error="errors.densidad" />
               </div>
 
               <div class="form-field">
                 <label for="stock_minimo">Stock Mínimo <span class="required">*</span></label>
-                <input 
-                  id="stock_minimo" 
-                  v-model.number="form.stock_minimo" 
-                  type="number" 
-                  step="1" 
-                  min="0"
-                  placeholder="0"
-                  @blur="validateField('stock_minimo')"
-                  :class="{ 'input-error': errors.stock_minimo }"
-                />
+                <input id="stock_minimo" v-model.number="form.stock_minimo" type="number" step="1" min="0"
+                  placeholder="0" @blur="validateField('stock_minimo')"
+                  :class="{ 'input-error': errors.stock_minimo }" />
                 <FormErrorMessage :error="errors.stock_minimo" />
               </div>
 
               <div class="form-field">
                 <label for="stock_maximo">Stock Máximo</label>
-                <input 
-                  id="stock_maximo" 
-                  v-model.number="form.stock_maximo" 
-                  type="number" 
-                  step="1" 
-                  min="0" 
-                  placeholder="Opcional"
-                  @blur="validateField('stock_maximo')"
-                  :class="{ 'input-error': errors.stock_maximo }"
-                />
+                <input id="stock_maximo" v-model.number="form.stock_maximo" type="number" step="1" min="0"
+                  placeholder="Opcional" @blur="validateField('stock_maximo')"
+                  :class="{ 'input-error': errors.stock_maximo }" />
                 <FormErrorMessage :error="errors.stock_maximo" />
               </div>
 
               <div class="form-field full">
                 <label for="descripcion">Descripción</label>
-                <textarea 
-                  id="descripcion" 
-                  v-model="form.descripcion" 
-                  rows="2" 
-                  placeholder="Descripción opcional"
-                  @blur="validateField('descripcion')"
-                  :class="{ 'input-error': errors.descripcion }"
-                ></textarea>
+                <textarea id="descripcion" v-model="form.descripcion" rows="2" placeholder="Descripción opcional"
+                  @blur="validateField('descripcion')" :class="{ 'input-error': errors.descripcion }"></textarea>
                 <FormErrorMessage :error="errors.descripcion" />
               </div>
             </div>
@@ -171,7 +126,7 @@ const form = reactive({
   stock_maximo: null
 })
 
-watch(() => props.show, (v) => { 
+watch(() => props.show, (v) => {
   visible.value = v
   if (v) {
     if (props.editId) {
@@ -182,9 +137,9 @@ watch(() => props.show, (v) => {
   }
 })
 
-watch(() => props.editId, (id) => { 
+watch(() => props.editId, (id) => {
   isEdit.value = !!id
-  if (id && props.show) loadMateriaPrima(id) 
+  if (id && props.show) loadMateriaPrima(id)
 })
 
 onMounted(() => {
@@ -562,7 +517,7 @@ function close() {
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .form-field.full {
     grid-column: 1;
   }
