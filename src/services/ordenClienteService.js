@@ -51,7 +51,50 @@ export default {
    */
   async getOrdenItems(ordenId) {
     const res = await api.get(`/ordenes-items/?order=${ordenId}`)
-    return res.data
+    const itemsData = res.data
+
+    // Si los items no incluyen información completa del producto,
+    // necesitamos enriquecerlos con la información de productos
+    const items = itemsData.results || itemsData || []
+
+    // Obtener información completa de productos para cada item
+    const enrichedItems = await Promise.all(
+      items.map(async (item) => {
+        try {
+          // Si el item ya incluye información del producto, úsala
+          if (item.product_data || item.product_name) {
+            return {
+              ...item,
+              precio_unitario: item.precio_unitario || item.product_data?.price || 0,
+              product_nombre: item.product_name || item.product_data?.name || 'Producto no encontrado'
+            }
+          }
+
+          // Si no, intentar obtener el producto por ID
+          if (item.product && typeof item.product === 'number') {
+            const ProductosService = (await import('./productosService')).default
+            const productoData = await ProductosService.getProducto(item.product)
+            return {
+              ...item,
+              precio_unitario: productoData.price || 0,
+              product_nombre: productoData.name || 'Producto no encontrado',
+              unit_nombre: productoData.unit?.name || item.unit_nombre || 'N/A'
+            }
+          }
+
+          return item
+        } catch (error) {
+          console.warn(`Error obteniendo información del producto ${item.product}:`, error)
+          return {
+            ...item,
+            precio_unitario: 0,
+            product_nombre: 'Error al cargar producto'
+          }
+        }
+      })
+    )
+
+    return enrichedItems
   },
 
   /**

@@ -82,14 +82,14 @@
                                             <option value="">Seleccione</option>
                                             <option v-for="producto in productos" :key="producto.producto_id"
                                                 :value="producto.producto_id">
-                                                {{ producto.name }}
+                                                {{ producto.nombre }} - ${{ producto.precio || '0.00' }}
                                             </option>
                                         </select>
                                         <!-- Mostrar información del producto seleccionado -->
                                         <div v-if="item.product && item.product_nombre" class="selected-product-info">
                                             <small class="text-success">
                                                 <i class="fa-solid fa-check"></i>
-                                                {{ item.product_nombre }} - ${{ Math.abs(item.precio_unitario || 0).toFixed(2) }} c/u
+                                                {{ item.product_nombre }} - ${{ item.precio_unitario || '0.00' }} c/u
                                             </small>
                                         </div>
                                     </div>
@@ -102,9 +102,8 @@
                                 </div>
 
                                 <div class="item-field">
-                                    <label>Precio Unitario *</label>
-                                    <input type="number" v-model.number="item.precio_unitario" min="0" step="0.01"
-                                        @input="calcularSubtotal(item)" required placeholder="0.00" />
+                                    <label>Precio Unitario</label>
+                                    <input type="text" :value="'$' + (item.precio_unitario || '0.00')" readonly disabled />
                                 </div>
 
                                 <div class="item-field">
@@ -219,7 +218,6 @@ async function cargarDatos() {
         const productosRes = await productosService.getProductos({ page_size: 1000 })
         productos.value = productosRes.results || productosRes || []
         console.log('Productos cargados:', productos.value.length, productos.value)
-        console.log('Primer producto:', productos.value[0])
         
         // Sincronizar items existentes con información de productos
         sincronizarItemsConProductos()
@@ -235,11 +233,8 @@ function sincronizarItemsConProductos() {
             if (producto) {
                 item.unit = producto.unidad_id
                 item.unit_nombre = producto.unidad_nombre || 'N/A'
-                // Solo asignar precio si no hay uno establecido
-                if (!item.precio_unitario || item.precio_unitario === 0) {
-                    item.precio_unitario = Math.abs(producto.costo_unitario || 0)
-                }
-                item.product_nombre = producto.name
+                item.precio_unitario = producto.precio || 0
+                item.product_nombre = producto.nombre
                 calcularSubtotal(item)
             }
         }
@@ -277,11 +272,7 @@ function onProductChange(item) {
     if (producto) {
         item.unit = producto.unidad_id
         item.unit_nombre = producto.unidad_nombre || 'N/A'
-        // Solo asignar precio si no hay uno establecido
-        if (!item.precio_unitario || item.precio_unitario === 0) {
-            item.precio_unitario = producto.costo_unitario || 0
-        }
-        item.product_nombre = producto.nombre
+        item.precio_unitario = producto.precio || 0 // Agregar precio unitario al item
         calcularSubtotal(item)
     }
 }
@@ -775,6 +766,11 @@ async function submit() {
     .selected-product-info {
         font-size: 11px;
         padding: 3px 6px;
+    }
+}
+
+    .totales-section {
+        max-width: 100%;
     }
 }
 </style>

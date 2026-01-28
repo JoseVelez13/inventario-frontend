@@ -15,6 +15,11 @@
         <Tooltip text="Editar lote">
           <button class="btn-secondary" @click="openEditModal">Editar</button>
         </Tooltip>
+        <Tooltip text="Completar producción" v-if="lote && lote.status !== 'completed'">
+          <button class="btn-success" @click="completarProduccion">
+            <i class="fa-solid fa-check-circle"></i> Completar
+          </button>
+        </Tooltip>
       </div>
     </div>
 
@@ -39,6 +44,11 @@
             <div class="info-item">
               <span class="info-label">Producto</span>
               <span class="info-value">{{ lote.product_name || lote.product }}</span>
+              <small v-if="lote.product_code">{{ lote.product_code }}</small>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Almacén</span>
+              <span class="info-value">{{ lote.almacen_name || 'N/A' }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">Fecha Producción</span>
@@ -46,11 +56,25 @@
             </div>
             <div class="info-item">
               <span class="info-label">Cantidad Producida</span>
-              <span class="info-value"><strong>{{ formatNumber(lote.produced_quantity) }}</strong> {{ getUnitSymbol(lote.unit) }}</span>
+              <span class="info-value">
+                <strong>{{ formatQuantity(lote.produced_quantity) }}</strong> {{ lote.unit_symbol || getUnitSymbol(lote.unit) }}
+              </span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Costo de Materiales</span>
+              <span class="info-value cost-highlight">${{ formatCost(lote.costo_materiales) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Costo Unitario Producto</span>
+              <span class="info-value cost-highlight">${{ formatCost(lote.costo_unitario_producto) }}</span>
             </div>
             <div class="info-item">
               <span class="info-label">Gestor Responsable</span>
               <span class="info-value">{{ lote.production_manager_name || `Gestor ${lote.production_manager}` }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Total Materiales</span>
+              <span class="info-value"><strong>{{ lote.total_materiales || 0 }}</strong> materiales</span>
             </div>
             <div class="info-item">
               <span class="info-label">Creado</span>
@@ -60,6 +84,16 @@
               <span class="info-label">Última Actualización</span>
               <span class="info-value">{{ formatDateTime(lote.updated_at) }}</span>
             </div>
+            <div class="info-item" v-if="lote.completed_at">
+              <span class="info-label">Completado</span>
+              <span class="info-value">{{ formatDateTime(lote.completed_at) }}</span>
+            </div>
+          </div>
+
+          <!-- Observaciones -->
+          <div v-if="lote.observaciones" class="observaciones-section">
+            <h4>Observaciones</h4>
+            <p>{{ lote.observaciones }}</p>
           </div>
 
           <!-- Cambio de estado -->
@@ -72,9 +106,52 @@
                 class="btn-status"
                 :class="{ active: lote.status === status.value }"
                 @click="changeStatus(status.value)"
+                :disabled="lote.status === 'completed' && status.value !== 'completed'"
               >
                 {{ status.label }}
               </button>
+            </div>
+            <small class="help-text" v-if="lote.status === 'completed'">
+              Un lote completado no puede cambiar a otro estado
+            </small>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tarjeta de costos -->
+      <div class="costs-card">
+        <div class="card-header">
+          <h3>Resumen de Costos</h3>
+        </div>
+        <div class="card-body">
+          <div class="costs-grid">
+            <div class="cost-item">
+              <div class="cost-icon">💰</div>
+              <div class="cost-details">
+                <span class="cost-label">Costo Total Materiales</span>
+                <span class="cost-value">${{ formatCost(lote.costo_materiales) }}</span>
+              </div>
+            </div>
+            <div class="cost-item">
+              <div class="cost-icon">📊</div>
+              <div class="cost-details">
+                <span class="cost-label">Costo por Unidad</span>
+                <span class="cost-value">${{ formatCost(lote.costo_unitario_producto) }}</span>
+              </div>
+            </div>
+            <div class="cost-item">
+              <div class="cost-icon">📦</div>
+              <div class="cost-details">
+                <span class="cost-label">Unidades Producidas</span>
+                <span class="cost-value">{{ formatQuantity(lote.produced_quantity) }}</span>
+              </div>
+            </div>
+            <div class="cost-item">
+              <div class="cost-icon">🧪</div>
+              <div class="cost-details">
+                <span class="cost-label">Total de Materiales</span>
+                <span class="cost-value">{{ lote.total_materiales || 0 }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -84,11 +161,17 @@
       <div class="materials-card">
         <div class="card-header">
           <h3>Materiales Utilizados</h3>
-          <button class="btn-primary" @click="openAddMaterialModal">+ Agregar Material</button>
+          <button 
+            class="btn-primary" 
+            @click="openAddMaterialModal"
+            :disabled="lote.status === 'completed'"
+          >
+            + Agregar Material
+          </button>
         </div>
 
         <div class="card-body">
-          <div v-if="loading" class="loading-state">Cargando materiales...</div>
+          <div v-if="loadingMateriales" class="loading-state">Cargando materiales...</div>
           <div v-else-if="materiales.length === 0" class="empty-state">
             <div class="empty-icon">📦</div>
             <h4>No hay materiales registrados</h4>
@@ -102,50 +185,62 @@
                 <th>Materia Prima</th>
                 <th class="text-right">Cantidad Usada</th>
                 <th>Unidad</th>
+                <th class="text-right">Costo Unit.</th>
+                <th class="text-right">Costo Total</th>
                 <th>Stock Actual</th>
                 <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="material in materiales" :key="material.id">
-                <td>{{ material.raw_material_codigo }}</td>
-                <td>{{ material.raw_material_name }}</td>
-                <td class="text-right"><strong>{{ formatNumber(material.used_quantity) }}</strong></td>
-                <td>{{ getUnitSymbolById(material.unit) }}</td>
+                <td>{{ material.raw_material_code }}</td>
+                <td><strong>{{ material.raw_material_name }}</strong></td>
+                <td class="text-right">{{ formatQuantity(material.used_quantity) }}</td>
+                <td>{{ material.unit_symbol || getUnitSymbolById(material.unit) }}</td>
+                <td class="text-right">${{ formatCost(material.costo_unitario) }}</td>
+                <td class="text-right cost-highlight">${{ formatCost(material.costo_total) }}</td>
                 <td>
-                  <span :class="[
-                    'badge-stock',
-                    material.raw_material_stock < material.raw_material_stock_minimo ? 'low' : 'normal'
-                  ]">
-                    {{ formatNumber(material.raw_material_stock) }}
+                  <span :class="['badge-stock', getStockClass(material)]">
+                    {{ formatQuantity(material.stock_disponible) }}
                   </span>
                 </td>
                 <td class="action-buttons">
                   <Tooltip text="Editar material">
-                    <button class="btn-icon btn-edit" @click="openEditMaterialModal(material.id)" aria-label="Editar">
+                    <button 
+                      class="btn-icon btn-edit" 
+                      @click="openEditMaterialModal(material.id)" 
+                      :disabled="lote.status === 'completed'"
+                      aria-label="Editar"
+                    >
                       <i class="fa-solid fa-pen-to-square"></i>
                     </button>
                   </Tooltip>
                   <Tooltip text="Eliminar material">
-                    <button class="btn-icon btn-delete" @click="deleteMaterial(material.id)" aria-label="Eliminar">
+                    <button 
+                      class="btn-icon btn-delete" 
+                      @click="deleteMaterial(material.id)"
+                      :disabled="lote.status === 'completed'"
+                      aria-label="Eliminar"
+                    >
                       <i class="fa-solid fa-trash"></i>
                     </button>
                   </Tooltip>
                 </td>
               </tr>
             </tbody>
+            <tfoot>
+              <tr class="summary-row">
+                <td colspan="5" class="text-right"><strong>Total:</strong></td>
+                <td class="text-right"><strong>${{ formatCost(totalCostoMateriales) }}</strong></td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
           </table>
 
-          <!-- Resumen de materiales -->
-          <div v-if="materiales.length > 0" class="materials-summary">
-            <div class="summary-item">
-              <span>Total de Materiales:</span>
-              <strong>{{ materiales.length }}</strong>
-            </div>
-            <div class="summary-item">
-              <span>Materiales con Stock Bajo:</span>
-              <strong class="text-warning">{{ materialesStockBajo }}</strong>
-            </div>
+          <!-- Advertencia para lotes completados -->
+          <div v-if="lote.status === 'completed'" class="alert-info">
+            <i class="fa-solid fa-lock"></i>
+            Este lote está completado. No se pueden agregar, editar o eliminar materiales.
           </div>
         </div>
       </div>
@@ -214,6 +309,7 @@ const loteId = route.params.id
 
 // Estado
 const loading = ref(false)
+const loadingMateriales = ref(false)
 const lote = ref(null)
 const materiales = ref([])
 const unidades = ref([])
@@ -234,10 +330,10 @@ const confirmDialog = ref({})
 const notification = ref({ show: false, message: '', type: 'success' })
 
 // Computed
-const materialesStockBajo = computed(() => {
-  return materiales.value.filter(
-    m => m.raw_material_stock < m.raw_material_stock_minimo
-  ).length
+const totalCostoMateriales = computed(() => {
+  return materiales.value.reduce((sum, m) => {
+    return sum + parseFloat(m.costo_total || 0)
+  }, 0)
 })
 
 // Métodos de utilidad
@@ -260,6 +356,14 @@ const getUnitSymbolById = (unitId) => {
   return getUnitSymbol(unitId)
 }
 
+const getStockClass = (material) => {
+  const stock = parseFloat(material.stock_disponible || 0)
+  
+  if (stock <= 0) return 'stock-zero'
+  if (stock < 10) return 'stock-low'
+  return 'stock-ok'
+}
+
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   return new Date(dateString).toLocaleDateString('es-ES')
@@ -271,7 +375,12 @@ const formatDateTime = (dateString) => {
   return date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES')
 }
 
-const formatNumber = (num) => {
+const formatQuantity = (num) => {
+  if (!num) return '0.0000'
+  return parseFloat(num).toFixed(4)
+}
+
+const formatCost = (num) => {
   if (!num) return '0.00'
   return parseFloat(num).toFixed(2)
 }
@@ -292,11 +401,14 @@ const loadLote = async () => {
 
 const loadMateriales = async () => {
   try {
+    loadingMateriales.value = true
     const data = await loteProduccionService.getMaterialesByLote(loteId)
     materiales.value = Array.isArray(data) ? data : data.results || []
   } catch (err) {
     console.error('Error cargando materiales:', err)
     showNotification('Error al cargar los materiales', 'error')
+  } finally {
+    loadingMateriales.value = false
   }
 }
 
@@ -336,10 +448,16 @@ const handleLoteSaved = () => {
 
 const handleMaterialSaved = () => {
   loadMateriales()
+  loadLote() // Recargar para actualizar costos
   showNotification(selectedMaterialId.value ? 'Material actualizado' : 'Material agregado', 'success')
 }
 
 const changeStatus = (newStatus) => {
+  if (lote.value.status === 'completed' && newStatus !== 'completed') {
+    showNotification('Un lote completado no puede cambiar a otro estado', 'error')
+    return
+  }
+
   confirmDialog.value = {
     title: 'Cambiar Estado',
     message: `¿Cambiar el estado a ${getStatusLabel(newStatus)}?`,
@@ -359,6 +477,41 @@ const changeStatus = (newStatus) => {
   }
 }
 
+const completarProduccion = () => {
+  if (materiales.value.length === 0) {
+    showNotification('Debes agregar al menos un material antes de completar', 'error')
+    return
+  }
+
+  confirmDialog.value = {
+    title: 'Completar Producción',
+    message: `¿Estás seguro de completar este lote? Esta acción:
+    
+• Descontará las materias primas del inventario
+• Sumará el producto terminado al inventario
+• Registrará movimientos en Kardex
+• No podrá revertirse`,
+    confirmText: 'Completar',
+    cancelText: 'Cancelar',
+    onConfirm: async () => {
+      try {
+        loading.value = true
+        await loteProduccionService.completarProduccion(loteId)
+        loadLote()
+        loadMateriales()
+        showNotification('Lote completado exitosamente', 'success')
+      } catch (err) {
+        console.error('Error completando lote:', err)
+        const errorMsg = err.response?.data?.detail || err.response?.data?.error || err.message
+        showNotification(`Error: ${errorMsg}`, 'error')
+      } finally {
+        loading.value = false
+      }
+      confirmDialog.value = {}
+    }
+  }
+}
+
 const deleteMaterial = (materialId) => {
   confirmDialog.value = {
     title: 'Eliminar Material',
@@ -369,6 +522,7 @@ const deleteMaterial = (materialId) => {
       try {
         await loteProduccionService.deleteMaterialFromLote(loteId, materialId)
         loadMateriales()
+        loadLote() // Recargar para actualizar costos
         showNotification('Material eliminado correctamente', 'success')
       } catch (err) {
         console.error('Error eliminando material:', err)
@@ -404,7 +558,7 @@ onMounted(() => {
   padding: 20px 32px;
   margin: 24px auto 20px;
   width: 95%;
-  max-width: 1200px;
+  max-width: 1400px;
   background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
@@ -414,7 +568,97 @@ onMounted(() => {
 .topbar-title {
   font-size: 24px;
   font-weight: 600;
-  color: #374151;
+  color: #6B7280;
+}
+
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-edit:hover:not(:disabled) { background: #FEF3C7; color: #92400E; }
+.btn-delete:hover:not(:disabled) { background: #FEE2E2; color: #991B1B; }
+
+.summary-row {
+  background: #F9FAFB;
+  font-weight: 600;
+  border-top: 2px solid #E5E7EB;
+}
+
+.alert-info {
+  background: #EFF6FF;
+  border: 1px solid #93C5FD;
+  border-radius: 6px;
+  padding: 12px;
+  color: #1E40AF;
+  font-size: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #6B7280;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 40px;
+  color: #6B7280;
+}
+
+.alert-error {
+  background: #FEE2E2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.help-text {
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+  .content-grid {
+    width: 100%;
+    padding: 0 16px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .costs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .table {
+    font-size: 12px;
+  }
+
+  .table th,
+  .table td {
+    padding: 8px 12px;
+  }
 }
 
 .topbar-actions {
@@ -422,7 +666,7 @@ onMounted(() => {
   gap: 12px;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary, .btn-secondary, .btn-success {
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
@@ -430,6 +674,9 @@ onMounted(() => {
   font-weight: 500;
   font-size: 14px;
   transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-primary {
@@ -437,8 +684,14 @@ onMounted(() => {
   color: white;
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: #2563EB;
+}
+
+.btn-primary:disabled {
+  background: #9CA3AF;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .btn-secondary {
@@ -450,16 +703,26 @@ onMounted(() => {
   background: #D1D5DB;
 }
 
+.btn-success {
+  background: #10B981;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #059669;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
   margin: 0 auto 40px;
   width: 95%;
-  max-width: 1200px;
+  max-width: 1400px;
 }
 
 .info-card,
+.costs-card,
 .materials-card {
   background: white;
   border-radius: 12px;
@@ -504,7 +767,7 @@ onMounted(() => {
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
   margin-bottom: 24px;
 }
@@ -528,6 +791,75 @@ onMounted(() => {
   color: #374151;
 }
 
+.info-value small {
+  display: block;
+  font-size: 13px;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+.cost-highlight {
+  color: #059669;
+  font-weight: 600;
+}
+
+.observaciones-section {
+  padding-top: 20px;
+  border-top: 1px solid #E5E7EB;
+  margin-top: 20px;
+}
+
+.observaciones-section h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.observaciones-section p {
+  color: #6B7280;
+  line-height: 1.6;
+}
+
+.costs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.cost-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #F9FAFB;
+  border-radius: 8px;
+  border: 1px solid #E5E7EB;
+}
+
+.cost-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.cost-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cost-label {
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.cost-value {
+  font-size: 20px;
+  color: #374151;
+  font-weight: 600;
+}
+
 .status-changer {
   padding-top: 20px;
   border-top: 1px solid #E5E7EB;
@@ -544,6 +876,7 @@ onMounted(() => {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
 .btn-status {
@@ -557,7 +890,7 @@ onMounted(() => {
   transition: all 0.15s ease;
 }
 
-.btn-status:hover {
+.btn-status:hover:not(:disabled) {
   border-color: #3B82F6;
   color: #3B82F6;
 }
@@ -566,6 +899,11 @@ onMounted(() => {
   background: #3B82F6;
   border-color: #3B82F6;
   color: white;
+}
+
+.btn-status:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .table {
@@ -601,6 +939,10 @@ onMounted(() => {
   color: #374151;
 }
 
+.text-right {
+  text-align: right;
+}
+
 .badge-stock {
   display: inline-block;
   padding: 4px 10px;
@@ -609,15 +951,9 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.badge-stock.normal {
-  background: #DCFCE7;
-  color: #166534;
-}
-
-.badge-stock.low {
-  background: #FEE2E2;
-  color: #991B1B;
-}
+.stock-ok { background: #DCFCE7; color: #166534; }
+.stock-low { background: #FEF3C7; color: #92400E; }
+.stock-zero { background: #FEE2E2; color: #991B1B; }
 
 .action-buttons {
   display: flex;
@@ -689,27 +1025,5 @@ onMounted(() => {
   padding: 12px 16px;
   border-radius: 8px;
   margin-bottom: 16px;
-}
-
-@media (max-width: 768px) {
-  .content-grid {
-    width: 100%;
-    padding: 0 16px;
-  }
-
-  .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-  }
-
-  .table {
-    font-size: 12px;
-  }
-
-  .table th,
-  .table td {
-    padding: 8px 12px;
-  }
 }
 </style>

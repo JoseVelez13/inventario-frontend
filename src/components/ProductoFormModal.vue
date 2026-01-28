@@ -63,6 +63,27 @@
                 <FormErrorMessage :error="errors.stock" />
               </div>
 
+              <div class="form-field">
+                <label for="stock_min">Stock Mínimo</label>
+                <input id="stock_min" v-model.number="form.stock_min" type="number" step="1" min="0" placeholder="0"
+                  @blur="validateField('stock_min')" :class="{ 'input-error': errors.stock_min }" />
+                <FormErrorMessage :error="errors.stock_min" />
+              </div>
+
+              <div class="form-field">
+                <label for="stock_max">Stock Máximo</label>
+                <input id="stock_max" v-model.number="form.stock_max" type="number" step="1" min="0" placeholder="Opcional"
+                  @blur="validateField('stock_max')" :class="{ 'input-error': errors.stock_max }" />
+                <FormErrorMessage :error="errors.stock_max" />
+              </div>
+
+              <div class="form-field">
+                <label for="costo_unitario">Costo Unitario</label>
+                <input id="costo_unitario" v-model.number="form.costo_unitario" type="number" step="0.01" min="0" placeholder="0.00"
+                  @blur="validateField('costo_unitario')" :class="{ 'input-error': errors.costo_unitario }" />
+                <FormErrorMessage :error="errors.costo_unitario" />
+              </div>
+
               <div class="form-field full">
                 <label for="description">Descripción</label>
                 <textarea id="description" v-model="form.description" placeholder="Descripción del producto"
@@ -110,7 +131,10 @@ const form = reactive({
   categoria_id: null,
   unit: null,
   weight: 0.0,
-  stock: 0
+  stock: 0,
+  stock_min: 0,
+  stock_max: null,
+  costo_unitario: 0
 })
 
 watch(() => props.show, (v) => { visible.value = v })
@@ -129,6 +153,9 @@ function resetForm() {
   form.unit = null
   form.weight = 0.0
   form.stock = 0
+  form.stock_min = 0
+  form.stock_max = null
+  form.costo_unitario = 0
   isEdit.value = false
 }
 
@@ -175,6 +202,9 @@ async function loadProducto(id) {
     form.unit = data.unit || null
     form.weight = data.weight || 0.0
     form.stock = data.stock || 0
+    form.stock_min = data.stock_min || 0
+    form.stock_max = data.stock_max || null
+    form.costo_unitario = data.costo_unitario || 0
     isEdit.value = true
   } catch (e) {
     console.error('Error cargando producto', e)
@@ -204,6 +234,20 @@ function validateField(fieldName) {
     ],
     stock: [
       (value) => validators.minValue(value, 0, 'Stock')
+    ],
+    stock_min: [
+      (value) => validators.minValue(value, 0, 'Stock mínimo')
+    ],
+    stock_max: [
+      (value) => {
+        if (value && form.stock_min && value < form.stock_min) {
+          return 'Stock máximo debe ser mayor al mínimo'
+        }
+        return null
+      }
+    ],
+    costo_unitario: [
+      (value) => validators.minValue(value, 0, 'Costo unitario')
     ]
   }
 
@@ -249,7 +293,13 @@ async function submit() {
       categoria_id: parseInt(form.categoria_id),
       unit: form.unit || 1,
       weight: form.weight || 0,
-      stock: form.stock || 0
+      stock: form.stock || 0,
+      stock_min: form.stock_min || 0,
+      costo_unitario: form.costo_unitario || 0
+    }
+
+    if (form.stock_max !== null && form.stock_max !== '') {
+      payload.stock_max = parseInt(form.stock_max)
     }
 
     if (props.editId) {

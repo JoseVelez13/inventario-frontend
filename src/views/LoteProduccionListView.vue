@@ -11,6 +11,9 @@
         <Tooltip text="Recargar lista de lotes">
           <button class="btn-secondary" @click="reload">Refrescar</button>
         </Tooltip>
+        <Tooltip text="Exportar lotes a archivo">
+          <button class="btn-secondary" @click="openExport">📤 Exportar</button>
+        </Tooltip>
         <Tooltip text="Crear un nuevo lote de producción">
           <button class="btn-primary" @click="openCreateModal">Nuevo Lote</button>
         </Tooltip>
@@ -23,7 +26,7 @@
             v-model="searchInput" 
             @input="debouncedSearch" 
             type="text" 
-            placeholder="Buscar por código, producto o estado..." 
+            placeholder="Buscar por código, producto, almacén o estado..." 
             class="search-input"
           />
           <button class="btn-secondary" @click="clearSearch">Limpiar</button>
@@ -49,9 +52,12 @@
             <tr>
               <th>Código Lote</th>
               <th>Producto</th>
+              <th>Almacén</th>
               <th>Fecha Producción</th>
               <th class="text-right">Cantidad</th>
-              <th>Unidad</th>
+              <th class="text-right">Costo Mat.</th>
+              <th class="text-right">Costo Unit.</th>
+              <th class="text-center">Materiales</th>
               <th>Estado</th>
               <th>Gestor</th>
               <th>Acciones</th>
@@ -64,10 +70,29 @@
                   <span class="item-codigo">{{ lote.batch_code }}</span>
                 </div>
               </td>
-              <td>{{ lote.product_name || lote.product }}</td>
+              <td>
+                <div class="product-info">
+                  <strong>{{ lote.product_name || lote.product }}</strong>
+                  <small v-if="lote.product_code">{{ lote.product_code }}</small>
+                </div>
+              </td>
+              <td>
+                <span class="almacen-badge">{{ lote.almacen_name || 'N/A' }}</span>
+              </td>
               <td>{{ formatDate(lote.production_date) }}</td>
-              <td class="text-right"><strong>{{ formatNumber(lote.produced_quantity) }}</strong></td>
-              <td>{{ getUnitSymbol(lote.unit) }}</td>
+              <td class="text-right">
+                <strong>{{ formatQuantity(lote.produced_quantity) }}</strong>
+                <small>{{ lote.unit_symbol || getUnitSymbol(lote.unit) }}</small>
+              </td>
+              <td class="text-right">
+                <span class="cost-value">${{ formatCost(lote.costo_materiales) }}</span>
+              </td>
+              <td class="text-right">
+                <span class="cost-value">${{ formatCost(lote.costo_unitario_producto) }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge-count">{{ lote.total_materiales || 0 }}</span>
+              </td>
               <td>
                 <span :class="['badge', `badge-${lote.status}`]">
                   {{ getStatusLabel(lote.status) }}
@@ -93,6 +118,15 @@
               </td>
             </tr>
           </tbody>
+          <tfoot v-if="filtered.length > 0">
+            <tr class="summary-row">
+              <td colspan="5" class="text-right"><strong>Totales:</strong></td>
+              <td class="text-right">
+                <strong>${{ formatCost(totalCostoMateriales) }}</strong>
+              </td>
+              <td colspan="5"></td>
+            </tr>
+          </tfoot>
         </table>
 
         <!-- Paginación -->
@@ -155,19 +189,34 @@
       :type="notification.type"
       @close="notification.show = false"
     />
+
+    <!-- Modal de Import/Export -->
+    <ImportExportDialog
+      :visible="importExportDialog.show"
+      :mode="importExportDialog.mode"
+      :columns="exportColumns"
+      :data="filtered"
+      :filename="'lotes_produccion'"
+      entity-name="Lotes"
+      @close="importExportDialog.show = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import HeaderGlobal from '../components/HeaderGlobal.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import Tooltip from '../components/Tooltip.vue'
 import LoteFormModal from '../components/LoteFormModal.vue'
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import Notification from '../components/Notification.vue'
+import ImportExportDialog from '../components/ImportExportDialog.vue'
 import loteProduccionService from '../services/loteProduccionService'
 import '../assets/styles/LotesProduccion.css'
+
+const router = useRouter()
 
 // Estado
 const loading = ref(false)
@@ -194,6 +243,20 @@ const estatuses = [
 const confirmDialog = ref({})
 const notification = ref({ show: false, message: '', type: 'success' })
 
+// Import/Export
+const importExportDialog = ref({ show: false, mode: 'export' })
+const exportColumns = ref([
+  { key: 'codigo_lote', label: 'Código Lote' },
+  { key: 'producto_nombre', label: 'Producto' },
+  { key: 'almacen_nombre', label: 'Almacén' },
+  { key: 'fecha_produccion', label: 'Fecha Producción' },
+  { key: 'cantidad', label: 'Cantidad' },
+  { key: 'costo_materiales', label: 'Costo Materiales' },
+  { key: 'costo_unitario', label: 'Costo Unitario' },
+  { key: 'estado', label: 'Estado' },
+  { key: 'notas', label: 'Notas' }
+])
+
 // Métodos de filtrado
 const filtered = computed(() => {
   let result = lotes.value
@@ -209,6 +272,7 @@ const filtered = computed(() => {
     result = result.filter(l =>
       l.batch_code?.toLowerCase().includes(searchLower) ||
       l.product_name?.toLowerCase().includes(searchLower) ||
+      l.almacen_name?.toLowerCase().includes(searchLower) ||
       l.production_manager_name?.toLowerCase().includes(searchLower)
     )
   }
@@ -220,6 +284,12 @@ const activeChips = computed(() => {
   const chips = []
   if (search.value) chips.push({ key: 'search', label: `Buscar: "${search.value}"` })
   return chips
+})
+
+const totalCostoMateriales = computed(() => {
+  return filtered.value.reduce((sum, lote) => {
+    return sum + parseFloat(lote.costo_materiales || 0)
+  }, 0)
 })
 
 // Paginación
@@ -296,21 +366,27 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
-const countByStatus = (status) => {
-  return lotes.value.filter(l => l.status === status).length
-}
-
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   return new Date(dateString).toLocaleDateString('es-ES')
 }
 
-const formatNumber = (num) => {
-  if (!num) return '0'
-  return Math.round(parseFloat(num)).toLocaleString('es-ES')
+const formatQuantity = (num) => {
+  if (!num) return '0.0000'
+  return parseFloat(num).toFixed(4)
+}
+
+const formatCost = (num) => {
+  if (!num) return '0.00'
+  return parseFloat(num).toFixed(2)
 }
 
 // Acciones de CRUD
+const openExport = () => {
+  importExportDialog.value.show = true
+  importExportDialog.value.mode = 'export'
+}
+
 const openCreateModal = () => {
   selectedLoteId.value = null
   showModal.value = true
@@ -332,16 +408,7 @@ const handleSaved = () => {
 }
 
 const viewLote = (lote) => {
-  const details = `
-    ID: ${lote.id}
-    Código Lote: ${lote.batch_code}
-    Producto: ${lote.product_name || lote.product}
-    Fecha: ${formatDate(lote.production_date)}
-    Cantidad: ${formatNumber(lote.produced_quantity)} ${getUnitSymbol(lote.unit)}
-    Estado: ${getStatusLabel(lote.status)}
-    Gestor: ${lote.production_manager_name || `Gestor ${lote.production_manager}`}
-  `
-  alert(details)
+  router.push(`/lotes-produccion/${lote.id}`)
 }
 
 const deleteLote = (id) => {
@@ -367,17 +434,14 @@ const deleteLote = (id) => {
 // Utilidades de búsqueda y paginación
 const debouncedSearch = (() => {
   let timeout
-  return (callback) => {
+  return () => {
     clearTimeout(timeout)
     timeout = setTimeout(() => {
-      callback()
+      search.value = searchInput.value
+      currentPage.value = 1
     }, 300)
   }
 })()
-
-const onSearch = () => {
-  currentPage.value = 1
-}
 
 const clearSearch = () => {
   search.value = ''
@@ -423,6 +487,9 @@ onMounted(() => {
 .text-right {
   text-align: right;
 }
+.text-center {
+  text-align: center;
+}
 .filter-chips {
   margin: 8px 0 12px 0;
 }
@@ -454,13 +521,45 @@ onMounted(() => {
 .chip-remove:hover {
   color: #d32f2f;
 }
-.filter-select {
-  margin-left: 10px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  border: 1px solid #cfd8dc;
-  background: #f8fafc;
-  color: #2a3b4d;
-  font-size: 1em;
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.product-info strong {
+  color: #374151;
+}
+.product-info small {
+  color: #6B7280;
+  font-size: 12px;
+}
+.almacen-badge {
+  background: #DBEAFE;
+  color: #1E40AF;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cost-value {
+  color: #059669;
+  font-weight: 600;
+}
+.badge-count {
+  background: #F3F4F6;
+  color: #374151;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.summary-row {
+  background: #F9FAFB;
+  font-weight: 600;
+}
+.summary-row td {
+  border-top: 2px solid #E5E7EB;
+  padding: 16px;
 }
 </style>

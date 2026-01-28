@@ -77,7 +77,8 @@ class RecepcionesService {
    * @returns {Promise} Lista de recepciones
    */
   async getRecepcionesItem(params = {}) {
-    const response = await api.get('/recepciones-item/', { params })
+    // Usar el mismo endpoint que recepciones de material, el backend debería filtrar por tipo
+    const response = await api.get('/recepciones/', { params: { ...params, tipo: 'item' } })
     return response.data
   }
 
@@ -87,7 +88,7 @@ class RecepcionesService {
    * @returns {Promise} Datos de la recepción
    */
   async getRecepcionItem(id) {
-    const response = await api.get(`/recepciones-item/${id}/`)
+    const response = await api.get(`/recepciones/${id}/`)
     return response.data
   }
 
@@ -97,7 +98,7 @@ class RecepcionesService {
    * @returns {Promise} Recepción creada
    */
   async createRecepcionItem(data) {
-    const response = await api.post('/recepciones-item/', data)
+    const response = await api.post('/recepciones/', { ...data, tipo_recepcion: 'item' })
     return response.data
   }
 
@@ -108,7 +109,7 @@ class RecepcionesService {
    * @returns {Promise} Recepción actualizada
    */
   async updateRecepcionItem(id, data) {
-    const response = await api.put(`/recepciones-item/${id}/`, data)
+    const response = await api.put(`/recepciones/${id}/`, data)
     return response.data
   }
 
@@ -118,7 +119,7 @@ class RecepcionesService {
    * @returns {Promise}
    */
   async deleteRecepcionItem(id) {
-    const response = await api.delete(`/recepciones-item/${id}/`)
+    const response = await api.delete(`/recepciones/${id}/`)
     return response.data
   }
 }

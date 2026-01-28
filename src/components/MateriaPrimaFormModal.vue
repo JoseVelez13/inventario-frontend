@@ -68,11 +68,25 @@
               </div>
 
               <div class="form-field">
+                <label for="stock">Stock Actual</label>
+                <input id="stock" v-model="form.stock" type="number" step="1" min="0" placeholder="0"
+                  @blur="validateField('stock')" :class="{ 'input-error': errors.stock }" />
+                <FormErrorMessage :error="errors.stock" />
+              </div>
+
+              <div class="form-field">
                 <label for="stock_maximo">Stock Máximo</label>
                 <input id="stock_maximo" v-model.number="form.stock_maximo" type="number" step="1" min="0"
                   placeholder="Opcional" @blur="validateField('stock_maximo')"
                   :class="{ 'input-error': errors.stock_maximo }" />
                 <FormErrorMessage :error="errors.stock_maximo" />
+              </div>
+
+              <div class="form-field">
+                <label for="costo_promedio">Costo Promedio</label>
+                <input id="costo_promedio" v-model.number="form.costo_promedio" type="number" step="0.01" min="0" placeholder="0.00"
+                  @blur="validateField('costo_promedio')" :class="{ 'input-error': errors.costo_promedio }" />
+                <FormErrorMessage :error="errors.costo_promedio" />
               </div>
 
               <div class="form-field full">
@@ -123,7 +137,9 @@ const form = reactive({
   unidad_id: '',
   densidad: null,
   stock_minimo: 0,
-  stock_maximo: null
+  stock: 0,
+  stock_maximo: null,
+  costo_promedio: 0
 })
 
 watch(() => props.show, (v) => {
@@ -189,7 +205,9 @@ function resetForm() {
   form.unidad_id = ''
   form.densidad = null
   form.stock_minimo = 0
+  form.stock = 0
   form.stock_maximo = null
+  form.costo_promedio = 0
   isEdit.value = false
 }
 
@@ -197,6 +215,7 @@ async function loadMateriaPrima(id) {
   try {
     loading.value = true
     const data = await materiasPrimasService.getMateriaPrima(id)
+    console.log('Datos cargados de backend:', data)
     form.codigo = data.codigo
     form.nombre = data.nombre
     form.descripcion = data.descripcion || ''
@@ -204,7 +223,10 @@ async function loadMateriaPrima(id) {
     form.unidad_id = data.unidad_id || data.unidad
     form.densidad = data.densidad || null
     form.stock_minimo = data.stock_minimo || 0
+    form.stock = data.stock || 0
     form.stock_maximo = data.stock_maximo || null
+    form.costo_promedio = data.costo_promedio || 0
+    console.log('Stock asignado al form:', form.stock)
     isEdit.value = true
   } catch (e) {
     console.error('Error al cargar materia prima', e)
@@ -236,6 +258,9 @@ function validateField(fieldName) {
       (value) => validators.required(value, 'Stock mínimo'),
       (value) => validators.minValue(value, 0, 'Stock mínimo')
     ],
+    stock: [
+      (value) => validators.minValue(value, 0, 'Stock')
+    ],
     stock_maximo: [
       (value) => {
         if (value && form.stock_minimo && value < form.stock_minimo) {
@@ -243,6 +268,9 @@ function validateField(fieldName) {
         }
         return null
       }
+    ],
+    costo_promedio: [
+      (value) => validators.minValue(value, 0, 'Costo promedio')
     ]
   }
 
@@ -271,6 +299,9 @@ async function submit() {
       (value) => validators.required(value, 'Stock mínimo'),
       (value) => validators.minValue(value, 0, 'Stock mínimo')
     ],
+    stock: [
+      (value) => validators.minValue(value, 0, 'Stock')
+    ],
     stock_maximo: [
       (value) => {
         if (value && form.stock_minimo && value < form.stock_minimo) {
@@ -278,6 +309,9 @@ async function submit() {
         }
         return null
       }
+    ],
+    costo_promedio: [
+      (value) => validators.minValue(value, 0, 'Costo promedio')
     ]
   }
 
@@ -294,8 +328,12 @@ async function submit() {
       descripcion: form.descripcion || '',
       categoria_id: parseInt(form.categoria_id),
       unidad_id: parseInt(form.unidad_id),
-      stock_minimo: parseInt(form.stock_minimo) || 0
+      stock_minimo: parseInt(form.stock_minimo) || 0,
+      stock: parseInt(form.stock) || 0,
+      costo_promedio: form.costo_promedio || 0
     }
+
+    console.log('Payload a enviar:', payload)
 
     if (form.densidad !== null && form.densidad !== '') {
       payload.densidad = parseFloat(form.densidad)

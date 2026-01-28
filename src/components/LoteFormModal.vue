@@ -55,12 +55,12 @@
               id="produced_quantity" 
               v-model.number="form.produced_quantity" 
               type="number"
-              min="1"
-              step="1"
-              placeholder="100"
+              min="0.0001"
+              step="0.0001"
+              placeholder="100.00"
               required
             />
-            <small class="help-text">Cantidad total producida (unidades enteras)</small>
+            <small class="help-text">Cantidad producida (hasta 4 decimales)</small>
           </div>
 
           <!-- Unidad -->
@@ -73,6 +73,18 @@
               </option>
             </select>
             <small class="help-text">Unidad de medida del producto</small>
+          </div>
+
+          <!-- NUEVO: Almacén -->
+          <div class="form-field">
+            <label for="almacen">Almacén *</label>
+            <select v-model.number="form.almacen" id="almacen" required>
+              <option value="">-- Selecciona un almacén --</option>
+              <option v-for="alm in almacenes" :key="alm.id" :value="alm.id">
+                {{ alm.nombre }} ({{ alm.codigo }})
+              </option>
+            </select>
+            <small class="help-text">Almacén donde se realiza la producción</small>
           </div>
 
           <!-- Estado -->
@@ -99,7 +111,7 @@
             <small class="help-text">Usuario responsable de este lote</small>
           </div>
 
-          <!-- Observaciones (opcional) -->
+          <!-- NUEVO: Observaciones -->
           <div class="form-field full">
             <label for="observaciones">Observaciones</label>
             <textarea 
@@ -111,9 +123,27 @@
             <small class="help-text">Información adicional (opcional)</small>
           </div>
 
+          <!-- Info de costos (solo en edición) -->
+          <div v-if="isEdit && loteData" class="form-field full">
+            <div class="cost-summary">
+              <div class="cost-item">
+                <span class="cost-label">Costo de Materiales:</span>
+                <span class="cost-value">${{ formatNumber(loteData.costo_materiales) }}</span>
+              </div>
+              <div class="cost-item">
+                <span class="cost-label">Costo Unitario Producto:</span>
+                <span class="cost-value">${{ formatNumber(loteData.costo_unitario_producto) }}</span>
+              </div>
+              <div class="cost-item">
+                <span class="cost-label">Total Materiales:</span>
+                <span class="cost-value">{{ loteData.total_materiales || 0 }} materiales</span>
+              </div>
+            </div>
+          </div>
+
           <div v-if="isEdit" class="alert-info full">
             <i class="fa-solid fa-info-circle"></i>
-            Editando lote existente. Los cambios se reflejarán inmediatamente.
+            Los costos se calculan automáticamente según los materiales usados.
           </div>
         </form>
       </div>
@@ -139,6 +169,7 @@ import loteProduccionService from '../services/loteProduccionService'
 import productosService from '../services/productosService'
 import unidadesService from '../services/unidadesService'
 import usuariosService from '../services/usuariosService'
+import almacenesService from '../services/almacenesService'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -153,6 +184,8 @@ const loading = ref(false)
 const productos = ref([])
 const unidades = ref([])
 const users = ref([])
+const almacenes = ref([])
+const loteData = ref(null)
 
 const form = reactive({
   batch_code: '',
@@ -160,6 +193,7 @@ const form = reactive({
   production_date: new Date().toISOString().split('T')[0],
   produced_quantity: 0,
   unit: '',
+  almacen: '',
   status: 'pending',
   production_manager: '',
   observaciones: ''
@@ -174,10 +208,12 @@ function resetForm() {
   form.production_date = new Date().toISOString().split('T')[0]
   form.produced_quantity = 0
   form.unit = ''
+  form.almacen = ''
   form.status = 'pending'
   form.production_manager = ''
   form.observaciones = ''
   isEdit.value = false
+  loteData.value = null
 }
 
 async function loadProductos() {
@@ -207,14 +243,25 @@ async function loadUsers() {
   }
 }
 
+async function loadAlmacenes() {
+  try {
+    const data = await almacenesService.getAlmacenes()
+    almacenes.value = Array.isArray(data) ? data : data.results || []
+  } catch (err) {
+    console.error('Error cargando almacenes:', err)
+  }
+}
+
 async function loadLote(id) {
   try {
     const data = await loteProduccionService.getLoteProduccion(id)
+    loteData.value = data
     form.batch_code = data.batch_code
     form.product = data.product
     form.production_date = data.production_date
     form.produced_quantity = data.produced_quantity
     form.unit = data.unit
+    form.almacen = data.almacen
     form.status = data.status
     form.production_manager = data.production_manager
     form.observaciones = data.observaciones || ''
@@ -256,10 +303,16 @@ function closeIfOutside(e) {
   }
 }
 
+function formatNumber(num) {
+  if (!num) return '0.00'
+  return parseFloat(num).toFixed(2)
+}
+
 onMounted(() => {
   loadProductos()
   loadUnidades()
   loadUsers()
+  loadAlmacenes()
 })
 </script>
 
@@ -279,7 +332,7 @@ onMounted(() => {
   background: white;
   border-radius: 8px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  max-width: 600px;
+  max-width: 700px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
@@ -376,6 +429,34 @@ onMounted(() => {
 .help-text {
   font-size: 12px;
   color: #6B7280;
+}
+
+.cost-summary {
+  background: #F0F9FF;
+  border: 1px solid #BAE6FD;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cost-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cost-label {
+  font-size: 14px;
+  color: #0369A1;
+  font-weight: 500;
+}
+
+.cost-value {
+  font-size: 16px;
+  color: #075985;
+  font-weight: 600;
 }
 
 .alert-info {

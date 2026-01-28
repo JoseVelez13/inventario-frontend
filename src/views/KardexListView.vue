@@ -162,6 +162,19 @@
       :type="notification.type" 
       @close="notification.show = false"
     />
+
+    <!-- Import/Export Dialog -->
+    <ImportExportDialog
+      v-if="importExportDialog.show"
+      :show="importExportDialog.show"
+      :mode="importExportDialog.mode"
+      :data="filteredMovimientos"
+      :columns="exportColumns"
+      :item-count="totalMovimientos"
+      entity-name="Kardex"
+      :api-endpoint="'http://localhost:8000/api/kardex/'"
+      @close="importExportDialog.show = false"
+    />
   </div>
 </template>
 
@@ -171,6 +184,7 @@ import HeaderGlobal from '../components/HeaderGlobal.vue'
 import Breadcrumbs from '../components/Breadcrumbs.vue'
 import Notification from '../components/Notification.vue'
 import Tooltip from '../components/Tooltip.vue'
+import ImportExportDialog from '../components/ImportExportDialog.vue'
 import kardexService from '../services/kardexService'
 import almacenesService from '../services/almacenesService'
 import '../assets/styles/Dashboard.css'
@@ -198,6 +212,26 @@ const notification = ref({
   message: '',
   type: 'success'
 })
+
+// Import/Export Dialog
+const importExportDialog = ref({
+  show: false,
+  mode: 'export'
+})
+
+// Export columns
+const exportColumns = ref([
+  { key: 'id', label: 'ID' },
+  { key: 'fecha_movimiento', label: 'Fecha' },
+  { key: 'tipo_movimiento', label: 'Tipo' },
+  { key: 'motivo', label: 'Motivo' },
+  { key: 'almacen_nombre', label: 'Almacén' },
+  { key: 'producto_codigo', label: 'Código Producto' },
+  { key: 'producto_nombre', label: 'Producto' },
+  { key: 'cantidad', label: 'Cantidad' },
+  { key: 'stock_anterior', label: 'Stock Anterior' },
+  { key: 'stock_actual', label: 'Stock Actual' }
+])
 
 // Computed
 const totalMovimientos = computed(() => movimientos.value.length)
@@ -283,7 +317,7 @@ const goToPage = (page) => {
 }
 
 const openExport = () => {
-  showNotification('Funcionalidad de exportación en desarrollo', 'info')
+  importExportDialog.value = { show: true, mode: 'export' }
 }
 
 const showNotification = (message, type = 'success') => {

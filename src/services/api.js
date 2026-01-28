@@ -2,7 +2,7 @@ import axios from 'axios'
 
 // Configuración base del API
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-const API_TIMEOUT = import.meta.env.VITE_API_TIMEOUT || 10000
+const API_TIMEOUT = import.meta.env.VITE_API_TIMEOUT || 30000 // Aumentado de 10000 a 30000 ms
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -15,6 +15,7 @@ const api = axios.create({
 // Interceptor para añadir token JWT automáticamente
 api.interceptors.request.use(
   (config) => {
+    console.log('API Request:', config.method.toUpperCase(), config.url, config.params || '')
     try {
       const token = localStorage.getItem('access_token')
       if (token) {
@@ -26,14 +27,19 @@ api.interceptors.request.use(
     return config
   },
   (error) => {
+    console.error('API Request Error:', error)
     return Promise.reject(error)
   }
 )
 
 // Interceptor para manejar respuestas y refresh token automático
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('API Response:', response.status, response.config.method.toUpperCase(), response.config.url)
+    return response
+  },
   async (error) => {
+    console.error('API Response Error:', error.response?.status || 'Network Error', error.config?.method.toUpperCase(), error.config?.url, error.message)
     const originalRequest = error.config
 
     // Si hay error 401 y no hemos intentado refresh aún
@@ -46,6 +52,7 @@ api.interceptors.response.use(
           throw new Error('No refresh token available')
         }
 
+        console.log('Attempting token refresh...')
         // Intentar refrescar el token
         const response = await axios.post(
           `${API_BASE_URL}/auth/refresh/`,

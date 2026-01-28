@@ -26,8 +26,11 @@ const routes = [
   {
     path: '/',
     name: 'Inicio',
-    component: DashboardView,
-    meta: { title: 'Dashboard - Sistema Innoquim', requiresAuth: true }
+    component: LoginView,
+    meta: {
+      title: 'Iniciar Sesión - Sistema Innoquim',
+      hideForAuth: true
+    }
   },
   {
     path: '/login',

@@ -57,92 +57,94 @@
           <h3>No hay materias primas registradas</h3>
           <p>Comienza agregando tu primera materia prima</p>
         </div>
-        <table v-else class="table">
-          <thead>
-            <tr>
-              <th class="sortable-header" @click="toggleSort('materia_prima_id')">
-                <div class="header-content">
-                  <span>ID</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'materia_prima_id' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'materia_prima_id' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+        <div v-else class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 60px;" class="sortable-header" @click="toggleSort('materia_prima_id')">
+                  <div class="header-content">
+                    <span>ID</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'materia_prima_id' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'materia_prima_id' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('codigo')">
-                <div class="header-content">
-                  <span>Código</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'codigo' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'codigo' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 100px;" class="sortable-header" @click="toggleSort('codigo')">
+                  <div class="header-content">
+                    <span>Código</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'codigo' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'codigo' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('nombre')">
-                <div class="header-content">
-                  <span>Nombre</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'nombre' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'nombre' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 150px;" class="sortable-header" @click="toggleSort('nombre')">
+                  <div class="header-content">
+                    <span>Nombre</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'nombre' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'nombre' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('nombre_categoria')">
-                <div class="header-content">
-                  <span>Categoría</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'nombre_categoria' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'nombre_categoria' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 120px;" class="sortable-header" @click="toggleSort('nombre_categoria')">
+                  <div class="header-content">
+                    <span>Categoría</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'nombre_categoria' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'nombre_categoria' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th>Descripción</th>
-              <th>Unidad</th>
-
-              <th class="sortable-header" @click="toggleSort('densidad')">
-                <div class="header-content">
-                  <span>Densidad</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'densidad' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'densidad' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 200px;">Descripción</th>
+                <th style="width: 80px;">Unidad</th>
+                <th style="width: 100px;" class="sortable-header" @click="toggleSort('densidad')">
+                  <div class="header-content">
+                    <span>Densidad</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'densidad' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'densidad' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('stock_minimo')">
-                <div class="header-content">
-                  <span>Stock Mín.</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'stock_minimo' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'stock_minimo' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 120px;" class="sortable-header" @click="toggleSort('costo_promedio')">
+                  <div class="header-content">
+                    <span>Costo Promedio</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'costo_promedio' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'costo_promedio' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('stock_maximo')">
-                <div class="header-content">
-                  <span>Stock Máx.</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'stock_maximo' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'stock_maximo' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 80px;" class="sortable-header" @click="toggleSort('stock')">
+                  <div class="header-content">
+                    <span>Stock</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'stock' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'stock' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th style="width:100px; text-align:center">Acciones</th>
-            </tr>
-          </thead>
+                <th style="width: 100px;">Estado</th>
+
+                <th style="width: 100px; text-align:center">Acciones</th>
+              </tr>
+            </thead>
           <tbody>
             <tr v-for="mp in paginatedData" :key="mp.materia_prima_id" :class="{'row-warning': isStockBajo(mp)}">
               <td class="h">{{ mp.materia_prima_id }}</td>
@@ -152,12 +154,15 @@
               <td class="h">{{ mp.descripcion || '-' }}</td>
               <td class="h">{{ mp.nombre_unidad || '-' }}</td>
               <td class="h">{{ mp.densidad ? mp.densidad + ' g/cm³' : '-' }}</td>
+              <td class="h">${{ mp.costo_promedio || 0 }}</td>
               <td class="h">
-                <span :class="{'badge-warning': isStockBajo(mp)}">
-                  {{ Math.floor(mp.stock_minimo) || 0 }}
+                <span class="stock-display" :class="getStockClass(mp.stock)">
+                  {{ mp.stock !== undefined && mp.stock !== null ? mp.stock : 0 }}
                 </span>
               </td>
-              <td class="h">{{ mp.stock_maximo ? Math.floor(mp.stock_maximo) : '-' }}</td>
+              <td>
+                <StatusBadge v-bind="getStockStatusBadge(mp)" />
+              </td>
               <td class="action-buttons">
                 <Tooltip text="Editar materia prima">
                   <button class="btn-icon btn-edit" @click.prevent="openEditModal(mp.materia_prima_id)">
@@ -173,6 +178,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
 
         <!-- Paginación -->
         <div v-if="materiasPrimas.length > 0" class="pagination-container">
@@ -257,10 +263,12 @@ import ConfirmDialog from '../components/ConfirmDialog.vue'
 import ImportExportDialog from '../components/ImportExportDialog.vue'
 import Notification from '../components/Notification.vue'
 import MateriaPrimaFormModal from '../components/MateriaPrimaFormModal.vue'
+import StatusBadge from '../components/StatusBadge.vue'
 import '../assets/styles/MateriasPrimas.css'
 import materiasPrimasService from '../services/materiasPrimasService'
 import unidadesService from '../services/unidadesService'
 import categoriasService from '../services/categoriasService'
+import { getStockStatus } from '../utils/statusUtils'
 
 function debounce(fn, delay) {
   let timeout
@@ -272,7 +280,7 @@ function debounce(fn, delay) {
 
 export default {
   name: 'MateriasPrimasListView',
-  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification, MateriaPrimaFormModal },
+  components: { HeaderGlobal, Breadcrumbs, Tooltip, ConfirmDialog, ImportExportDialog, Notification, MateriaPrimaFormModal, StatusBadge },
   
   data() {
     return {
@@ -280,6 +288,7 @@ export default {
       searchInput: '',
       filters: { proveedor: '' },
       materiasPrimas: [],
+      allMateriasPrimas: [], // Para mantener copia completa para filtros
       unidades: [],
       loading: false,
       error: '',
@@ -302,8 +311,7 @@ export default {
         { key: 'descripcion', label: 'Descripción' },
         { key: 'unidad', label: 'Unidad' },
         { key: 'densidad', label: 'Densidad (g/cm³)' },
-        { key: 'stock_minimo', label: 'Stock Mínimo' },
-        { key: 'stock_maximo', label: 'Stock Máximo' }
+        { key: 'stock', label: 'Stock' }
       ],
       notification: {
         show: false,
@@ -391,11 +399,23 @@ export default {
             hasMore = false
           }
         }
-        this.materiasPrimas = allMateriasPrimas
-        this.allMateriasPrimas = allMateriasPrimas // <-- sincronizar para filtro
+
+        // Forzar reactividad en Vue asignando el array completo
+        // Asegurar que las propiedades sean arrays antes de usar splice
+        if (!Array.isArray(this.materiasPrimas)) {
+          this.materiasPrimas = []
+        }
+        if (!Array.isArray(this.allMateriasPrimas)) {
+          this.allMateriasPrimas = []
+        }
+        
+        this.materiasPrimas.splice(0, this.materiasPrimas.length, ...allMateriasPrimas)
+        this.allMateriasPrimas.splice(0, this.allMateriasPrimas.length, ...allMateriasPrimas)
         this.currentPage = 1
+
+        console.log(`✅ Cargadas ${allMateriasPrimas.length} materias primas`)
       } catch (e) {
-        console.error('Error al listar materias primas', e)
+        console.error('❌ Error al listar materias primas', e)
         this.error = 'No se pudo cargar la lista de materias primas.'
       } finally {
         this.loading = false
@@ -424,6 +444,7 @@ export default {
     },
 
     reload() {
+      console.log('🔄 Ejecutando reload manual...')
       this.fetchMateriasPrimas()
     },
 
@@ -456,7 +477,7 @@ export default {
         if (bVal === null || bVal === undefined) bVal = ''
 
         // Ordenamiento numérico para campos ID, densidad y stocks
-        if (['materia_prima_id', 'densidad', 'stock_minimo', 'stock_maximo'].includes(this.sortField)) {
+        if (['materia_prima_id', 'densidad', 'stock'].includes(this.sortField)) {
           aVal = Number(aVal) || 0
           bVal = Number(bVal) || 0
           return this.sortOrder === 'asc' ? aVal - bVal : bVal - aVal
@@ -510,20 +531,36 @@ export default {
     },
 
     onModalSaved(detail) {
+      console.log('🎯 Evento onModalSaved recibido:', detail)
       const isUpdate = detail && detail.action === 'updated'
       this.showNotification(
-        'success', 
-        isUpdate ? '✅ Materia prima actualizada' : '✅ Materia prima creada', 
+        'success',
+        isUpdate ? '✅ Materia prima actualizada' : '✅ Materia prima creada',
         isUpdate ? 'La materia prima se actualizó correctamente' : 'La materia prima se guardó exitosamente'
       )
-      this.currentPage = 1
-      this.fetchMateriasPrimas()
+
+      // Forzar recarga completa de la lista con un pequeño delay para asegurar que el backend procesó la operación
+      setTimeout(() => {
+        console.log('🔄 Recargando lista de materias primas después de guardar...')
+        this.fetchMateriasPrimas()
+      }, 1000)
     },
 
     isStockBajo(mp) {
       // Aquí podrías comparar con stock actual si está disponible
       // Por ahora solo es visual basado en stock_minimo
       return false
+    },
+
+    getStockStatusBadge(mp) {
+      return getStockStatus(mp.stock, mp.stock_minimo, mp.stock_maximo)
+    },
+
+    getStockClass(stock) {
+      if (stock === 0 || stock === null) return 'stock-danger'
+      if (stock <= 10) return 'stock-warning'
+      if (stock <= 20) return 'stock-info'
+      return 'stock-success'
     },
 
     deleteMateriaPrima(id) {
@@ -772,5 +809,12 @@ export default {
   background: #f8fafc;
   color: #2a3b4d;
   font-size: 1em;
+}
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+.table-container .table {
+  min-width: 1200px;
 }
 </style>

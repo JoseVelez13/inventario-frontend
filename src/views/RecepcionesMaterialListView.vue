@@ -149,6 +149,17 @@
       :type="notification.type" 
       @close="notification.show = false"
     />
+
+    <!-- Modal de Import/Export -->
+    <ImportExportDialog
+      :visible="importExportDialog.show"
+      :mode="importExportDialog.mode"
+      :columns="exportColumns"
+      :data="filtered.value"
+      :filename="'recepciones_material'"
+      entity-name="Recepciones"
+      @close="importExportDialog.show = false"
+    />
   </div>
 </template>
 
@@ -160,6 +171,7 @@ import RecepcionMaterialFormModal from '../components/RecepcionMaterialFormModal
 import ConfirmDialog from '../components/ConfirmDialog.vue'
 import Notification from '../components/Notification.vue'
 import Tooltip from '../components/Tooltip.vue'
+import ImportExportDialog from '../components/ImportExportDialog.vue'
 import recepcionesService from '../services/recepcionesService'
 import '../assets/styles/Dashboard.css'
 
@@ -186,6 +198,26 @@ const notification = ref({
   message: '',
   type: 'success'
 })
+
+// Import/Export Dialog
+const importExportDialog = ref({
+  show: false,
+  mode: 'export'
+})
+
+// Export columns
+const exportColumns = ref([
+  { key: 'id', label: 'ID' },
+  { key: 'fecha_recepcion', label: 'Fecha Recepción' },
+  { key: 'numero_factura', label: 'N° Factura' },
+  { key: 'materia_prima_nombre', label: 'Materia Prima' },
+  { key: 'proveedor_nombre', label: 'Proveedor' },
+  { key: 'cantidad', label: 'Cantidad' },
+  { key: 'costo_unitario', label: 'Costo Unitario' },
+  { key: 'total', label: 'Total' },
+  { key: 'almacen_nombre', label: 'Almacén' },
+  { key: 'observaciones', label: 'Observaciones' }
+])
 
 // Computed
 const totalRecepciones = computed(() => recepciones.value.length)
@@ -321,7 +353,7 @@ const goToPage = (page) => {
 }
 
 const openExport = () => {
-  showNotification('Funcionalidad de exportación en desarrollo', 'info', 'Información')
+  importExportDialog.value = { show: true, mode: 'export' }
 }
 
 const showNotification = (message, type = 'success', title = '') => {

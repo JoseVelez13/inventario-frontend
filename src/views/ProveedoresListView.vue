@@ -136,24 +136,47 @@
           </tbody>
         </table>
         <!-- Paginación -->
-        <div v-if="totalPages > 1" class="pagination">
-          <button class="btn-pagination" @click="goToPage(1)" :disabled="currentPage === 1">
-            ← Anterior
-          </button>
+        <div v-if="proveedores.length > 0" class="pagination-container">
           <div class="pagination-info">
-            Página 
-            <input 
-              v-model.number="currentPage" 
-              type="number" 
-              min="1" 
-              :max="totalPages" 
-              class="pagination-input"
-            /> 
-            de {{ totalPages }}
+            <span>Mostrando {{ startItem }}-{{ endItem }} de {{ totalFiltered }} proveedores</span>
           </div>
-          <button class="btn-pagination" @click="goToPage(totalPages)" :disabled="currentPage === totalPages">
-            Siguiente →
-          </button>
+          <div class="pagination-controls">
+            <button 
+              class="btn-secondary" 
+              @click="previousPage" 
+              :disabled="currentPage === 1"
+            >
+              ← Anterior
+            </button>
+            <div class="page-indicator">
+              <label for="page-input">Página:</label>
+              <input 
+                id="page-input"
+                v-model.number="currentPage" 
+                @change="goToPage"
+                type="number" 
+                :min="1" 
+                :max="totalPages"
+                class="page-input"
+              />
+              <span>de {{ totalPages }}</span>
+            </div>
+            <button 
+              class="btn-secondary" 
+              @click="nextPage" 
+              :disabled="currentPage === totalPages || totalPages === 0"
+            >
+              Siguiente →
+            </button>
+          </div>
+          <div class="pagination-size">
+            <label for="page-size-select">Items por página:</label>
+            <select v-model.number="pageSize" @change="changePageSize" id="page-size-select" class="page-size-select">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -234,7 +257,7 @@ export default {
       sortField: 'proveedor_id',
       sortOrder: 'asc',
       currentPage: 1,
-      itemsPerPage: 10,
+      pageSize: 20,
       confirmDialog: {
         show: false,
         title: '¿Eliminar proveedor?',
@@ -306,13 +329,25 @@ export default {
     },
     
     paginatedProveedores() {
-      const start = (this.currentPage - 1) * this.itemsPerPage
-      const end = start + this.itemsPerPage
+      const start = (this.currentPage - 1) * this.pageSize
+      const end = start + this.pageSize
       return this.sortedProveedores.slice(start, end)
     },
     
+    totalFiltered() {
+      return this.sortedProveedores.length
+    },
+    
     totalPages() {
-      return Math.ceil(this.sortedProveedores.length / this.itemsPerPage)
+      return Math.ceil(this.totalFiltered / this.pageSize)
+    },
+    
+    startItem() {
+      return this.totalFiltered === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1
+    },
+    
+    endItem() {
+      return Math.min(this.currentPage * this.pageSize, this.totalFiltered)
     },
     
     activeChips() {
@@ -370,10 +405,33 @@ export default {
       }
     },
 
-    goToPage(page) {
-      if (page >= 1 && page <= this.totalPages) {
-        this.currentPage = page
+    goToPage() {
+      if (this.currentPage < 1) {
+        this.currentPage = 1
+      } else if (this.currentPage > this.totalPages) {
+        this.currentPage = this.totalPages
       }
+    },
+
+    previousPage() {
+      if (this.currentPage > 1) {
+        this.currentPage--
+      }
+    },
+
+    nextPage() {
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++
+      }
+    },
+
+    changePageSize() {
+      this.currentPage = 1
+    },
+
+    reload() {
+      this.currentPage = 1
+      this.fetchProveedores()
     },
 
     openImport() {

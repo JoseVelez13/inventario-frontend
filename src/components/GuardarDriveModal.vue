@@ -129,9 +129,17 @@ export default {
                     { value: 'inventario', label: 'Inventario' },
                     { value: 'clientes', label: 'Clientes' },
                     { value: 'proveedores', label: 'Proveedores' },
-                    { value: 'pedidos', label: 'Pedidos de Material' },
+                    { value: 'productos', label: 'Productos' },
                     { value: 'materias_primas', label: 'Materias Primas' },
-                    { value: 'ordenes', label: 'Ordenes de Cliente' },
+                    { value: 'almacenes', label: 'Almacenes' },
+                    { value: 'unidades', label: 'Unidades' },
+                    { value: 'categorias', label: 'Categorías' },
+                    { value: 'kardex', label: 'Kardex' },
+                    { value: 'recepciones', label: 'Recepciones' },
+                    { value: 'lotes', label: 'Lotes de Producción' },
+                    { value: 'inventarios', label: 'Inventarios' },
+                    { value: 'ordenes', label: 'Órdenes de Cliente' },
+                    { value: 'pedidos', label: 'Pedidos de Material' },
                     { value: 'otro', label: 'Otro' }
                 ];
             }
@@ -152,6 +160,13 @@ export default {
             this.error = null;
             this.exitoMensaje = null;
 
+            console.log('🚀 Iniciando guardado en Drive:', {
+                tipoReporte: this.formData.tipoReporte,
+                archivoSize: this.archivo.size,
+                archivoName: this.archivo.name,
+                descripcion: this.formData.descripcion
+            });
+
             try {
                 const resultado = await archivoService.subirArchivo(
                     this.archivo,
@@ -159,6 +174,7 @@ export default {
                     this.formData.descripcion
                 );
 
+                console.log('✅ Archivo guardado exitosamente:', resultado);
                 this.exitoMensaje = 'Archivo guardado exitosamente en Google Drive';
 
                 // Emitir evento de éxito
@@ -170,8 +186,10 @@ export default {
                 }, 1500);
 
             } catch (error) {
-                console.error('Error al guardar archivo:', error);
+                console.error('❌ Error al guardar archivo:', error);
                 this.error = error.response?.data?.error ||
+                    error.response?.data?.detail ||
+                    error.message ||
                     'Error al guardar el archivo. Intente nuevamente.';
             } finally {
                 this.guardando = false;

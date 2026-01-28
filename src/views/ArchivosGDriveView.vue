@@ -406,10 +406,29 @@ export default {
                 'proveedores': 'Proveedores',
                 'pedidos': 'Pedidos',
                 'materias_primas': 'Materias Primas',
-                'ordenes': 'Ordenes',
+                'ordenes': 'Órdenes',
+                'categorias': 'Categorías',
+                'productos': 'Productos',
+                'almacenes': 'Almacenes',
+                'unidades': 'Unidades',
+                'kardex': 'Kardex',
+                'recepciones': 'Recepciones',
+                'lotes': 'Lotes',
+                'inventarios': 'Inventarios',
                 'otro': 'Otro'
             };
-            return tipos[tipo] || tipo;
+            
+            // Si el tipo está en el mapeo, devolverlo
+            if (tipos[tipo]) {
+                return tipos[tipo];
+            }
+            
+            // Si no, capitalizar la primera letra automáticamente
+            if (typeof tipo === 'string' && tipo.length > 0) {
+                return tipo.charAt(0).toUpperCase() + tipo.slice(1).toLowerCase().replace(/_/g, ' ');
+            }
+            
+            return tipo;
         },
 
         formatearFecha(fecha) {
@@ -784,6 +803,46 @@ button:focus-visible {
 .tipo-ordenes {
     background: #CCFBF1;
     color: #0F766E;
+}
+
+.tipo-categorias {
+    background: #F3E8FF;
+    color: #7C3AED;
+}
+
+.tipo-productos {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.tipo-almacenes {
+    background: #FDE2E4;
+    color: #BE123C;
+}
+
+.tipo-unidades {
+    background: #D1D5DB;
+    color: #374151;
+}
+
+.tipo-kardex {
+    background: #FEF08A;
+    color: #854D0E;
+}
+
+.tipo-recepciones {
+    background: #DCFCE7;
+    color: #166534;
+}
+
+.tipo-lotes {
+    background: #E9D5FF;
+    color: #6B21A8;
+}
+
+.tipo-inventarios {
+    background: #CFF0F5;
+    color: #164E63;
 }
 
 .tipo-otro {

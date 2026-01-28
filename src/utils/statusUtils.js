@@ -2,8 +2,13 @@
  * Utilidad para determinar el estado del stock y su badge correspondiente
  */
 
-export const getStockStatus = (stock, minStock = 10) => {
-  if (stock === 0 || stock === null || stock === undefined) {
+export const getStockStatus = (stock, minStock = 10, maxStock = null) => {
+  // Convertir a números para evitar problemas de tipos
+  const stockNum = parseFloat(stock) || 0
+  const minStockNum = parseFloat(minStock) || 10
+  const maxStockNum = maxStock !== null && maxStock !== undefined ? parseFloat(maxStock) : null
+
+  if (stockNum === 0 || stock === null || stock === undefined) {
     return {
       variant: 'danger',
       text: 'Agotado',
@@ -12,33 +17,44 @@ export const getStockStatus = (stock, minStock = 10) => {
       title: 'Stock agotado - Se requiere reabastecimiento urgente'
     }
   }
-  
-  if (stock <= minStock) {
+
+  if (stockNum <= minStockNum) {
     return {
       variant: 'warning',
       text: 'Stock Bajo',
       icon: '⚡',
       pulse: true,
-      title: `Stock bajo - Solo quedan ${stock} unidades`
+      title: `Stock bajo - Solo quedan ${stockNum} unidades (mín: ${minStockNum})`
     }
   }
-  
-  if (stock <= minStock * 2) {
+
+  // Solo mostrar "Sobre Stock" si realmente excede el máximo
+  if (maxStockNum !== null && stockNum > maxStockNum) {
+    return {
+      variant: 'info',
+      text: 'Sobre Stock',
+      icon: '📦',
+      pulse: false,
+      title: `Sobre stock - ${stockNum} unidades (máx: ${maxStockNum})`
+    }
+  }
+
+  if (stockNum <= minStockNum * 2) {
     return {
       variant: 'info',
       text: 'Stock Normal',
       icon: '📦',
       pulse: false,
-      title: `Stock normal - ${stock} unidades disponibles`
+      title: `Stock normal - ${stockNum} unidades`
     }
   }
-  
+
   return {
     variant: 'success',
     text: 'Stock Alto',
     icon: '✅',
     pulse: false,
-    title: `Stock alto - ${stock} unidades disponibles`
+    title: `Stock alto - ${stockNum} unidades`
   }
 }
 
@@ -54,7 +70,7 @@ export const getProductStatus = (producto) => {
   }
   
   // Por defecto, basado en el stock
-  return getStockStatus(producto.stock, producto.stock_minimo || 10)
+  return getStockStatus(producto.stock, producto.stock_min || 10, producto.stock_max)
 }
 
 export const getLoteStatus = (lote) => {

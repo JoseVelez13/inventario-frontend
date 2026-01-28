@@ -544,6 +544,13 @@ export default {
     },
     async exportarADrive(formato) {
       try {
+        console.log('📄 Iniciando exportación a Drive:', {
+          entityName: this.entityName,
+          formato,
+          dataLength: this.data?.length || 0,
+          columnsCount: this.columns?.length || 0
+        });
+
         let blob = null
         let fileName = `${this.entityName}_${this.getTimestamp()}`
 
@@ -572,17 +579,39 @@ export default {
           }
 
           const headers = this.columns.map(col => col.label)
-          const tableData = this.data.map(item => this.columns.map(col => {
+          
+          // Limitar datos para evitar PDFs demasiado grandes que causen timeouts
+          const maxRowsForDrive = 1000
+          let tableData = this.data.map(item => this.columns.map(col => {
             const value = item[col.key]
             if (value === null || value === undefined) return '-'
             if (typeof value === 'number') return String(value)
             return String(value)
           }))
+          
+          if (tableData.length > maxRowsForDrive) {
+            console.warn(`⚠️ Limitando datos de ${tableData.length} a ${maxRowsForDrive} filas para evitar timeout`)
+            tableData = tableData.slice(0, maxRowsForDrive)
+          }
+
+          console.log('📊 Generando tabla PDF:', {
+            headersCount: headers.length,
+            rowsCount: tableData.length,
+            originalRowsCount: this.data.length,
+            limited: this.data.length > maxRowsForDrive
+          });
+
           autoTable(doc, { head: [headers], body: tableData, startY: 48, theme: 'striped', styles: { fontSize: 8, cellPadding: 3 }, headStyles: { fillColor: [79,111,143], textColor: [255,255,255] }, alternateRowStyles: { fillColor: [245,247,250] } })
 
           const pdfArrayBuffer = doc.output('arraybuffer')
           blob = new Blob([pdfArrayBuffer], { type: 'application/pdf' })
           fileName += '.pdf'
+
+          console.log('✅ PDF generado:', {
+            fileName,
+            size: blob.size,
+            sizeMB: (blob.size / (1024 * 1024)).toFixed(2) + ' MB'
+          });
         } else {
           alert('Solo se permite exportar a PDF para guardar en Drive')
           return
@@ -592,10 +621,16 @@ export default {
           this.archivoParaDrive = new File([blob], fileName, { type: blob.type })
           this.nombreArchivoParaDrive = fileName
           this.mostrarModalDrive = true
+
+          console.log('🚀 Modal de Drive abierto con archivo:', {
+            fileName,
+            size: blob.size,
+            type: blob.type
+          });
         }
       } catch (error) {
-        console.error('Error al preparar archivo para Drive:', error)
-        alert('Error al preparar el archivo')
+        console.error('❌ Error al preparar archivo para Drive:', error)
+        alert('Error al preparar el archivo: ' + error.message)
       }
     },
 

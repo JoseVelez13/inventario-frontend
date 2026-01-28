@@ -64,101 +64,113 @@
           <h3>No hay productos registrados</h3>
           <p>Comienza agregando tu primer producto</p>
         </div>
-        <table v-else class="table">
-          <thead>
-            <tr>
-              <th class="sortable-header" @click="toggleSort('producto_id')">
-                <div class="header-content">
-                  <span>ID</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'producto_id' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'producto_id' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+        <div v-else class="table-container">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width: 60px;" class="sortable-header" @click="toggleSort('producto_id')">
+                  <div class="header-content">
+                    <span>ID</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'producto_id' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'producto_id' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('product_code')">
-                <div class="header-content">
-                  <span>Código</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'product_code' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'product_code' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 100px;" class="sortable-header" @click="toggleSort('product_code')">
+                  <div class="header-content">
+                    <span>Código</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'product_code' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'product_code' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('name')">
-                <div class="header-content">
-                  <span>Nombre</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'name' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'name' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 150px;" class="sortable-header" @click="toggleSort('name')">
+                  <div class="header-content">
+                    <span>Nombre</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'name' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'name' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('nombre_categoria')">
-                <div class="header-content">
-                  <span>Categoría</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'nombre_categoria' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'nombre_categoria' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 120px;" class="sortable-header" @click="toggleSort('nombre_categoria')">
+                  <div class="header-content">
+                    <span>Categoría</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'nombre_categoria' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'nombre_categoria' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('description')">
-                <div class="header-content">
-                  <span>Descripción</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'description' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'description' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 200px;" class="sortable-header" @click="toggleSort('description')">
+                  <div class="header-content">
+                    <span>Descripción</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'description' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'description' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('unit')">
-                <div class="header-content">
-                  <span>Unidad</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'unit' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'unit' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 80px;" class="sortable-header" @click="toggleSort('unit')">
+                  <div class="header-content">
+                    <span>Unidad</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'unit' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'unit' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
-              <th class="sortable-header" @click="toggleSort('weight')">
-                <div class="header-content">
-                  <span>Peso</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'weight' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'weight' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                </th>
+                <th style="width: 80px;" class="sortable-header" @click="toggleSort('weight')">
+                  <div class="header-content">
+                    <span>Peso</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'weight' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'weight' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th class="sortable-header" @click="toggleSort('stock')">
-                <div class="header-content">
-                  <span>Stock</span>
-                  <div class="sort-indicator">
-                    <i v-if="sortField === 'stock' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
-                    <i v-else-if="sortField === 'stock' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
-                    <i v-else class="fa-solid fa-sort"></i>
+                <th style="width: 120px;" class="sortable-header" @click="toggleSort('costo_unitario')">
+                  <div class="header-content">
+                    <span>Costo Unitario</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'costo_unitario' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'costo_unitario' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
                   </div>
-                </div>
-              </th>
+                </th>
 
-              <th>Estado</th>
+                <th style="width: 80px;" class="sortable-header" @click="toggleSort('stock')">
+                  <div class="header-content">
+                    <span>Stock</span>
+                    <div class="sort-indicator">
+                      <i v-if="sortField === 'stock' && sortOrder === 'asc'" class="fa-solid fa-sort-up active"></i>
+                      <i v-else-if="sortField === 'stock' && sortOrder === 'desc'" class="fa-solid fa-sort-down active"></i>
+                      <i v-else class="fa-solid fa-sort"></i>
+                    </div>
+                  </div>
+                </th>
 
-              <th style="width:100px; text-align:center">Acciones</th>
-            </tr>
-          </thead>
+                <th style="width: 100px;">Estado</th>
+
+                <th style="width: 100px; text-align:center">Acciones</th>
+              </tr>
+            </thead>
           <tbody>
             <tr v-for="p in paginatedData" :key="p.producto_id || p.id" class="animate-fade-in">
               <td>{{ p.producto_id || p.id }}</td>
@@ -168,6 +180,7 @@
               <td>{{ p.description || '-' }}</td>
               <td>{{ getUnidadNombre(p.unit) }}</td>
               <td>{{ p.weight }} kg</td>
+              <td>${{ p.costo_unitario || 0 }}</td>
               <td>
                 <span class="stock-display" :class="getStockClass(p.stock)">
                   {{ p.stock !== undefined ? p.stock : 'N/A' }}
@@ -191,6 +204,7 @@
             </tr>
           </tbody>
         </table>
+        </div>
         <!-- Paginación similar a clientes -->
         <div v-if="allProductos.length > 0" class="pagination-container">
           <div class="pagination-info">
@@ -263,7 +277,7 @@ import ImportExportDialog from '../components/ImportExportDialog.vue'
 import ProductoFormModal from '../components/ProductoFormModal.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import { getStockStatus } from '../utils/statusUtils'
-import '../assets/styles/Clientes.css'
+import '../assets/styles/Productos.css'
 import productosService from '../services/productosService'
 import unidadesService from '../services/unidadesService'
 import categoriasService from '../services/categoriasService'
@@ -403,36 +417,33 @@ export default {
       }
     },
     async fetchProductos() {
+      console.log('Iniciando fetchProductos')
       this.loading = true
       this.error = ''
       try {
-        // Cargar TODOS los productos (paginación por backend)
+        // Cargar productos con page_size grande para evitar paginación compleja
+        console.log('Cargando productos con page_size=1000')
+        const res = await productosService.getProductos({ page_size: 100 })
+        console.log('Respuesta de productosService:', res)
         let allData = []
-        let page = 1
-        let hasMore = true
-
-        while (hasMore) {
-          const res = await productosService.getProductos({ page, page_size: 100 })
-          if (res.results) {
-            allData = allData.concat(res.results)
-            this.totalProductos = res.count || allData.length
-            hasMore = !!res.next
-            page++
-          } else {
-            allData = Array.isArray(res) ? res : []
-            this.totalProductos = allData.length
-            hasMore = false
-          }
+        if (res.results) {
+          allData = res.results
+          this.totalProductos = res.count || allData.length
+        } else {
+          allData = Array.isArray(res) ? res : []
+          this.totalProductos = allData.length
         }
 
         this.allProductos = allData
         this.productos = allData
         this.currentPage = 1
+        console.log('Productos cargados exitosamente:', allData.length)
       } catch (e) {
         console.error('Error al listar productos', e)
         this.error = 'No se pudo cargar la lista de productos.'
       } finally {
         this.loading = false
+        console.log('Finalizando fetchProductos, loading = false')
       }
     },
     onSearch() {},
@@ -475,7 +486,7 @@ export default {
       return 'stock-success'
     },
     getStockStatusBadge(stock) {
-      return getStockStatus(stock, 10)
+      return getStockStatus(stock)
     },
     reload() {
       this.currentPage = 1
@@ -693,5 +704,12 @@ export default {
   background: #f8fafc;
   color: #2a3b4d;
   font-size: 1em;
+}
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+.table-container .table {
+  min-width: 1300px;
 }
 </style>

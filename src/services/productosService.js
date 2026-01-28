@@ -46,7 +46,8 @@ class ProductosService {
       categoria_id: Number(productoData.categoria_id), // ID de la categoría (ForeignKey - OBLIGATORIO)
       unit: Number(productoData.unit), // ID de la unidad (ForeignKey)
       weight: Number(productoData.weight),
-      stock: Number(productoData.stock || 0)
+      stock: Number(productoData.stock || 0),
+      costo_unitario: Number(productoData.costo_unitario || 0)
     }
     
     console.log('productosService.createProducto - Datos limpios:', cleanData)
