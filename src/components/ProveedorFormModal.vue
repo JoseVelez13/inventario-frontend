@@ -10,7 +10,7 @@
         <div class="content">
           <form @submit.prevent="submit">
             <div class="form-grid">
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.05s">
                 <label for="ruc">RUC <span class="required">*</span></label>
                 <input 
                   id="ruc" 
@@ -25,7 +25,7 @@
                 <FormErrorMessage :error="errors.ruc" />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.10s">
                 <label for="nombre_empresa">Nombre de la Empresa <span class="required">*</span></label>
                 <input 
                   id="nombre_empresa" 
@@ -38,7 +38,7 @@
                 <FormErrorMessage :error="errors.nombre_empresa" />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.15s">
                 <label for="nombre_contacto">Nombre del Contacto</label>
                 <input 
                   id="nombre_contacto" 
@@ -51,7 +51,7 @@
                 <FormErrorMessage :error="errors.nombre_contacto" />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.20s">
                 <label for="telefono">Teléfono</label>
                 <input 
                   id="telefono" 
@@ -65,7 +65,7 @@
                 <FormErrorMessage :error="errors.telefono" />
               </div>
 
-              <div class="form-field full">
+              <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.25s">
                 <label for="email">Correo Electrónico</label>
                 <input 
                   id="email" 
@@ -98,12 +98,11 @@
                   id="tipo_producto" 
                   v-model="form.tipo_producto" 
                   maxlength="100" 
-                  placeholder="Ej: Químicos, Materias Primas, Envases"
-                  @blur="validateField('tipo_producto')"
-                  :class="{ 'input-error': errors.tipo_producto }"
-                />
-                <FormErrorMessage :error="errors.tipo_producto" />
-              </div>
+                    <div class="form-actions">
+                      <button type="submit" class="btn-primary" :disabled="loading">
+                        {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }}
+                      </button>
+                    </div>
             </div>
 
             <div class="form-actions">

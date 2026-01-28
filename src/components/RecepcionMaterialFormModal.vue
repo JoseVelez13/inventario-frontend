@@ -1,22 +1,24 @@
 <template>
   <transition name="fade-in-up" appear>
-    <div v-if="visible" class="dialog-overlay" @click="close">
-      <div class="dialog-card form-modal" @click.stop>
+    <div v-if="visible" class="dialog-overlay" @click="close" role="dialog" aria-modal="true" aria-labelledby="recepcion-modal-title">
+      <div class="dialog-card form-modal" @click.stop tabindex="-1">
         <div class="modal-header">
-          <h2>{{ isEdit ? 'Editar Recepción' : 'Nueva Recepción de Material' }}</h2>
-          <button class="btn-icon" @click="close" aria-label="Cerrar">✖</button>
+          <h2 id="recepcion-modal-title">{{ isEdit ? 'Editar Recepción' : 'Nueva Recepción de Material' }}</h2>
+          <button class="btn-icon" @click="close" aria-label="Cerrar este formulario" title="Cerrar">✖</button>
         </div>
 
         <div class="content">
-          <form @submit.prevent="submit">
+          <form @submit.prevent="submit" aria-describedby="recepcion-modal-desc">
             <div class="form-grid">
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.05s">
                 <label for="materia_prima">Materia Prima *</label>
                 <select 
                   id="materia_prima" 
                   v-model="form.materia_prima" 
                   required
                   :disabled="isEdit"
+                  aria-required="true"
+                  aria-label="Seleccionar materia prima"
                 >
                   <option value="">Seleccionar...</option>
                   <option 
@@ -29,7 +31,7 @@
                 </select>
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.10s">
                 <label for="cantidad">Cantidad *</label>
                 <input 
                   id="cantidad" 
@@ -38,11 +40,13 @@
                   step="0.01"
                   min="0.01"
                   required
+                  aria-required="true"
+                  aria-label="Cantidad de materia prima"
                   placeholder="Ej: 100.50"
                 />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.15s">
                 <label for="costo_unitario">Costo Unitario *</label>
                 <input 
                   id="costo_unitario" 
@@ -51,26 +55,32 @@
                   step="0.01"
                   min="0.01"
                   required
+                  aria-required="true"
+                  aria-label="Costo unitario"
                   placeholder="Ej: 15.50"
                 />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.20s">
                 <label>Total</label>
                 <input 
                   :value="formatTotal" 
                   type="text"
                   disabled
                   class="input-readonly"
+                  aria-label="Total calculado"
+                  tabindex="-1"
                 />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.25s">
                 <label for="proveedor">Proveedor *</label>
                 <select 
                   id="proveedor" 
                   v-model="form.proveedor" 
                   required
+                  aria-required="true"
+                  aria-label="Seleccionar proveedor"
                 >
                   <option value="">Seleccionar...</option>
                   <option v-for="prov in proveedoresFiltered" :key="prov.proveedor_id" :value="prov.proveedor_id">
@@ -79,12 +89,14 @@
                 </select>
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.30s">
                 <label for="almacen">Almacén *</label>
                 <select 
                   id="almacen" 
                   v-model="form.almacen" 
                   required
+                  aria-required="true"
+                  aria-label="Seleccionar almacén"
                 >
                   <option value="">Seleccionar...</option>
                   <option v-for="alm in almacenesFiltered" :key="alm.id" :value="alm.id">
@@ -93,33 +105,37 @@
                 </select>
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.35s">
                 <label for="fecha_de_recepcion">Fecha de Recepción *</label>
                 <input 
                   id="fecha_de_recepcion" 
                   v-model="form.fecha_de_recepcion" 
                   type="date"
                   required
+                  aria-required="true"
+                  aria-label="Fecha de recepción"
                 />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.40s">
                 <label for="numero_de_factura">Número de Factura</label>
                 <input 
                   id="numero_de_factura" 
                   v-model="form.numero_de_factura" 
                   type="text"
                   maxlength="50"
+                  aria-label="Número de factura"
                   placeholder="Ej: FAC-001-2026"
                 />
               </div>
 
-              <div class="form-field full">
+              <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.45s">
                 <label for="observaciones">Observaciones</label>
                 <textarea 
                   id="observaciones" 
                   v-model="form.observaciones" 
                   rows="3"
+                  aria-label="Observaciones"
                   placeholder="Observaciones adicionales sobre la recepción..."
                 ></textarea>
               </div>
@@ -131,10 +147,9 @@
             </div>
 
             <div class="form-actions">
-              <button type="button" class="btn-secondary" @click="close">Cancelar</button>
-              <button type="submit" class="btn-primary" :disabled="submitting">
-                {{ submitting ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Registrar') }}
-              </button>
+                <button type="submit" class="btn-primary" :disabled="submitting" aria-label="{{ isEdit ? 'Actualizar recepción' : 'Registrar recepción' }}">
+                  {{ submitting ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Registrar') }}
+                </button>
             </div>
           </form>
         </div>

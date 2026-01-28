@@ -10,7 +10,7 @@
         <div class="content">
           <form @submit.prevent="submit">
             <div class="form-grid">
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.05s">
                 <label for="nombre">Nombre *</label>
                 <input 
                   id="nombre" 
@@ -21,7 +21,7 @@
                 />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.10s">
                 <label for="simbolo">Símbolo *</label>
                 <input 
                   id="simbolo" 
@@ -32,7 +32,7 @@
                 />
               </div>
 
-              <div class="form-field full">
+              <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.15s">
                 <label for="factor_conversion">Factor de Conversión</label>
                 <input 
                   id="factor_conversion" 
@@ -49,7 +49,6 @@
             </div>
 
             <div class="form-actions">
-              <button type="button" class="btn-secondary" @click="close">Cancelar</button>
               <button type="submit" class="btn-primary">
                 {{ isEdit ? 'Actualizar' : 'Crear' }}
               </button>

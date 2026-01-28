@@ -10,7 +10,7 @@
         <div class="content">
           <form @submit.prevent="submit">
             <div class="form-grid">
-              <div class="form-field full">
+              <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.05s">
                 <label for="nombre">Nombre *</label>
                 <input 
                   id="nombre" 
@@ -21,7 +21,7 @@
                 />
               </div>
 
-              <div class="form-field full">
+              <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.10s">
                 <label for="tipo">Tipo *</label>
                 <select id="tipo" v-model="form.tipo" required>
                   <option value="">Seleccione un tipo</option>
@@ -30,7 +30,7 @@
                 </select>
               </div>
 
-              <div class="form-field full">
+              <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.15s">
                 <label for="descripcion">Descripción</label>
                 <textarea 
                   id="descripcion" 

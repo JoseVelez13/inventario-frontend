@@ -11,7 +11,7 @@
       <div class="modal-body">
         <form @submit.prevent="submit" class="form-grid">
           <!-- Materia Prima -->
-          <div class="form-field full">
+          <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.05s">
             <label for="raw_material">Materia Prima *</label>
             <select v-model.number="form.raw_material" id="raw_material" required>
               <option value="">-- Selecciona una materia prima --</option>
@@ -23,7 +23,7 @@
           </div>
 
           <!-- Cantidad Usada -->
-          <div class="form-field">
+          <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.10s">
             <label for="used_quantity">Cantidad Usada *</label>
             <input 
               id="used_quantity" 
@@ -38,7 +38,7 @@
           </div>
 
           <!-- Unidad -->
-          <div class="form-field">
+          <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.15s">
             <label for="unit">Unidad de Medida *</label>
             <select v-model.number="form.unit" id="unit" required>
               <option value="">-- Selecciona una unidad --</option>
@@ -69,7 +69,6 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary" @click="close">Cancelar</button>
         <button 
           class="btn-primary" 
           @click="submit"

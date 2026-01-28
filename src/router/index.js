@@ -28,7 +28,11 @@ const routes = [
     path: '/',
     name: 'Inicio',
     component: DashboardView,
-    meta: { title: 'Dashboard - Sistema Innoquim', requiresAuth: true }
+    meta: {
+      title: 'Dashboard - Sistema Innoquim',
+      description: 'Panel principal del sistema Innoquim para gestión de inventario, productos, clientes y lotes de producción.',
+      requiresAuth: true
+    }
   },
   {
     path: '/login',
@@ -36,6 +40,7 @@ const routes = [
     component: LoginView,
     meta: {
       title: 'Iniciar Sesión - Sistema Innoquim',
+      description: 'Accede al sistema Innoquim para gestionar tu inventario y operaciones empresariales.',
       hideForAuth: true
     }
   },
@@ -45,7 +50,8 @@ const routes = [
     component: DashboardView,
     meta: {
       requiresAuth: true,
-      title: 'Dashboard - Sistema Innoquim'
+      title: 'Dashboard - Sistema Innoquim',
+      description: 'Panel principal del sistema Innoquim para gestión de inventario, productos, clientes y lotes de producción.'
     }
   },
   {
@@ -54,26 +60,39 @@ const routes = [
     component: ProfileView,
     meta: {
       requiresAuth: true,
-      title: 'Mi Perfil - Sistema Innoquim'
+      title: 'Mi Perfil - Sistema Innoquim',
+      description: 'Consulta y edita la información de tu perfil de usuario en el sistema Innoquim.'
     }
   },
   {
     path: '/clientes',
     name: 'Clientes',
     component: ClientesListView,
-    meta: { title: 'Clientes - Sistema Innoquim', requiresAuth: true }
+    meta: {
+      title: 'Clientes - Sistema Innoquim',
+      description: 'Gestión de empresas y contactos en el sistema Innoquim.',
+      requiresAuth: true
+    }
   },
   {
     path: '/productos',
     name: 'Productos',
     component: ProductosListView,
-    meta: { title: 'Productos - Sistema Innoquim', requiresAuth: true }
+    meta: {
+      title: 'Productos - Sistema Innoquim',
+      description: 'Control y administración de productos en el sistema Innoquim.',
+      requiresAuth: true
+    }
   },
   {
     path: '/materias-primas',
     name: 'MateriasPrimas',
     component: MateriasPrimasListView,
-    meta: { title: 'Materias Primas - Sistema Innoquim', requiresAuth: true }
+    meta: {
+      title: 'Materias Primas - Sistema Innoquim',
+      description: 'Gestión de insumos y materias primas para la producción.',
+      requiresAuth: true
+    }
   },
   {
     path: '/materias-primas/nuevo',
@@ -187,13 +206,24 @@ const router = createRouter({
   routes,
 })
 
-// Guard global para proteger rutas que requieren autenticación
+// Guard global para proteger rutas que requieren autenticación y actualizar metadatos SEO
 router.beforeEach((to, from, next) => {
   const isAuthenticated = authService.isAuthenticated()
 
   // Actualizar título de la página
   if (to.meta.title) {
     document.title = to.meta.title
+  }
+
+  // Actualizar meta descripción si existe en la ruta
+  if (to.meta.description) {
+    let descriptionTag = document.querySelector('meta[name="description"]')
+    if (!descriptionTag) {
+      descriptionTag = document.createElement('meta')
+      descriptionTag.setAttribute('name', 'description')
+      document.head.appendChild(descriptionTag)
+    }
+    descriptionTag.setAttribute('content', to.meta.description)
   }
 
   // Si la ruta requiere autenticación y no está autenticado

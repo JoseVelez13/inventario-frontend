@@ -11,7 +11,7 @@
       <div class="modal-body">
         <form @submit.prevent="submit" class="form-grid">
           <!-- Código del Lote -->
-          <div class="form-field">
+          <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.05s">
             <label for="batch_code">Código del Lote *</label>
             <input 
               id="batch_code" 
@@ -25,7 +25,7 @@
           </div>
 
           <!-- Producto -->
-          <div class="form-field">
+          <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.10s">
             <label for="product">Producto *</label>
             <select v-model.number="form.product" id="product" required>
               <option value="">-- Selecciona un producto --</option>
@@ -37,7 +37,7 @@
           </div>
 
           <!-- Fecha de Producción -->
-          <div class="form-field">
+          <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.15s">
             <label for="production_date">Fecha de Producción *</label>
             <input 
               id="production_date" 
@@ -49,7 +49,7 @@
           </div>
 
           <!-- Cantidad Producida -->
-          <div class="form-field">
+          <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.20s">
             <label for="produced_quantity">Cantidad Producida *</label>
             <input 
               id="produced_quantity" 
@@ -64,7 +64,7 @@
           </div>
 
           <!-- Unidad -->
-          <div class="form-field">
+          <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.25s">
             <label for="unit">Unidad de Medida *</label>
             <select v-model.number="form.unit" id="unit" required>
               <option value="">-- Selecciona una unidad --</option>
@@ -119,14 +119,13 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn-secondary" @click="close">Cancelar</button>
         <button 
           class="btn-primary" 
           @click="submit"
           :disabled="loading"
         >
           <i v-if="loading" class="fa-solid fa-spinner fa-spin"></i>
-          {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Crear') }}
+          {{ loading ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Agregar') }}
         </button>
       </div>
     </div>

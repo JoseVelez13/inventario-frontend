@@ -13,7 +13,7 @@
                         <div class="section-header">Información de Orden</div>
 
                         <div class="form-grid">
-                            <div class="form-field">
+                            <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.05s">
                                 <label for="client">Cliente *</label>
                                 <select id="client" v-model="form.client" required>
                                     <option value="">Seleccione un cliente</option>
@@ -24,18 +24,18 @@
                                 </select>
                             </div>
 
-                            <div class="form-field">
+                            <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.10s">
                                 <label for="order_code">Código de Orden *</label>
                                 <input id="order_code" v-model="form.order_code" maxlength="50" required
                                     placeholder="Ej: ORD-2025-001" />
                             </div>
 
-                            <div class="form-field">
+                            <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.15s">
                                 <label for="order_date">Fecha de Orden *</label>
                                 <input id="order_date" type="date" v-model="form.order_date" required />
                             </div>
 
-                            <div class="form-field">
+                            <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.20s">
                                 <label for="status">Estado *</label>
                                 <select id="status" v-model="form.status" required>
                                     <option value="pending">Pendiente</option>
@@ -46,13 +46,13 @@
                                 </select>
                             </div>
 
-                            <div class="form-field">
+                            <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.25s">
                                 <label for="tax_rate">Tasa de Impuesto (%) *</label>
                                 <input id="tax_rate" type="number" v-model.number="form.tax_rate" step="0.01" min="0"
                                     max="100" required placeholder="Ej: 15.00" />
                             </div>
 
-                            <div class="form-field full">
+                            <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.30s">
                                 <label for="notes">Notas</label>
                                 <textarea id="notes" v-model="form.notes"
                                     placeholder="Observaciones o instrucciones especiales"></textarea>

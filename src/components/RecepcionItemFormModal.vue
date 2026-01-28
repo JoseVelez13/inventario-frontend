@@ -10,7 +10,7 @@
         <div class="content">
           <form @submit.prevent="submit">
             <div class="form-grid">
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.05s">
                 <label for="producto">Producto *</label>
                 <select 
                   id="producto" 
@@ -25,7 +25,7 @@
                 </select>
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.10s">
                 <label for="cantidad">Cantidad *</label>
                 <input 
                   id="cantidad" 
@@ -38,7 +38,7 @@
                 />
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.15s">
                 <label for="almacen">Almacén *</label>
                 <select 
                   id="almacen" 
@@ -52,7 +52,7 @@
                 </select>
               </div>
 
-              <div class="form-field">
+              <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.20s">
                 <label for="fecha_recepcion">Fecha de Recepción *</label>
                 <input 
                   id="fecha_recepcion" 
@@ -62,7 +62,7 @@
                 />
               </div>
 
-              <div class="form-field full">
+              <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.25s">
                 <label for="lote_produccion">Lote de Producción</label>
                 <input 
                   id="lote_produccion" 
@@ -76,7 +76,7 @@
                 </small>
               </div>
 
-              <div class="form-field full">
+              <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.30s">
                 <label for="observaciones">Observaciones</label>
                 <textarea 
                   id="observaciones" 
@@ -93,10 +93,9 @@
             </div>
 
             <div class="form-actions">
-              <button type="button" class="btn-secondary" @click="close">Cancelar</button>
-              <button type="submit" class="btn-primary" :disabled="submitting">
-                {{ submitting ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Registrar') }}
-              </button>
+                <button type="submit" class="btn-primary" :disabled="submitting">
+                  {{ submitting ? 'Guardando...' : (isEdit ? 'Actualizar' : 'Registrar') }}
+                </button>
             </div>
           </form>
         </div>

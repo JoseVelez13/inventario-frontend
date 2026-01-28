@@ -11,7 +11,7 @@
                     <form @submit.prevent="submit">
                         <div class="form-grid">
                             <!-- Tipo de Ítem -->
-                            <div class="form-field full">
+                            <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.05s">
                                 <label for="tipo_item">Tipo de Ítem *</label>
                                 <select id="tipo_item" v-model="form.tipo_item" @change="onTipoChange" required
                                     :disabled="isEdit">
@@ -23,7 +23,7 @@
                             </div>
 
                             <!-- Ítem (dinámico según tipo) -->
-                            <div class="form-field full">
+                            <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.10s">
                                 <label for="object_id">{{ form.tipo_item === 'materia_prima' ? 'Materia Prima' :
                                     'Producto' }} *</label>
                                 <select id="object_id" v-model="form.object_id" @change="onItemChange" required
@@ -37,7 +37,7 @@
                             </div>
 
                             <!-- Almacén -->
-                            <div class="form-field">
+                            <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.15s">
                                 <label for="almacen_id">Almacén *</label>
                                 <select id="almacen_id" v-model="form.almacen_id" required :disabled="isEdit">
                                     <option value="">Seleccione un almacén</option>
@@ -50,7 +50,7 @@
                             </div>
 
                             <!-- Unidad -->
-                            <div class="form-field">
+                            <div class="form-field animate__animated animate__fadeIn" style="animation-delay: 0.20s">
                                 <label for="unidad_id">Unidad de Medida *</label>
                                 <select id="unidad_id" v-model="form.unidad_id" required
                                     :disabled="unidadAutoSeleccionada">
@@ -65,7 +65,7 @@
                             </div>
 
                             <!-- Cantidad -->
-                            <div class="form-field full">
+                            <div class="form-field full animate__animated animate__fadeIn" style="animation-delay: 0.25s">
                                 <label for="cantidad">Cantidad *</label>
                                 <input id="cantidad" type="number" v-model.number="form.cantidad" step="0.01" min="0"
                                     required placeholder="0.00" />
